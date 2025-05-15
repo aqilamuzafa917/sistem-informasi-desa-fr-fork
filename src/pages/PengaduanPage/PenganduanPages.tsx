@@ -3,7 +3,6 @@ import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
@@ -13,7 +12,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-export default function DashboardPage() {
+export default function PengaduanPages() {
   // const navigate = useNavigate();
 
   // const handleLogout = () => {
@@ -34,7 +33,7 @@ export default function DashboardPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Dashboard Desa</BreadcrumbLink>
+                  Pengaduan Warga
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

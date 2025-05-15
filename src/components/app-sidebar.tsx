@@ -1,173 +1,236 @@
-import * as React from "react"
+import * as React from "react";
+import { useLocation } from "react-router-dom";
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react"
+  AppWindow,
+  ArrowUpCircleIcon,
+  ChartNoAxesColumnIncreasing,
+  Files,
+  House,
+  Images,
+  MessageCircleWarning,
+  Users,
+} from "lucide-react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
+} from "@/components/ui/sidebar";
+import { NavSurat } from "./nav-surat";
+import { NavPenduduk } from "./nav-penduduk";
+import { NavInfografis } from "./nav-infografis";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const location = useLocation();
+  const currentPath = location.pathname.toLowerCase();
+
+  // This is sample data with isActive based on current path
+  const data = {
+    navDashboard: [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: House,
+        isActive: currentPath === "/dashboard",
+      },
+    ],
+    navSurat: [
+      {
+        title: "Surat",
+        url: "#",
+        icon: Files,
+        isActive: currentPath.includes("/sk"),
+        items: [
+          {
+            title: "SK Pindah",
+            url: "/skpindah",
+            isActive: currentPath === "/skpindah",
+          },
+          {
+            title: "SK Domisili",
+            url: "/skdomisili",
+            isActive: currentPath === "/skdomisili",
+          },
+          {
+            title: "SK Kematian",
+            url: "/skkematian",
+            isActive: currentPath === "/skkematian",
+          },
+          {
+            title: "SK Usaha",
+            url: "/skusaha",
+            isActive: currentPath === "/skusaha",
+          },
+          {
+            title: "SK Tidak Mampu",
+            url: "/sktidakmampu",
+            isActive: currentPath === "/sktidakmampu",
+          },
+          {
+            title: "SK Kehilangan KTP",
+            url: "/skkehilanganktp",
+            isActive: currentPath === "/skkehilanganktp",
+          },
+          {
+            title: "SK Kehilangan KK",
+            url: "/skkehilangankk",
+            isActive: currentPath === "/skkehilangankk",
+          },
+          {
+            title: "SK Umum",
+            url: "/skumum",
+            isActive: currentPath === "/skumum",
+          },
+        ],
+      },
+    ],
+    navProfil: [
+      {
+        title: "Profil Desa",
+        url: "/profil",
+        icon: AppWindow,
+        isActive: currentPath === "/profil",
+      },
+    ],
+    navArtikel: [
+      {
+        title: "Artikel Desa",
+        url: "/artikel",
+        icon: Images,
+        isActive: currentPath === "/artikel",
+      },
+    ],
+    navInfografis: [
+      {
+        title: "Infografis Desa",
+        url: "#",
+        icon: ChartNoAxesColumnIncreasing,
+        isActive: ["/pendapatan", "/belanja", "/peta"].includes(currentPath),
+        items: [
+          {
+            title: "Pendapatan Desa",
+            url: "/pendapatan",
+            isActive: currentPath === "/pendapatan",
+          },
+          {
+            title: "Belanja Desa",
+            url: "/belanja",
+            isActive: currentPath === "/belanja",
+          },
+          {
+            title: "Peta Fasilitas",
+            url: "/peta",
+            isActive: currentPath === "/peta",
+          },
+        ],
+      },
+    ],
+    navPenduduk: [
+      {
+        title: "Penduduk",
+        url: "#",
+        icon: Users,
+        isActive: ["/dataktp", "/datakk"].includes(currentPath),
+        items: [
+          {
+            title: "Data KTP",
+            url: "/dataktp",
+            isActive: currentPath === "/dataktp",
+          },
+          {
+            title: "Data KK",
+            url: "/datakk",
+            isActive: currentPath === "/datakk",
+          },
+        ],
+      },
+    ],
+    navPengaduan: [
+      {
+        title: "Pengaduan Warga",
+        url: "/pengaduan",
+        icon: MessageCircleWarning,
+        isActive: currentPath === "/pengaduan",
+      },
+    ],
+  };
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <a href="/dashboard">
+                <ArrowUpCircleIcon className="h-5 w-5" />
+                <span className="text-base font-semibold">
+                  Admin Desa Batujajar
+                </span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <SidebarMenu>
+          {data.navDashboard.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          <NavSurat items={data.navSurat} />
+          {data.navProfil.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          <NavPenduduk items={data.navPenduduk} />
+          {data.navArtikel.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          <NavInfografis items={data.navInfografis} />
+          {data.navPengaduan.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
