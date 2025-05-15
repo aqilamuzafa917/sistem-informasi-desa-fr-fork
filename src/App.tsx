@@ -28,14 +28,13 @@ import KipPages from "./pages/SuratPage/KipPages";
 
 export default function App() {
   return (
-    <>
-<<<<<<< Updated upstream
-=======
       {/* <div className="absolute top-4 right-4 z-50"> 
         <DarkThemeToggle />
       </div> */}
-
->>>>>>> Stashed changes
+    <>      
+      {/* <div className="absolute top-4 right-4 z-50"> 
+        <DarkThemeToggle />
+      </div> */}
       <div className="absolute top-4 right-4 z-50">
         <DarkThemeToggle />
       </div>
@@ -49,7 +48,6 @@ export default function App() {
           <li>
             <Link to="/login" className="text-blue-600 hover:underline dark:text-blue-400">Login</Link>
           </li>
-        
           <li>
             <Link to="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">Dashboard</Link>
           </li>
@@ -59,7 +57,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/skpindah" element={<PindahPages />} />
