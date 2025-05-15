@@ -9,7 +9,7 @@ export default function DashboardPage() {
     // Clear authentication token (e.g., from localStorage)
     localStorage.removeItem("authToken");
     // Redirect to login page
-    navigate("/login");
+    navigate("/");
   };
 
   return (
