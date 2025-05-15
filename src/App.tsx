@@ -28,13 +28,7 @@ import KipPages from "./pages/SuratPage/KipPages";
 
 export default function App() {
   return (
-      {/* <div className="absolute top-4 right-4 z-50"> 
-        <DarkThemeToggle />
-      </div> */}
     <>      
-      {/* <div className="absolute top-4 right-4 z-50"> 
-        <DarkThemeToggle />
-      </div> */}
       <div className="absolute top-4 right-4 z-50">
         <DarkThemeToggle />
       </div>
@@ -75,7 +69,6 @@ export default function App() {
           <Route path="/belanja" element={<BelanjaPages />} />
           <Route path="/peta" element={<PetaPages />} />
           <Route path="/dataktp" element={<DataKTPPages />} />
-          <Route path="/datakk" element={<DataKKPages />} />
           <Route path="/datakk" element={<DataKKPages />} />
           <Route path="/pengaduan" element={<PengaduanPages />} />
         </Route>
