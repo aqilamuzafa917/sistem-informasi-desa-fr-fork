@@ -1,7 +1,7 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Label, TextInput, Alert } from "flowbite-react";
-import axios from "axios"; // ⬅️ Tambahkan ini
+import axios from "axios";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,15 +10,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const API_BASE_URL = "https://thankful-urgently-silkworm.ngrok-free.app/api";
-
+  const baseURL = import.meta.env.VITE_API_BASE_URL;
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/login`, {
+      const response = await axios.post(`${baseURL}/login`, {
         email,
         password,
       });
@@ -70,7 +69,7 @@ export default function LoginPage() {
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div>
             <div className="mb-2 block">
-              <Label htmlFor="email" value="Your email" />
+              <Label htmlFor="email" />
             </div>
             <TextInput
               id="email"
@@ -84,7 +83,7 @@ export default function LoginPage() {
           </div>
           <div>
             <div className="mb-2 block">
-              <Label htmlFor="password" value="Your password" />
+              <Label htmlFor="password"  />
             </div>
             <TextInput
               id="password"
@@ -96,7 +95,7 @@ export default function LoginPage() {
               disabled={loading}
             />
           </div>
-          <Button type="submit" isProcessing={loading} disabled={loading}>
+          <Button type="submit" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
           </Button>
         </form>
