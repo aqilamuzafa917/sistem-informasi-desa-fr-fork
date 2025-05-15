@@ -10,7 +10,7 @@ import {
 } from "flowbite-react";
 import { Button as Buttonsc } from "@/components/ui/button";
 import * as React from "react";
-import { TrendingUp } from "lucide-react";
+// import { TrendingUp } from "lucide-react";
 import { Label, Pie, PieChart, Tooltip, Cell } from "recharts";
 
 export default function HomePage() {
