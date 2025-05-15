@@ -62,6 +62,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/skkematian",
             isActive: currentPath === "/skkematian",
           },
+                    {
+            title: "SK Kelahiran",
+            url: "/skKelahiran",
+            isActive: currentPath === "/skkelahiran",
+          },
           {
             title: "SK Usaha",
             url: "/skusaha",
@@ -71,6 +76,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "SK Tidak Mampu",
             url: "/sktidakmampu",
             isActive: currentPath === "/sktidakmampu",
+          },
+                    {
+            title: "SKTM KIP",
+            url: "/sktmkip",
+            isActive: currentPath === "/sktmkip",
           },
           {
             title: "SK Kehilangan KTP",
