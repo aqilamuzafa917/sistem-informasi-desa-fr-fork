@@ -1,15 +1,16 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Card, Label, TextInput, Alert } from 'flowbite-react'; // Assuming you use these components
+import { useState, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button, Card, Label, TextInput, Alert } from "flowbite-react";
+import axios from "axios"; // ⬅️ Tambahkan ini
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const API_BASE_URL = 'https://thankful-urgently-silkworm.ngrok-free.app/api';
+  const API_BASE_URL = "https://thankful-urgently-silkworm.ngrok-free.app/api";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -17,57 +18,50 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post(`${API_BASE_URL}/login`, {
+        email,
+        password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
-        // Assuming the API returns a message like { message: "error message", ... }
-        // Or if it's just a string: data.error
-        throw new Error(data.message || data.error || 'Login failed');
+      if (!data.token) {
+        throw new Error("Login successful, but no token received.");
       }
 
-      // Assuming the API returns a token or user data upon successful login
-      console.log('Login successful:', data);
-      // Store token (e.g., in localStorage)
-      // Make sure your API returns a token, e.g., data.token or data.access_token
-      if (data.token) { // Adjust 'data.token' based on your API response
-        localStorage.setItem('authToken', data.token);
-         navigate('/dashboard'); // Redirect to dashboard
-      } else {
-        // If the API response for success doesn't include a token as expected
-        throw new Error('Login successful, but no token received.');
-      }
-
-      // Redirect to a protected route (e.g., dashboard)
-      // For now, let's redirect to the home page
-      // navigate('/'); 
+      // Simpan token & redirect
+      localStorage.setItem("authToken", data.token);
+      navigate("/dashboard");
     } catch (err) {
-      if (err instanceof Error) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.message ||
+            err.response?.data?.error ||
+            err.message,
+        );
+      } else if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('An unknown error occurred.');
+        setError("An unknown error occurred.");
       }
-      console.error('Login error:', err);
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 dark:bg-gray-900">
       <Card className="w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
           Login
         </h1>
         {error && (
-          <Alert color="failure" onDismiss={() => setError(null)} className="mb-4">
+          <Alert
+            color="failure"
+            onDismiss={() => setError(null)}
+            className="mb-4"
+          >
             <span>
               <span className="font-medium">Login Error!</span> {error}
             </span>
@@ -103,14 +97,26 @@ export default function LoginPage() {
             />
           </div>
           <Button type="submit" isProcessing={loading} disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? "Logging in..." : "Login"}
           </Button>
         </form>
-         <p className="text-sm text-gray-600 dark:text-gray-400 mt-4 text-center">
-            Don't have an account? <a href="/signup" className="text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
+        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+          Don't have an account?{" "}
+          <a
+            href="/signup"
+            className="text-primary-600 dark:text-primary-500 hover:underline"
+          >
+            Sign up
+          </a>
         </p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
-            Or go <a href="/" className="text-primary-600 hover:underline dark:text-primary-500">Back to Home</a>
+        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          Or go{" "}
+          <a
+            href="/"
+            className="text-primary-600 dark:text-primary-500 hover:underline"
+          >
+            Back to Home
+          </a>
         </p>
       </Card>
     </div>
