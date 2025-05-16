@@ -22,6 +22,7 @@ import PengaduanPages from "./pages/PengaduanPage/PenganduanPages";
 import ProfilPages from "./pages/ProfilPage/ProfilPages";
 import KelahiranPages from "./pages/SuratPage/KelahiranPages";
 import KipPages from "./pages/SuratPage/KipPages";
+import SuratPages from "./pages/SuratPage/SuratPages";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/surat" element={<SuratPages />} />
           <Route path="/skpindah" element={<PindahPages />} />
           <Route path="/skdomisili" element={<DomisiliPages />} />
           <Route path="/skkematian" element={<KematianPages />} />

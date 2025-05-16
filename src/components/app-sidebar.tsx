@@ -22,7 +22,6 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { NavSurat } from "./nav-surat";
 import { NavPenduduk } from "./nav-penduduk";
 import { NavInfografis } from "./nav-infografis";
 
@@ -43,7 +42,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navSurat: [
       {
         title: "Surat",
-        url: "#",
+        url: "/surat",
         icon: Files,
         isActive: currentPath.includes("/sk"),
         items: [
@@ -62,7 +61,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/skkematian",
             isActive: currentPath === "/skkematian",
           },
-                    {
+          {
             title: "SK Kelahiran",
             url: "/skKelahiran",
             isActive: currentPath === "/skkelahiran",
@@ -77,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/sktidakmampu",
             isActive: currentPath === "/sktidakmampu",
           },
-                    {
+          {
             title: "SKTM KIP",
             url: "/sktmkip",
             isActive: currentPath === "/sktmkip",
@@ -202,7 +201,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <NavSurat items={data.navSurat} />
+          {data.navSurat.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
           {data.navProfil.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
