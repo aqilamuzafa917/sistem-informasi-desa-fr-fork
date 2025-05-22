@@ -19,8 +19,6 @@ import PetaPages from "./pages/InfografisPage/PetaPages";
 import DataKTPPages from "./pages/PendudukPage/KtpPages";
 import DataKKPages from "./pages/PendudukPage/KkPages";
 import PengaduanPages from "./pages/PengaduanPage/PenganduanPages";
-<<<<<<< Updated upstream
-=======
 import ProfilPages from "./pages/ProfilPage/ProfilPages";
 import KelahiranPages from "./pages/SuratPage/KelahiranPages";
 import KipPages from "./pages/SuratPage/KipPages";
@@ -35,7 +33,9 @@ import InfografisPenduduk from "./pages/InfografisPenduduk";
 import InfografisAPBDesa from "./pages/InfografisAPBDesa";
 import InfografisIDM from "./pages/InfografisIDM";
 import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
->>>>>>> Stashed changes
+import ProfilPages from "./pages/ProfilPage/ProfilPages";
+import KelahiranPages from "./pages/SuratPage/KelahiranPages";
+import KipPages from "./pages/SuratPage/KipPages";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -43,10 +43,6 @@ import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
 export default function App() {
   return (
     <>      
-      {/* <div className="absolute top-4 right-4 z-50"> 
-        <DarkThemeToggle />
-      </div> */}
-      
       <div className="absolute top-4 right-4 z-50">
         <DarkThemeToggle />
       </div>
@@ -85,20 +81,21 @@ export default function App() {
           <Route path="/skpindah" element={<PindahPages />} />
           <Route path="/skdomisili" element={<DomisiliPages />} />
           <Route path="/skkematian" element={<KematianPages />} />
+          <Route path="/skkelahiran" element={<KelahiranPages />} />
           <Route path="/skusaha" element={<UsahaPages />} />
           <Route path="/sktidakmampu" element={<TidakMampuPages />} />
+          <Route path="/sktmkip" element={<KipPages />} />
           <Route path="/skkehilanganktp" element={<KehilanganKtpPages />} />
           <Route path="/skkehilangankk" element={<KehilanganKkPages />} />
-          <Route path="/profil" element={<UmumPages />} />
+          <Route path="/skumum" element={<UmumPages />} />
+          <Route path="/profil" element={<ProfilPages />} />
           <Route path="/artikel" element={<ArtikelPages />} />
           <Route path="/pendapatan" element={<PendapatanPages />} />
           <Route path="/belanja" element={<BelanjaPages />} />
           <Route path="/peta" element={<PetaPages />} />
           <Route path="/dataktp" element={<DataKTPPages />} />
           <Route path="/datakk" element={<DataKKPages />} />
-          <Route path="/datakk" element={<DataKKPages />} />
           <Route path="/pengaduan" element={<PengaduanPages />} />
-          
         </Route>
       </Routes>
     </>
