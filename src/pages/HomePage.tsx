@@ -7,11 +7,26 @@ import {
   NavbarCollapse,
   NavbarLink,
   NavbarToggle,
+  Footer,
+  FooterBrand,
+  FooterCopyright,
+  FooterDivider,
+  FooterIcon,
+  FooterLink,
+  FooterLinkGroup,
+  FooterTitle,
 } from "flowbite-react";
 import { Button as Buttonsc } from "@/components/ui/button";
 import * as React from "react";
 // import { TrendingUp } from "lucide-react";
 import { Label, Pie, PieChart, Tooltip, Cell } from "recharts";
+import {
+  BsFacebook,
+  BsInstagram,
+  BsTwitter,
+  BsGithub,
+  BsDribbble,
+} from "react-icons/bs";
 
 export default function HomePage() {
   // Data untuk pie chart penduduk desa
@@ -31,7 +46,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
       {/* Navbar Section */}
-      <Navbar fluid rounded className="mb-8">
+      <Navbar fluid rounded className="mb-8 border-y-2">
         <NavbarBrand href="/">
           <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
             Desa Batujajar Timur
@@ -42,14 +57,14 @@ export default function HomePage() {
           <NavbarToggle />
         </div>
         <NavbarCollapse>
-          <NavbarLink href="#" active>
+          <NavbarLink href="/" active>
             Beranda
           </NavbarLink>
-          <NavbarLink href="#FiturDesa">Fitur Desa</NavbarLink>
-          <NavbarLink href="#">Profil Desa</NavbarLink>
-          <NavbarLink href="#">Infografis</NavbarLink>
-          <NavbarLink href="#">Artikel</NavbarLink>
-          <NavbarLink href="#">Peta Fasilitas</NavbarLink>
+          <NavbarLink href="/#FiturDesa">Fitur Desa</NavbarLink>
+          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
+          <NavbarLink href="/infografis/penduduk">Infografis</NavbarLink>
+          <NavbarLink href="/artikeldesa">Artikel</NavbarLink>
+          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
         </NavbarCollapse>
       </Navbar>
 
@@ -87,7 +102,10 @@ export default function HomePage() {
       </div>
 
       {/* Fitur Desa */}
-      <section id="FiturDesa" className="mb-28">
+      <section
+        id="FiturDesa"
+        className="mb-28 w-full bg-sky-50 py-12 dark:bg-gray-800"
+      >
         <div className="container mx-auto mb-12 px-4">
           <h2 className="mb-10 text-center text-3xl font-bold text-gray-900 dark:text-white">
             Fitur Desa
@@ -122,7 +140,7 @@ export default function HomePage() {
                 diperlukan untuk keperluan administrasi.
               </p>
               <a
-                href="#"
+                href="/pengajuansurat"
                 className="text-sm font-medium text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
               >
                 Ajukan Dokumen
@@ -133,7 +151,7 @@ export default function HomePage() {
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
                 <svg
-                  className="h-6 w-6 text-blue-600 dark:text-blue-400"
+                  className="h-auto w-6 text-blue-600 dark:text-blue-400"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -159,7 +177,7 @@ export default function HomePage() {
               </p>
 
               <a
-                href="#"
+                href="/cekstatussurat"
                 className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
               >
                 Lacak Dokumen
@@ -185,17 +203,16 @@ export default function HomePage() {
                 </svg>
               </div>
               <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
-                Informasi Darurat
+                Pengaduan Warga
               </h3>
               <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                Kontak penting dan prosedur
+                Laporkan masalah atau keluhan yang Anda hadapi.
               </p>
               <p className="mb-6 text-gray-700 dark:text-gray-300">
-                Akses nomor kontak darurat, rute evakuasi, dan informasi
-                keselamatan penting untuk penduduk desa.
+                Berikan informasi yang jelas dan lengkap tentang masalah Anda.
               </p>
               <a
-                href="#"
+                href="/pengaduanwarga"
                 className="text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
               >
                 Kontak Darurat
@@ -214,9 +231,6 @@ export default function HomePage() {
           <div className="flex flex-col items-stretch md:flex-row">
             {/* Bagian Kiri - Pie Chart */}
             <div className="from-white-50 to-white-100 flex flex-shrink-0 flex-col items-center justify-center bg-gradient-to-br p-8 md:w-1/2 dark:from-gray-800 dark:to-gray-700">
-              <h3 className="mb-6 text-center text-xl font-bold text-gray-900 dark:text-white">
-                Data Penduduk
-              </h3>
               <div className="mx-auto aspect-square max-h-[350px]">
                 <PieChart width={350} height={350}>
                   <Tooltip
@@ -240,7 +254,7 @@ export default function HomePage() {
                     cx="50%"
                     cy="50%"
                     innerRadius={120}
-                    outerRadius={160}
+                    outerRadius={170}
                     fill="#8884d8"
                     stroke="#fff"
                     strokeWidth={2}
@@ -352,7 +366,7 @@ export default function HomePage() {
               </div>
 
               <div className="mt-6 text-right">
-                <a href="#">
+                <a href="/infografis/penduduk">
                   <Buttonsc className="justify-end-safe text-xl" variant="link">
                     LIHAT DATA LEBIH LENGKAP
                   </Buttonsc>
@@ -1130,7 +1144,7 @@ export default function HomePage() {
               </div>
 
               <div className="mt-6 text-right">
-                <a href="#">
+                <a href="/Infografis/apbdesa">
                   <Buttonsc className="justify-end-safe text-xl" variant="link">
                     LIHAT DATA LEBIH LENGKAP
                   </Buttonsc>
@@ -1173,7 +1187,6 @@ export default function HomePage() {
                   <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
                     MAJU
                   </p>
-                  z
                 </div>
               </div>
 
@@ -1919,9 +1932,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className=" mb-24 w-full bg-sky-50 px-4 py-12 dark:bg-gray-800">
         {/* Informasi Terkini Section */}
-        <section className="mb-16">
+        <section className="container mx-auto mb-12 px-4">
           <h2 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
             Informasi Terkini
           </h2>
@@ -1999,14 +2012,51 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* Footer Section */}
-        <footer className="border-t border-gray-200 py-6 text-center dark:border-gray-700">
-          <p className="text-gray-600 dark:text-gray-400">
-            © 2025 Desa Bajujajar Timur - Kabupaten Bandung Barat
-          </p>
-        </footer>
       </div>
+      {/* Footer Section */}
+      <Footer container className="rounded-none">
+        <div className="w-full">
+          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
+            <div>
+              <FooterBrand href="/" src="" name="Desa Batujajar Timur" />
+            </div>
+            <div className="grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6">
+              <div>
+                <FooterTitle title="Tentang" />
+                <FooterLinkGroup col>
+                  <FooterLink href="/profildesa">Profil Desa</FooterLink>
+                  <FooterLink href="#">Visi & Misi</FooterLink>
+                </FooterLinkGroup>
+              </div>
+              <div>
+                <FooterTitle title="Ikuti Kami" />
+                <FooterLinkGroup col>
+                  <FooterLink href="#">Facebook</FooterLink>
+                  <FooterLink href="#">Instagram</FooterLink>
+                </FooterLinkGroup>
+              </div>
+              <div>
+                <FooterTitle title="Informasi" />
+                <FooterLinkGroup col>
+                  <FooterLink href="#">Kontak</FooterLink>
+                  <FooterLink href="#">Layanan</FooterLink>
+                </FooterLinkGroup>
+              </div>
+            </div>
+          </div>
+          <FooterDivider />
+          <div className="w-full sm:flex sm:items-center sm:justify-between">
+            <FooterCopyright href="/" by="Desa Batujajar Timur™" year={2023} />
+            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
+              <FooterIcon href="#" icon={BsFacebook} />
+              <FooterIcon href="#" icon={BsInstagram} />
+              <FooterIcon href="#" icon={BsTwitter} />
+              <FooterIcon href="#" icon={BsGithub} />
+              <FooterIcon href="#" icon={BsDribbble} />
+            </div>
+          </div>
+        </div>
+      </Footer>
     </main>
   );
 }
