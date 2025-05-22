@@ -22,6 +22,8 @@ import PengaduanPages from "./pages/PengaduanPage/PenganduanPages";
 import ProfilPages from "./pages/ProfilPage/ProfilPages";
 import KelahiranPages from "./pages/SuratPage/KelahiranPages";
 import KipPages from "./pages/SuratPage/KipPages";
+import SuratPages from "./pages/SuratPage/SuratPages";
+import VerifikasiSuratPages from "./pages/SuratPage/VerifikasiSuratPages";
 import ProfilDesa from "./pages/ProfilDesa";
 import PengajuanSuratPage from "./pages/PengajuanSuratPage";
 import CekStatusSuratPage from "./pages/CekStatusSuratPage";
@@ -34,8 +36,6 @@ import InfografisAPBDesa from "./pages/InfografisAPBDesa";
 import InfografisIDM from "./pages/InfografisIDM";
 import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
 import ProfilPages from "./pages/ProfilPage/ProfilPages";
-import KelahiranPages from "./pages/SuratPage/KelahiranPages";
-import KipPages from "./pages/SuratPage/KipPages";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -78,6 +78,8 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/surat" element={<SuratPages />} />
+          <Route path="/surat/:id" element={<VerifikasiSuratPages />} />
           <Route path="/skpindah" element={<PindahPages />} />
           <Route path="/skdomisili" element={<DomisiliPages />} />
           <Route path="/skkematian" element={<KematianPages />} />
