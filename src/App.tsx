@@ -24,8 +24,18 @@ import KelahiranPages from "./pages/SuratPage/KelahiranPages";
 import KipPages from "./pages/SuratPage/KipPages";
 import SuratPages from "./pages/SuratPage/SuratPages";
 import VerifikasiSuratPages from "./pages/SuratPage/VerifikasiSuratPages";
-// import VerifikasiSuratPages  from "./pages/SuratPage/VerifikasiSuratPages";
-
+import ProfilDesa from "./pages/ProfilDesa";
+import PengajuanSuratPage from "./pages/PengajuanSuratPage";
+import CekStatusSuratPage from "./pages/CekStatusSuratPage";
+import PengaduanWargaPage from "./pages/PengaduanWargaPage";
+import ArtikelDesa from "./pages/ArtikelDesa";
+import ArtikelDetailPage from "./pages/ArtikelDetailPage";
+import ArtikelCreatePage from "./pages/ArtikelCreatePage";
+import InfografisPenduduk from "./pages/InfografisPenduduk";
+import InfografisAPBDesa from "./pages/InfografisAPBDesa";
+import InfografisIDM from "./pages/InfografisIDM";
+import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
+import ProfilPages from "./pages/ProfilPage/ProfilPages";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -54,6 +64,17 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/profildesa" element={<ProfilDesa />} />
+        <Route path="/pengajuansurat" element={<PengajuanSuratPage />}/>
+        <Route path="/cekstatussurat" element={<CekStatusSuratPage/>}/>
+        <Route path="/pengaduanwarga" element={<PengaduanWargaPage/>}/>
+        <Route path="/artikeldesa" element={<ArtikelDesa/>}/>
+        <Route path="/artikeldesa/:id" element={<ArtikelDetailPage />} />
+        <Route path="/artikeldesa/buat" element={<ArtikelCreatePage />} />
+        <Route path="/infografis/penduduk" element={<InfografisPenduduk/>}/>
+        <Route path="/Infografis/apbdesa" element={<InfografisAPBDesa/>}/>
+        <Route path="/Infografis/idm" element={<InfografisIDM/>}/>
+        <Route path="/petafasilitasdesa" element={<PetaFasilitasDesa/>}/>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
