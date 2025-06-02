@@ -39,6 +39,7 @@ import SuratCreate from "./pages/SuratPage/SuratCreate";
 import DetailKtpPages from "./pages/PendudukPage/DetailKtpPages";
 import TambahKtpPages from "./pages/PendudukPage/TambahKtpPages";
 import ArtikelCreate from "./pages/ArtikelPage/ArtikelCreate";
+import VerifikasiArtikelPage from "./pages/ArtikelPage/VerifikasiArtikelPage";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -97,6 +98,7 @@ export default function App() {
           <Route path="/profil" element={<ProfilPages />} />
           <Route path="/artikel" element={<ArtikelPages />} />
           <Route path="/artikel/buat" element={<ArtikelCreate />} />
+          <Route path="/artikel/:id" element={<VerifikasiArtikelPage />} />
           <Route path="/pendapatan" element={<PendapatanPages />} />
           <Route path="/belanja" element={<BelanjaPages />} />
           <Route path="/peta" element={<PetaPages />} />
