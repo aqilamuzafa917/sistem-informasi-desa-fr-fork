@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Navbar,
   NavbarBrand,
@@ -15,6 +15,8 @@ import {
   FooterLinkGroup,
   FooterTitle,
   Card,
+  Spinner,
+  Pagination,
 } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,84 +27,112 @@ import {
   BsGithub,
   BsDribbble,
 } from "react-icons/bs";
+import axios from "axios";
+
+interface Artikel {
+  id_artikel: number;
+  judul_artikel: string;
+  kategori_artikel: string;
+  isi_artikel: string;
+  penulis_artikel: string;
+  tanggal_publikasi_artikel: string;
+  media_artikel: Array<{
+    path: string;
+    type: string;
+    name: string;
+    url: string;
+  }>;
+}
+
+interface PaginatedArtikelData {
+  current_page: number;
+  data: Artikel[];
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+interface ArtikelResponse {
+  status: string;
+  data: PaginatedArtikelData;
+}
 
 export default function ArtikelDesa() {
-  // Sample articles data - in a real app, this would come from an API
-  const [articles, setArticles] = useState([
-    {
-      id: 1,
-      title: "Festival Panen Desa",
-      date: "10 Juni, 2023",
-      excerpt:
-        "Festival panen tahunan kami merayakan kelimpahan tanah kami dan kerja keras para petani...",
-      category: "Acara",
-      image: "https://flowbite.com/docs/images/blog/image-1.jpg",
-    },
-    {
-      id: 2,
-      title: "Pembukaan Balai Desa Baru",
-      date: "15 Mei, 2023",
-      excerpt:
-        "Balai desa yang telah lama ditunggu akhirnya akan membuka pintunya bulan depan, menyediakan ruang untuk...",
-      category: "Berita",
-      image: "https://flowbite.com/docs/images/blog/image-2.jpg",
-    },
-    {
-      id: 3,
-      title: "Workshop Anyaman Tradisional",
-      date: "22 April, 2023",
-      excerpt:
-        "Pelajari seni anyaman bambu kuno dari tetua desa dalam workshop praktik ini...",
-      category: "Budaya",
-      image: "https://flowbite.com/docs/images/blog/image-3.jpg",
-    },
-    {
-      id: 4,
-      title: "Rencana Pembangunan Desa 2023-2025",
-      date: "30 Maret, 2023",
-      excerpt:
-        "Dewan desa telah menyetujui rencana pembangunan baru yang berfokus pada infrastruktur, pendidikan, dan...",
-      category: "Pemerintahan",
-      image: "https://flowbite.com/docs/images/blog/image-4.jpg",
-    },
-    {
-      id: 5,
-      title: "Sorotan Kuliner Lokal: Resep Kue Beras",
-      date: "12 Maret, 2023",
-      excerpt:
-        "Temukan rahasia di balik kue beras terkenal desa kami dengan resep tradisional ini...",
-      category: "Budaya",
-      image: "https://flowbite.com/docs/images/blog/image-5.jpg",
-    },
-    {
-      id: 6,
-      title: "Hasil Turnamen Olahraga Pemuda",
-      date: "28 Februari, 2023",
-      excerpt:
-        "Turnamen olahraga pemuda tahunan berakhir dengan pertandingan yang menarik dan rekor desa baru...",
-      category: "Acara",
-      image: "https://flowbite.com/docs/images/blog/image-6.jpg",
-    },
-  ]);
-
+  const [articles, setArticles] = useState<Artikel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const itemsPerPage = 9; // Show 9 articles per page for grid layout
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get<ArtikelResponse>(
+          `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
+          {
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+            },
+          },
+        );
+
+        if (response.data.status === "success") {
+          setArticles(response.data.data.data);
+          setTotalPages(response.data.data.last_page);
+        } else {
+          setError("Gagal mengambil data artikel");
+        }
+      } catch (err) {
+        console.error("Error fetching articles:", err);
+        setError("Terjadi kesalahan saat mengambil data artikel");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, [currentPage]);
+
+  // Get unique categories from articles
+  const categories = [
+    "Semua",
+    ...new Set(articles.map((article) => article.kategori_artikel)),
+  ];
 
   // Filter articles based on search term and category
   const filteredArticles = articles.filter((article) => {
     const matchesSearch =
-      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      article.judul_artikel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      article.isi_artikel.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === "Semua" || article.category === selectedCategory;
+      selectedCategory === "Semua" ||
+      article.kategori_artikel === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  // Get unique categories
-  const categories = [
-    "Semua",
-    ...new Set(articles.map((article) => article.category)),
-  ];
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const capitalizeWords = (str: string) => {
+    return str
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const onPageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -180,7 +210,7 @@ export default function ArtikelDesa() {
                   }
                   onClick={() => setSelectedCategory(category)}
                 >
-                  {category}
+                  {capitalizeWords(category)}
                 </Button>
               ))}
             </div>
@@ -188,14 +218,43 @@ export default function ArtikelDesa() {
         </div>
 
         {/* Articles Grid */}
-        {filteredArticles.length > 0 ? (
-          <div className="grid gap-x-40 gap-y-20 md:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          <div className="flex h-40 items-center justify-center">
+            <Spinner size="xl" />
+          </div>
+        ) : error ? (
+          <div className="py-12 text-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mx-auto h-12 w-12 text-red-500"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+              {error}
+            </h3>
+          </div>
+        ) : filteredArticles.length > 0 ? (
+          <div className="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
             {filteredArticles.map((article) => (
               <Card
-                key={article.id}
+                key={article.id_artikel}
                 className="max-w-sm"
-                imgAlt={article.title}
-                imgSrc={article.image}
+                imgAlt={article.judul_artikel}
+                imgSrc={
+                  article.media_artikel?.[0]?.url ||
+                  "https://flowbite.com/docs/images/blog/image-1.jpg"
+                }
                 theme={{
                   img: {
                     base: "h-48 w-full object-cover",
@@ -204,7 +263,7 @@ export default function ArtikelDesa() {
               >
                 <div className="mb-2 flex items-center justify-between">
                   <span className="rounded bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                    {article.category}
+                    {capitalizeWords(article.kategori_artikel)}
                   </span>
                   <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <svg
@@ -224,21 +283,21 @@ export default function ArtikelDesa() {
                       <line x1="8" y1="2" x2="8" y2="6" />
                       <line x1="3" y1="10" x2="21" y2="10" />
                     </svg>
-                    {article.date}
+                    {formatDate(article.tanggal_publikasi_artikel)}
                   </div>
                 </div>
                 <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {article.title}
+                  {capitalizeWords(article.judul_artikel)}
                 </h5>
                 <p className="font-normal text-gray-700 dark:text-gray-400">
-                  {article.excerpt}
+                  {capitalizeWords(article.isi_artikel.substring(0, 150))}...
                 </p>
                 <div className="mt-4">
                   <Button
                     variant="outline"
                     className="w-full justify-between"
                     onClick={() =>
-                      (window.location.href = `/artikeldesa/${article.id}`)
+                      (window.location.href = `/artikeldesa/${article.id_artikel}`)
                     }
                   >
                     Baca Selengkapnya
@@ -285,6 +344,18 @@ export default function ArtikelDesa() {
             <p className="mt-1 text-gray-500 dark:text-gray-400">
               Coba ubah filter pencarian Anda atau pilih kategori yang berbeda.
             </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+              showIcons
+            />
           </div>
         )}
       </main>
