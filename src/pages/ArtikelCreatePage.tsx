@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Navbar,
   NavbarBrand,
@@ -17,8 +17,6 @@ import {
   Label,
   Select,
   Textarea,
-  FileInput,
-  Alert,
 } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,31 +28,78 @@ import {
   BsDribbble,
   BsImage,
 } from "react-icons/bs";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import dynamic from "next/dynamic";
+import axios from "axios";
+import { toast } from "sonner";
+import { Toaster } from "sonner";
+
+// Fix for default marker icon in Leaflet
+delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 
 interface FormData {
-  name: string;
-  title: string;
-  category: string;
-  content: string;
-  image: File | null;
+  penulis_artikel: string;
+  judul_artikel: string;
+  kategori_artikel: string;
+  tanggal_kejadian: string;
+  location_name: string;
+  latitude: number | null;
+  longitude: number | null;
+  status_artikel: string;
+  isi_artikel: string;
+  jenis_artikel: string;
+  media_artikel: File[] | null;
+}
+
+// Dynamic import for MapContainer to avoid SSR issues
+const MapWithNoSSR = dynamic(() => Promise.resolve(MapContainer), {
+  ssr: false,
+});
+
+function LocationMarker({
+  onLocationSelect,
+}: {
+  onLocationSelect: (lat: number, lng: number) => void;
+}) {
+  const [position, setPosition] = useState<L.LatLng | null>(null);
+
+  useMapEvents({
+    click(e: L.LeafletMouseEvent) {
+      setPosition(e.latlng);
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+
+  return position === null ? null : <Marker position={position} />;
 }
 
 export default function ArtikelCreatePage() {
   const [formData, setFormData] = useState<FormData>({
-    name: "",
-    title: "",
-    category: "Berita",
-    content: "",
-    image: null,
+    penulis_artikel: "",
+    judul_artikel: "",
+    kategori_artikel: "Berita",
+    tanggal_kejadian: "",
+    location_name: "",
+    latitude: null,
+    longitude: null,
+    status_artikel: "Resmi",
+    isi_artikel: "",
+    jenis_artikel: "warga",
+    media_artikel: null,
   });
 
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<{
-    type: "success" | "error" | null;
-    message: string | null;
-  }>({ type: null, message: null });
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = [
     "Berita",
@@ -79,88 +124,121 @@ export default function ArtikelCreatePage() {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+
       setFormData((prev) => ({
         ...prev,
-        image: file,
+        media_artikel: prev.media_artikel
+          ? [...prev.media_artikel, ...newFiles]
+          : newFiles,
       }));
 
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
+      // Create preview URLs for new images
+      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+      setPreviewImages((prev) => [...prev, ...newPreviewUrls]);
+
+      // Cleanup function for new preview URLs
+      return () => {
+        newPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
       };
-      reader.readAsDataURL(file);
     }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData((prev) => {
+      const newFiles = prev.media_artikel ? [...prev.media_artikel] : [];
+      newFiles.splice(index, 1);
+      return {
+        ...prev,
+        media_artikel: newFiles.length > 0 ? newFiles : null,
+      };
+    });
+
+    setPreviewImages((prev) => {
+      const newPreviews = [...prev];
+      URL.revokeObjectURL(newPreviews[index]); // Cleanup the URL
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+  };
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validasi form
-    if (!formData.name.trim()) {
-      setSubmitStatus({
-        type: "error",
-        message: "Judul artikel tidak boleh kosong",
-      });
-      return;
-    }
-    if (!formData.title.trim()) {
-      setSubmitStatus({
-        type: "error",
-        message: "Judul artikel tidak boleh kosong",
-      });
-      return;
-    }
-
-    if (!formData.content.trim()) {
-      setSubmitStatus({
-        type: "error",
-        message: "Konten artikel tidak boleh kosong",
-      });
-      return;
-    }
-
-    if (!formData.image) {
-      setSubmitStatus({
-        type: "error",
-        message: "Gambar artikel harus diunggah",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
-    setSubmitStatus({ type: null, message: null });
 
     try {
-      // Simulasi pengiriman data ke server
-      // Dalam implementasi nyata, ini akan memanggil API
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("Token tidak ditemukan");
 
-      // Reset form setelah berhasil
-      setFormData({
-        name: "",
-        title: "",
-        category: "Berita",
-        content: "",
-        image: null,
-      });
-      setPreviewImage(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      const formDataToSend = new FormData();
+
+      // Handle multiple media_artikel files
+      if (formData.media_artikel) {
+        formData.media_artikel.forEach((file) => {
+          formDataToSend.append("media_artikel[]", file);
+        });
       }
 
-      setSubmitStatus({
-        type: "success",
-        message:
-          "Artikel berhasil dikirim dan sedang menunggu persetujuan admin",
+      // Add other form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key !== "media_artikel" && value !== null) {
+          formDataToSend.append(key, value.toString());
+        }
       });
+
+      const response = await axios.post(
+        "https://thankful-urgently-silkworm.ngrok-free.app/api/artikel",
+        formDataToSend,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+            "ngrok-skip-browser-warning": "69420",
+          },
+        },
+      );
+
+      if (response.data) {
+        toast.success("Artikel berhasil dibuat!", {
+          description: "Halaman akan dimuat ulang dalam beberapa detik",
+          duration: 2000,
+        });
+
+        // Wait for 2 seconds to show toast before refreshing
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } catch (error) {
-      setSubmitStatus({
-        type: "error",
-        message: "Terjadi kesalahan saat mengirim artikel. Silakan coba lagi.",
-      });
+      console.error("Error submitting form:", error);
+      if (axios.isAxiosError(error) && error.response?.data?.errors) {
+        // Handle validation errors
+        const errorMessages = Object.entries(error.response.data.errors)
+          .map(
+            ([field, messages]) =>
+              `${field}: ${(messages as string[]).join(", ")}`,
+          )
+          .join("\n");
+        toast.error("Gagal membuat artikel", {
+          description: errorMessages,
+        });
+      } else {
+        toast.error("Gagal membuat artikel", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan saat mengirim artikel. Silakan coba lagi.",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -168,6 +246,7 @@ export default function ArtikelCreatePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-gray-900">
+      <Toaster richColors position="top-center" />
       {/* Navbar Section */}
       <Navbar fluid rounded className="mb-8 border-y-2">
         <NavbarBrand href="/">
@@ -197,104 +276,182 @@ export default function ArtikelCreatePage() {
             Buat Artikel Baru
           </h1>
 
-          {submitStatus.type && (
-            <Alert
-              color={submitStatus.type === "success" ? "success" : "failure"}
-              className="mb-6"
-            >
-              {submitStatus.message}
-            </Alert>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="name">Nama Penulis</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Masukkan nama penulis"
-                required
-              />
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <Label htmlFor="penulis_artikel">Nama Penulis</Label>
+                <Input
+                  id="penulis_artikel"
+                  name="penulis_artikel"
+                  value={formData.penulis_artikel}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="judul_artikel">Judul Artikel</Label>
+                <Input
+                  id="judul_artikel"
+                  name="judul_artikel"
+                  value={formData.judul_artikel}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="kategori_artikel">Kategori</Label>
+                <Select
+                  id="kategori_artikel"
+                  name="kategori_artikel"
+                  value={formData.kategori_artikel}
+                  onChange={handleInputChange}
+                  required
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="tanggal_kejadian">Tanggal Kejadian</Label>
+                <Input
+                  id="tanggal_kejadian"
+                  name="tanggal_kejadian"
+                  type="date"
+                  value={formData.tanggal_kejadian}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="location_name">Nama Lokasi</Label>
+                <Input
+                  id="location_name"
+                  name="location_name"
+                  value={formData.location_name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="latitude">Latitude</Label>
+                  <Input
+                    id="latitude"
+                    name="latitude"
+                    type="number"
+                    step="any"
+                    value={formData.latitude ?? ""}
+                    onChange={handleInputChange}
+                    placeholder="Klik pada peta untuk mengisi koordinat"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="longitude">Longitude</Label>
+                  <Input
+                    id="longitude"
+                    name="longitude"
+                    type="number"
+                    step="any"
+                    value={formData.longitude ?? ""}
+                    onChange={handleInputChange}
+                    placeholder="Klik pada peta untuk mengisi koordinat"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="title" className="mb-2 block">
-                Judul Artikel
-              </Label>
-              <Input
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Masukkan judul artikel"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="category" className="mb-2 block">
-                Kategori
-              </Label>
-              <Select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                required
+            <div className="h-[400px] w-full">
+              <MapWithNoSSR
+                center={[
+                  formData.latitude ?? -6.913331,
+                  formData.longitude ?? 107.511669,
+                ]}
+                zoom={15}
+                style={{ height: "100%", width: "100%" }}
               >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </Select>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <LocationMarker onLocationSelect={handleLocationSelect} />
+              </MapWithNoSSR>
             </div>
 
             <div>
-              <Label htmlFor="content" className="mb-2 block">
-                Konten Artikel
+              <Label htmlFor="isi_artikel" className="mb-2 block">
+                Isi Artikel
               </Label>
               <Textarea
-                id="content"
-                name="content"
-                value={formData.content}
+                id="isi_artikel"
+                name="isi_artikel"
+                value={formData.isi_artikel}
                 onChange={handleInputChange}
-                placeholder="Tulis konten artikel di sini..."
+                placeholder="Tulis isi artikel di sini..."
                 rows={10}
                 required
                 className="w-full"
               />
             </div>
 
-            <div>
-              <Label htmlFor="image" className="mb-2 block">
-                Gambar Artikel
-              </Label>
-              <div className="flex items-center space-x-4">
-                <FileInput
-                  id="image"
-                  ref={fileInputRef}
-                  onChange={handleImageChange}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="media_artikel">Gambar Artikel</Label>
+                <Input
+                  id="media_artikel"
+                  name="media_artikel"
+                  type="file"
                   accept="image/*"
-                  className="mb-2"
+                  onChange={handleImageChange}
+                  multiple
+                  required
                 />
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Anda dapat memilih lebih dari satu gambar
+                </p>
               </div>
-            </div>
 
-            {previewImage && (
-              <div className="mt-4">
-                <Label htmlFor="preview">Preview Gambar</Label>
-                <div className="relative h-64 w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                  <img
-                    src={previewImage}
-                    alt="Preview"
-                    className="h-full w-full object-cover"
-                  />
+              {previewImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                  {previewImages.map((preview, index) => (
+                    <div key={index} className="group relative">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="h-32 w-full rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="bg-destructive text-destructive-foreground absolute top-2 right-2 rounded-full p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="Hapus gambar"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 6 6 18" />
+                          <path d="m6 6 12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="flex justify-end space-x-4">
               <Button
