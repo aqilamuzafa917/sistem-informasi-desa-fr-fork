@@ -35,14 +35,17 @@ import InfografisPenduduk from "./pages/InfografisPenduduk";
 import InfografisAPBDesa from "./pages/InfografisAPBDesa";
 import InfografisIDM from "./pages/InfografisIDM";
 import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
-import ProfilPages from "./pages/ProfilPage/ProfilPages";
+import SuratCreate from "./pages/SuratPage/SuratCreate";
+import DetailKtpPages from "./pages/PendudukPage/DetailKtpPages";
+import TambahKtpPages from "./pages/PendudukPage/TambahKtpPages";
+import ArtikelCreate from "./pages/ArtikelPage/ArtikelCreate";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
 
 export default function App() {
   return (
-    <>      
+    <>
       <div className="absolute top-4 right-4 z-50">
         <DarkThemeToggle />
       </div>
@@ -65,16 +68,16 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/profildesa" element={<ProfilDesa />} />
-        <Route path="/pengajuansurat" element={<PengajuanSuratPage />}/>
-        <Route path="/cekstatussurat" element={<CekStatusSuratPage/>}/>
-        <Route path="/pengaduanwarga" element={<PengaduanWargaPage/>}/>
-        <Route path="/artikeldesa" element={<ArtikelDesa/>}/>
+        <Route path="/pengajuansurat" element={<PengajuanSuratPage />} />
+        <Route path="/cekstatussurat" element={<CekStatusSuratPage />} />
+        <Route path="/pengaduanwarga" element={<PengaduanWargaPage />} />
+        <Route path="/artikeldesa" element={<ArtikelDesa />} />
         <Route path="/artikeldesa/:id" element={<ArtikelDetailPage />} />
         <Route path="/artikeldesa/buat" element={<ArtikelCreatePage />} />
-        <Route path="/infografis/penduduk" element={<InfografisPenduduk/>}/>
-        <Route path="/Infografis/apbdesa" element={<InfografisAPBDesa/>}/>
-        <Route path="/Infografis/idm" element={<InfografisIDM/>}/>
-        <Route path="/petafasilitasdesa" element={<PetaFasilitasDesa/>}/>
+        <Route path="/infografis/penduduk" element={<InfografisPenduduk />} />
+        <Route path="/Infografis/apbdesa" element={<InfografisAPBDesa />} />
+        <Route path="/Infografis/idm" element={<InfografisIDM />} />
+        <Route path="/petafasilitasdesa" element={<PetaFasilitasDesa />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -90,12 +93,16 @@ export default function App() {
           <Route path="/skkehilanganktp" element={<KehilanganKtpPages />} />
           <Route path="/skkehilangankk" element={<KehilanganKkPages />} />
           <Route path="/skumum" element={<UmumPages />} />
+          <Route path="/suratcreate" element={<SuratCreate />} />
           <Route path="/profil" element={<ProfilPages />} />
           <Route path="/artikel" element={<ArtikelPages />} />
+          <Route path="/artikel/buat" element={<ArtikelCreate />} />
           <Route path="/pendapatan" element={<PendapatanPages />} />
           <Route path="/belanja" element={<BelanjaPages />} />
           <Route path="/peta" element={<PetaPages />} />
           <Route path="/dataktp" element={<DataKTPPages />} />
+          <Route path="/dataktp/:nik" element={<DetailKtpPages />} />
+          <Route path="dataktp/tambahktp" element={<TambahKtpPages />} />
           <Route path="/datakk" element={<DataKKPages />} />
           <Route path="/pengaduan" element={<PengaduanPages />} />
         </Route>

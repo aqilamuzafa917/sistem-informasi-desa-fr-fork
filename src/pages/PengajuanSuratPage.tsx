@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import {
   Button,
   Navbar,
@@ -24,16 +25,112 @@ import {
   BsDribbble,
 } from "react-icons/bs";
 
+// Define an interface for the API payload
+interface SuratPayload {
+  id_surat?: number | null;
+  nomor_surat?: string | null;
+  jenis_surat: string;
+  tanggal_pengajuan?: string | null;
+  tanggal_disetujui?: string | null;
+  nik_pemohon?: string | null;
+  keperluan?: string | null;
+  status_surat?: string;
+  catatan?: string | null;
+  attachment_bukti_pendukung?: string | null;
+  nik_penduduk_meninggal?: string | null;
+  alamat_terakhir_meninggal?: string | null;
+  tanggal_kematian?: string | null;
+  waktu_kematian?: string | null;
+  tempat_kematian?: string | null;
+  penyebab_kematian?: string | null;
+  hubungan_pelapor_kematian?: string | null;
+  alamat_tujuan?: string | null;
+  rt_tujuan?: string | null;
+  rw_tujuan?: string | null;
+  kelurahan_desa_tujuan?: string | null;
+  kecamatan_tujuan?: string | null;
+  kabupaten_kota_tujuan?: string | null;
+  provinsi_tujuan?: string | null;
+  alasan_pindah?: string | null;
+  klasifikasi_pindah?: string | null;
+  data_pengikut_pindah?: string | null; // Assuming string, adjust if it's an object/array
+  nama_bayi?: string | null;
+  tempat_dilahirkan?: string | null;
+  tempat_kelahiran?: string | null;
+  tanggal_lahir_bayi?: string | null;
+  waktu_lahir_bayi?: string | null;
+  jenis_kelamin_bayi?: string | null;
+  jenis_kelahiran?: string | null;
+  anak_ke?: number | string | null; // API shows number, but form might pass string
+  penolong_kelahiran?: string | null;
+  berat_bayi_kg?: number | string | null;
+  panjang_bayi_cm?: number | string | null;
+  nik_penduduk_ibu?: string | null;
+  nik_penduduk_ayah?: string | null;
+  nik_penduduk_pelapor_lahir?: string | null;
+  hubungan_pelapor_lahir?: string | null;
+  nama_usaha?: string | null;
+  jenis_usaha?: string | null;
+  alamat_usaha?: string | null;
+  status_bangunan_usaha?: string | null;
+  perkiraan_modal_usaha?: number | string | null;
+  perkiraan_pendapatan_usaha?: number | string | null;
+  jumlah_tenaga_kerja?: number | string | null;
+  sejak_tanggal_usaha?: string | null;
+  penghasilan_perbulan_kepala_keluarga?: number | string | null;
+  pekerjaan_kepala_keluarga?: string | null;
+  nik_penduduk_siswa?: string | null;
+  nama_sekolah?: string | null;
+  nisn_siswa?: string | null;
+  kelas_siswa?: string | null;
+  nomor_ktp_hilang?: string | null;
+  tanggal_perkiraan_hilang?: string | null;
+  lokasi_perkiraan_hilang?: string | null;
+  kronologi_singkat?: string | null;
+  nomor_laporan_polisi?: string | null;
+  tanggal_laporan_polisi?: string | null;
+  deleted_at?: string | null;
+  // Optional fields from API response, not typically sent in POST, but good for type completeness
+  nama_pemohon?: string | null;
+  tempat_lahir_pemohon?: string | null;
+  status_perkawinan_pemohon?: string | null;
+  tanggal_lahir_pemohon?: string | null;
+  jenis_kelamin_pemohon?: string | null;
+  alamat_pemohon?: string | null;
+  umur_pemohon?: number | null;
+  nama_meninggal?: string | null;
+  nik_meninggal?: string | null; // Added for SK_KEMATIAN mapping
+  tempat_lahir_meninggal?: string | null;
+  tanggal_lahir_meninggal?: string | null;
+  jenis_kelamin_meninggal?: string | null;
+  umur_saat_meninggal?: number | null;
+  // nik_meninggal already listed under nik_penduduk_meninggal
+  hari_kematian?: string | null;
+  nama_ibu?: string | null;
+  umur_ibu_saat_kelahiran?: number | null;
+  nama_ayah?: string | null;
+  umur_ayah_saat_kelahiran?: number | null;
+  nama_siswa?: string | null;
+  tempat_lahir_siswa?: string | null;
+  tanggal_lahir_siswa?: string | null;
+  jenis_kelamin_siswa?: string | null;
+  umur_siswa?: number | null;
+}
+
 export default function PengajuanSuratPage() {
   const [jenisSurat, setJenisSurat] = useState("");
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<Partial<SuratPayload>>({});
 
-  const handleJenisSuratChange = (e) => {
+  const handleJenisSuratChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setJenisSurat(e.target.value);
     setFormData({});
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -41,15 +138,118 @@ export default function PengajuanSuratPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const dataToSubmit = {
-      ...formData,
-      jenis_surat: jenisSurat,
+
+    // Initialize with all keys from SuratPayload set to null or default
+    const defaultApiData: SuratPayload = {
+      id_surat: null,
+      nomor_surat: null,
+      jenis_surat: jenisSurat, // This comes from the form selection
+      tanggal_pengajuan: new Date().toISOString(), // Set current date
+      tanggal_disetujui: null,
+      nik_pemohon: null,
+      keperluan: null,
+      status_surat: "Diajukan", // Default status
+      catatan: null,
+      attachment_bukti_pendukung: null,
+      nik_penduduk_meninggal: null,
+      alamat_terakhir_meninggal: null,
+      tanggal_kematian: null,
+      waktu_kematian: null,
+      tempat_kematian: null,
+      penyebab_kematian: null,
+      hubungan_pelapor_kematian: null,
+      alamat_tujuan: null,
+      rt_tujuan: null,
+      rw_tujuan: null,
+      kelurahan_desa_tujuan: null,
+      kecamatan_tujuan: null,
+      kabupaten_kota_tujuan: null,
+      provinsi_tujuan: null,
+      alasan_pindah: null,
+      klasifikasi_pindah: null,
+      data_pengikut_pindah: null,
+      nama_bayi: null,
+      tempat_dilahirkan: null,
+      tempat_kelahiran: null,
+      tanggal_lahir_bayi: null,
+      waktu_lahir_bayi: null,
+      jenis_kelamin_bayi: null,
+      jenis_kelahiran: null,
+      anak_ke: null,
+      penolong_kelahiran: null,
+      berat_bayi_kg: null,
+      panjang_bayi_cm: null,
+      nik_penduduk_ibu: null,
+      nik_penduduk_ayah: null,
+      nik_penduduk_pelapor_lahir: null,
+      hubungan_pelapor_lahir: null,
+      nama_usaha: null,
+      jenis_usaha: null,
+      alamat_usaha: null,
+      status_bangunan_usaha: null,
+      perkiraan_modal_usaha: null,
+      perkiraan_pendapatan_usaha: null,
+      jumlah_tenaga_kerja: null,
+      sejak_tanggal_usaha: null,
+      penghasilan_perbulan_kepala_keluarga: null,
+      pekerjaan_kepala_keluarga: null,
+      nik_penduduk_siswa: null,
+      nama_sekolah: null,
+      nisn_siswa: null,
+      kelas_siswa: null,
+      nomor_ktp_hilang: null,
+      tanggal_perkiraan_hilang: null,
+      lokasi_perkiraan_hilang: null,
+      kronologi_singkat: null,
+      nomor_laporan_polisi: null,
+      tanggal_laporan_polisi: null,
+      deleted_at: null,
     };
-    console.log("Data yang dikirim:", dataToSubmit);
-    // Implementasi pengiriman data ke API bisa ditambahkan di sini
-    alert("Pengajuan surat berhasil dikirim!");
+
+    // Merge formData into apiData using object spreading
+    const apiData: SuratPayload = {
+      ...defaultApiData,
+      ...formData,
+    };
+
+    // Special handling for SK_KEMATIAN's nik_meninggal and nik_penduduk_meninggal
+    if (jenisSurat === "SK_KEMATIAN" && formData.nik_penduduk_meninggal) {
+      apiData.nik_meninggal = formData.nik_penduduk_meninggal;
+    }
+
+    console.log("Data yang dikirim:", apiData);
+
+    try {
+      const response = await axios.post(
+        "https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat",
+        apiData,
+        {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        },
+      );
+      console.log("Respon API:", response.data);
+      alert("Pengajuan surat berhasil dikirim!");
+      // Optionally reset form or redirect user
+      setJenisSurat("");
+      setFormData({});
+    } catch (error) {
+      console.error("Error mengirim data:", error);
+      if (axios.isAxiosError(error) && error.response) {
+        // Handle validation errors or other specific API errors
+        console.error("Detail error:", error.response.data);
+        alert(
+          `Gagal mengirim pengajuan: ${
+            error.response.data.message || "Terjadi kesalahan pada server."
+          }`,
+        );
+      } else {
+        alert("Gagal mengirim pengajuan. Silakan coba lagi.");
+      }
+    }
   };
 
   // Render form berdasarkan jenis surat yang dipilih
@@ -618,7 +818,7 @@ export default function PengajuanSuratPage() {
                 <textarea
                   name="kronologi_singkat"
                   className="w-full rounded-md border p-2"
-                  rows="3"
+                  rows={3}
                   onChange={handleInputChange}
                   required
                 ></textarea>
@@ -730,7 +930,7 @@ export default function PengajuanSuratPage() {
                 <textarea
                   name="kronologi_singkat"
                   className="w-full rounded-md border p-2"
-                  rows="3"
+                  rows={3}
                   onChange={handleInputChange}
                   required
                 ></textarea>
@@ -775,7 +975,7 @@ export default function PengajuanSuratPage() {
               <textarea
                 name="deskripsi_keperluan"
                 className="w-full rounded-md border p-2"
-                rows="4"
+                rows={4}
                 onChange={handleInputChange}
                 required
               ></textarea>
