@@ -23,6 +23,23 @@ import {
   BsGithub,
   BsDribbble,
 } from "react-icons/bs";
+import axios from "axios";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix for default marker icon in Leaflet
+if (typeof window !== "undefined") {
+  delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+    iconUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+    shadowUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  });
+}
 
 // Tipe data untuk artikel
 interface Article {
@@ -32,32 +49,57 @@ interface Article {
   date_created: string;
   author: string;
   image: string;
+  jenis_artikel: string;
+  kategori_artikel: string;
+  media_artikel: { url: string; name: string }[];
+  latitude?: number;
+  longitude?: number;
+  location_name?: string;
 }
 
 export default function ArtikelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
-    // Simulasi fetch data artikel berdasarkan ID
-    // Dalam implementasi nyata, ini akan memanggil API
     const fetchArticle = async () => {
       setLoading(true);
       try {
-        // Contoh data artikel
-        const dummyArticle: Article = {
-          id: parseInt(id || "1"),
-          title: "Rencana Pembangunan Desa 2023-2025",
-          content:
-            "Dewan desa telah menyetujui rencana pembangunan baru yang berfokus pada infrastruktur, pendidikan, dan kesehatan masyarakat. Rencana ini akan diimplementasikan selama tiga tahun ke depan dengan anggaran yang telah dialokasikan dari dana desa dan bantuan pemerintah provinsi. Beberapa proyek utama termasuk perbaikan jalan desa, pembangunan pusat kesehatan masyarakat, dan renovasi sekolah dasar. Partisipasi masyarakat sangat diharapkan dalam pelaksanaan program-program ini untuk memastikan keberhasilan dan keberlanjutan pembangunan desa kita.",
-          date_created: "30 Maret, 2023",
-          author: "Admin Desa",
-          image: "https://flowbite.com/docs/images/blog/image-2.jpg",
-        };
-
-        setArticle(dummyArticle);
+        const response = await axios.get(
+          `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/artikel/${id}`,
+          {
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+            },
+          },
+        );
+        if (response.data.status === "success") {
+          const data = response.data.data;
+          setArticle({
+            id: data.id_artikel,
+            title: data.judul_artikel,
+            content: data.isi_artikel,
+            date_created: formatDate(data.tanggal_publikasi_artikel),
+            author: data.penulis_artikel,
+            image:
+              (data.media_artikel &&
+                data.media_artikel.length > 0 &&
+                data.media_artikel[0].url) ||
+              "https://flowbite.com/docs/images/blog/image-2.jpg",
+            jenis_artikel: data.jenis_artikel,
+            kategori_artikel: data.kategori_artikel,
+            media_artikel: data.media_artikel || [],
+            latitude: data.latitude,
+            longitude: data.longitude,
+            location_name: data.location_name,
+          });
+        } else {
+          setArticle(null);
+        }
       } catch (error) {
+        setArticle(null);
         console.error("Error fetching article:", error);
       } finally {
         setLoading(false);
@@ -66,6 +108,16 @@ export default function ArtikelDetailPage() {
 
     fetchArticle();
   }, [id]);
+
+  function formatDate(dateString: string) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
 
   // Fungsi untuk mengatur progress bar saat scroll
   useEffect(() => {
@@ -139,6 +191,20 @@ export default function ArtikelDetailPage() {
     };
   }, []);
 
+  // Carousel navigation
+  const handlePrev = () => {
+    if (!article) return;
+    setCarouselIndex((prev) =>
+      prev === 0 ? article.media_artikel.length - 1 : prev - 1,
+    );
+  };
+  const handleNext = () => {
+    if (!article) return;
+    setCarouselIndex((prev) =>
+      prev === article.media_artikel.length - 1 ? 0 : prev + 1,
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white dark:bg-gray-900">
@@ -203,40 +269,112 @@ export default function ArtikelDetailPage() {
       </Navbar>
 
       {/* Article Header */}
+
       <div className="pt-16 text-center md:pt-32">
-        <p className="text-sm font-bold text-green-500 md:text-base">
-          {article.date_created}
-        </p>
-        <h1 className="text-3xl font-bold break-normal text-gray-900 md:text-5xl dark:text-white">
+        <h1 className="text-3xl font-bold break-normal text-gray-900 md:text-4xl dark:text-white">
           {article.title}
         </h1>
+        <div className="flex flex-wrap items-center text-xs justify-center gap-2 p-4">
+          <p className="inline-block rounded bg-green-100 px-3 py-1 font-semibold text-green-800 dark:bg-green-900 dark:text-green-300">
+            {article.date_created}
+          </p>
+          <span className="inline-block rounded bg-blue-100 px-3 py-1 font-semibold text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+            {article.jenis_artikel === "resmi" ? "Resmi" : "Warga"}
+          </span>
+          <span className="inline-block rounded bg-gray-100 px-3 py-1 font-semibold text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+            {article.kategori_artikel
+              .split(" ")
+              .map(
+                (word) =>
+                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+              )
+              .join(" ")}
+          </span>
+        </div>
       </div>
 
-      {/* Article Image */}
-      <div
-        className="container mx-auto mt-8 w-full max-w-6xl rounded-lg bg-white bg-cover shadow-lg dark:bg-gray-800"
-        style={{ backgroundImage: `url('${article.image}')`, height: "75vh" }}
-      ></div>
-
       {/* Article Content */}
-      <div className="container mx-auto -mt-32 max-w-5xl">
+      <div className="container mx-auto mt-5 max-w-5xl">
         <div className="mx-0 sm:mx-6">
           <div
             className="w-full rounded-lg bg-white p-8 text-xl leading-normal text-gray-800 shadow-lg md:p-24 md:text-2xl dark:bg-gray-800 dark:text-gray-200"
             style={{ fontFamily: "Georgia, serif" }}
           >
+            {/* Carousel Gambar */}
+            {article.media_artikel.length > 0 && (
+              <div className="mb-8">
+                <div className="relative h-[60vh] w-full overflow-hidden rounded-lg bg-white bg-cover shadow-lg dark:bg-gray-800">
+                  <img
+                    src={article.media_artikel[carouselIndex]?.url}
+                    alt={
+                      article.media_artikel[carouselIndex]?.name ||
+                      "Gambar Artikel"
+                    }
+                    className="h-full w-full object-contain"
+                  />
+                  {article.media_artikel.length > 1 && (
+                    <>
+                      <button
+                        onClick={handlePrev}
+                        className="absolute top-1/2 left-2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow hover:bg-white"
+                        aria-label="Sebelumnya"
+                      >
+                        &#8592;
+                      </button>
+                      <button
+                        onClick={handleNext}
+                        className="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow hover:bg-white"
+                        aria-label="Selanjutnya"
+                      >
+                        &#8594;
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+                        {article.media_artikel.map((_, idx) => (
+                          <span
+                            key={idx}
+                            className={`inline-block h-2 w-2 rounded-full ${carouselIndex === idx ? "bg-green-600" : "bg-gray-300"}`}
+                          ></span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
             {/* Post Content */}
-            <h3 className="text-3xl font-bold dark:text-white">
-              {article.title}
-            </h3>
+
             <p className="py-6">{article.content}</p>
+            {/* Lokasi jika ada */}
+            {article.location_name && (
+              <div className="mt-6 text-base text-gray-700 dark:text-gray-300">
+                <strong>Lokasi:</strong> {article.location_name}
+              </div>
+            )}
+            {/* Leaflet Map jika ada koordinat */}
+            {article.latitude && article.longitude && (
+              <div className="mt-6 mb-8">
+                <div className="h-80 w-full overflow-hidden rounded-lg">
+                  <MapContainer
+                    center={[article.latitude, article.longitude]}
+                    zoom={15}
+                    style={{ height: "100%", width: "100%" }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={[article.latitude, article.longitude]} />
+                  </MapContainer>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Author */}
           <div className="flex w-full items-center p-8 font-sans md:p-24">
             <img
               className="mr-4 h-10 w-10 rounded-full"
-              src="http://i.pravatar.cc/300"
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(article.author)}&background=random`}
               alt="Avatar of Author"
             />
             <div className="flex-1">
