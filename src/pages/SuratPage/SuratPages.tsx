@@ -30,6 +30,7 @@ import {
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
+  FileDown,
 } from "lucide-react";
 import {
   Command,
@@ -163,6 +164,33 @@ export default function SuratPages() {
 
     return 0;
   });
+
+  const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
+    try {
+      const pdfUrl = `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
+      const response = await fetch(pdfUrl, {
+        headers: {
+          "ngrok-skip-browser-warning": "69420",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gagal mengunduh PDF. Status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `surat_${nik_pemohon}_${id_surat}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading PDF:", err);
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -343,7 +371,9 @@ export default function SuratPages() {
                   {sortedSuratList.map((surat) => (
                     <TableRow key={surat.id_surat}>
                       <TableCell>{surat.nomor_surat}</TableCell>
-                      <TableCell>{surat.jenis_surat}</TableCell>
+                      <TableCell>
+                        {surat.jenis_surat.replace(/_/g, " ")}
+                      </TableCell>
                       <TableCell>
                         {formatDate(surat.tanggal_pengajuan)}
                       </TableCell>
@@ -368,15 +398,33 @@ export default function SuratPages() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <ButtonFlowbite
-                          size="xs"
-                          color="info"
-                          className="flex items-center gap-1"
-                          onClick={() => navigate(`/surat/${surat.id_surat}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>Detail</span>
-                        </ButtonFlowbite>
+                        <div className="flex gap-2">
+                          <ButtonFlowbite
+                            size="xs"
+                            color="info"
+                            className="flex items-center gap-1"
+                            onClick={() => navigate(`/surat/${surat.id_surat}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span>Detail</span>
+                          </ButtonFlowbite>
+                          {surat.status_surat === "Disetujui" && (
+                            <ButtonFlowbite
+                              size="xs"
+                              color="success"
+                              className="flex items-center gap-1"
+                              onClick={() =>
+                                handleDownloadPdf(
+                                  surat.nik_pemohon,
+                                  surat.id_surat,
+                                )
+                              }
+                            >
+                              <FileDown className="h-4 w-4" />
+                              <span>Download</span>
+                            </ButtonFlowbite>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

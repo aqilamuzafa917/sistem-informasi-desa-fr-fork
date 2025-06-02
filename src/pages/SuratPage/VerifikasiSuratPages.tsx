@@ -20,6 +20,21 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
+// Helper function to format date strings
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return "";
+  try {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // Month is 0-indexed
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch (error) {
+    console.error("Error formatting date:", dateString, error);
+    return dateString; // Return original string if formatting fails
+  }
+};
+
 // Interface untuk semua kemungkinan field dari response surat
 interface Surat {
   id_surat: number;
@@ -30,7 +45,7 @@ interface Surat {
   nik_pemohon: string | null;
   keperluan: string | null;
   status_surat: string | null;
-  // catatan: string | null;
+  catatan: string | null;
   created_at: string | null;
   updated_at: string | null;
   attachment_bukti_pendukung: string | null;
@@ -319,9 +334,13 @@ export default function VerifikasiSuratPages() {
       </SidebarProvider>
     );
 
-  // Filter hanya field yang tidak null dan bukan nomor_surat
+  // Filter fields: exclude 'id_surat', 'created_at', 'updated_at', include 'nomor_surat' always, and other fields if not null.
   const nonNullFields = Object.entries(surat).filter(
-    ([key, value]) => value !== null && key !== "nomor_surat",
+    ([key, value]) =>
+      (key === "nomor_surat" || value !== null) &&
+      key !== "id_surat" &&
+      key !== "created_at" &&
+      key !== "updated_at",
   );
 
   return (
@@ -352,9 +371,6 @@ export default function VerifikasiSuratPages() {
               <h1 className="text-3xl font-bold tracking-tight">
                 Verifikasi Surat {getJenisSuratLabel(surat.jenis_surat)}
               </h1>
-              <p className="text-muted-foreground mt-2">
-                ID Surat: {surat.id_surat}
-              </p>
             </div>
 
             <Card className="p-6">
@@ -364,9 +380,51 @@ export default function VerifikasiSuratPages() {
                     <Label htmlFor={key}>{getFieldLabel(key)}</Label>
                     <Input
                       id={key}
-                      value={value?.toString() || ""}
+                      value={(() => {
+                        if (typeof value === "string") {
+                          if (key === "jenis_surat") {
+                            return value.replace(/_/g, " ");
+                          }
+                          if (
+                            [
+                              "tanggal_pengajuan",
+                              "tanggal_disetujui",
+                              "created_at",
+                              "updated_at",
+                              "tanggal_kematian",
+                              "tanggal_lahir_bayi",
+                              "sejak_tanggal_usaha",
+                              "tanggal_perkiraan_hilang",
+                              "tanggal_laporan_polisi",
+                              "tanggal_lahir_pemohon",
+                              "tanggal_lahir_meninggal",
+                              "tanggal_lahir_siswa",
+                            ].includes(key)
+                          ) {
+                            return formatDate(value);
+                          }
+                        }
+                        if (
+                          typeof value === "number" &&
+                          [
+                            "umur_pemohon",
+                            "umur_saat_meninggal",
+                            "umur_ibu_saat_kelahiran",
+                            "umur_ayah_saat_kelahiran",
+                            "umur_siswa",
+                          ].includes(key)
+                        ) {
+                          return String(Math.floor(value));
+                        }
+                        return value?.toString() || "";
+                      })()}
                       readOnly
                       className="bg-muted"
+                      placeholder={
+                        key === "nomor_surat" && !value
+                          ? "SK BELUM DILAKUKAN VERIFIKASI"
+                          : undefined
+                      }
                     />
                   </div>
                 ))}

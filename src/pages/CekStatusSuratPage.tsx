@@ -31,42 +31,37 @@ import {
   BsDribbble,
 } from "react-icons/bs";
 
+// Define the interface for the API response
+interface SuratApiResponse {
+  id_surat: number;
+  nomor_surat: string | null;
+  jenis_surat: string;
+  tanggal_pengajuan: string;
+  tanggal_disetujui: string | null;
+  nik_pemohon: string;
+  keperluan: string;
+  status_surat: string;
+  catatan: string | null;
+  created_at: string;
+  updated_at: string;
+  attachment_bukti_pendukung: string | null;
+  // Add other fields from your JSON if needed for display or logic
+  // For example:
+  // nama_pemohon?: string;
+  // etc.
+}
+
 export default function CekStatusSuratPage() {
   const [nik, setNik] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [statusData, setStatusData] = useState(null);
+  const [statusData, setStatusData] = useState<SuratApiResponse[] | null>(null);
   const [error, setError] = useState("");
-
-  // Contoh data status surat (dalam implementasi nyata, ini akan diambil dari API)
-  const dummyData = [
-    {
-      id: "SK001",
-      jenis_surat: "SK Pindah",
-      tanggal_pengajuan: "2023-06-15",
-      status: "Disetujui",
-      keterangan: "Surat dapat diambil di kantor desa",
-    },
-    {
-      id: "SK002",
-      jenis_surat: "SK Domisili",
-      tanggal_pengajuan: "2023-06-18",
-      status: "Dalam Proses",
-      keterangan: "Sedang ditinjau oleh kepala desa",
-    },
-    {
-      id: "SK003",
-      jenis_surat: "SK Tidak Mampu",
-      tanggal_pengajuan: "2023-06-20",
-      status: "Ditolak",
-      keterangan: "Data tidak lengkap, silakan ajukan ulang",
-    },
-  ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNik(e.target.value);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setStatusData(null);
@@ -78,22 +73,71 @@ export default function CekStatusSuratPage() {
 
     setIsLoading(true);
 
-    // Simulasi pemanggilan API dengan setTimeout
-    setTimeout(() => {
-      // Dalam implementasi nyata, ini akan diganti dengan panggilan API
-      // const response = await fetch(`/api/status-surat?nik=${nik}`);
-      // const data = await response.json();
+    try {
+      const response = await fetch(
+        `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat/${nik}`,
+        {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        },
+      );
 
-      // Simulasi data berdasarkan NIK terakhir
-      const lastDigit = parseInt(nik.slice(-1));
-      if (lastDigit >= 0 && lastDigit < dummyData.length) {
-        setStatusData(dummyData[lastDigit] as any);
-      } else {
-        setStatusData(null);
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Gagal mengambil data status surat." }));
+        throw new Error(
+          errorData.message ||
+            `Error ${response.status}: ${response.statusText}`,
+        );
       }
 
+      const responseData = await response.json();
+
+      let candidateSuratItems: SuratApiResponse[] = [];
+
+      if (responseData) {
+        // Check for the structure like { "data": [...] }
+        if (Array.isArray(responseData.data)) {
+          candidateSuratItems = responseData.data;
+        }
+        // Check if the responseData itself is an array [...]
+        else if (Array.isArray(responseData)) {
+          candidateSuratItems = responseData;
+        }
+        // Check if responseData is a single surat object (e.g., has an id_surat property)
+        else if (
+          typeof responseData === "object" &&
+          responseData.id_surat !== undefined
+        ) {
+          candidateSuratItems = [responseData as SuratApiResponse];
+        }
+        // If responseData is an object but doesn't fit the known structures for a list or single item,
+        // candidateSuratItems will remain empty.
+      }
+      // If responseData was null or undefined, candidateSuratItems also remains empty.
+
+      // Apply the filter to the extracted items
+      const filteredData = candidateSuratItems.filter(
+        (surat) => surat.nik_pemohon === nik,
+      );
+
+      if (filteredData.length > 0) {
+        setStatusData(filteredData);
+      } else {
+        setStatusData([]);
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Terjadi kesalahan yang tidak diketahui.");
+      }
+      setStatusData(null);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const renderStatusBadge = (status: string) => {
@@ -102,7 +146,7 @@ export default function CekStatusSuratPage() {
       case "Disetujui":
         color = "success";
         break;
-      case "Dalam Proses":
+      case "Diajukan":
         color = "warning";
         break;
       case "Ditolak":
@@ -118,6 +162,51 @@ export default function CekStatusSuratPage() {
         {status}
       </span>
     );
+  };
+
+  const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
+    setIsLoading(true);
+    try {
+      const pdfUrl = `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
+      const response = await fetch(pdfUrl, {
+        headers: {
+          "ngrok-skip-browser-warning": "69420",
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Gagal mengunduh PDF. Status: ${response.status}`;
+        try {
+          // Attempt to parse error message from API if it returns JSON
+          const errorData = await response.json();
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch {
+          // If response is not JSON or error parsing, use the status-based message
+        }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `surat_${nik_pemohon}_${id_surat}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setError(""); // Clear previous errors on successful download
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Terjadi kesalahan yang tidak diketahui saat mengunduh PDF.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -186,41 +275,66 @@ export default function CekStatusSuratPage() {
             </div>
           )}
 
-          {!isLoading && statusData && (
-            <div className="overflow-hidden rounded-md border">
+          {!isLoading && statusData && statusData.length > 0 && (
+            <div className="overflow-x-auto rounded-md border">
               <Table hoverable>
                 <TableHead>
-                  <TableHeadCell>ID Surat</TableHeadCell>
+                  <TableHeadCell>Nomor Surat</TableHeadCell>
                   <TableHeadCell>Jenis Surat</TableHeadCell>
                   <TableHeadCell>Tanggal Pengajuan</TableHeadCell>
                   <TableHeadCell>Status</TableHeadCell>
-                  <TableHeadCell>Keterangan</TableHeadCell>
+                  <TableHeadCell>Catatan</TableHeadCell>
+                  <TableHeadCell className="table-cell whitespace-nowrap">
+                    Cetak Surat
+                  </TableHeadCell>
                 </TableHead>
                 <TableBody className="divide-y">
-                  <TableRow className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                    <TableCell>{(statusData as any).id}</TableCell>
-                    <TableCell>{(statusData as any).jenis_surat}</TableCell>
-                    <TableCell>
-                      {(statusData as any).tanggal_pengajuan}
-                    </TableCell>
-                    <TableCell>
-                      {renderStatusBadge((statusData as any).status)}
-                    </TableCell>
-                    <TableCell>{(statusData as any).keterangan}</TableCell>
-                  </TableRow>
+                  {statusData.map((surat) => (
+                    <TableRow
+                      key={surat.id_surat}
+                      className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                    >
+                      <TableCell>{surat.nomor_surat || "-"}</TableCell>
+                      <TableCell>{surat.jenis_surat}</TableCell>
+                      <TableCell>
+                        {new Date(surat.tanggal_pengajuan).toLocaleDateString(
+                          "id-ID",
+                          { year: "numeric", month: "long", day: "numeric" },
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {renderStatusBadge(surat.status_surat)}
+                      </TableCell>
+                      <TableCell>{surat.catatan || "-"}</TableCell>
+                      <TableCell className="table-cell whitespace-nowrap">
+                        {surat.status_surat === "Disetujui" && (
+                          <Button
+                            size="xs"
+                            color="success"
+                            onClick={() =>
+                              handleDownloadPdf(
+                                surat.nik_pemohon,
+                                surat.id_surat,
+                              )
+                            }
+                            disabled={isLoading}
+                          >
+                            {isLoading ? <Spinner size="xs" /> : "Download PDF"}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
           )}
 
-          {!isLoading &&
-            statusData &&
-            Array.isArray(statusData) &&
-            (statusData as any[]).length === 0 && (
-              <div className="rounded-md border py-8 text-center text-gray-600">
-                Tidak ada pengajuan surat yang terkait dengan NIK tersebut.
-              </div>
-            )}
+          {!isLoading && statusData && statusData.length === 0 && !error && (
+            <div className="rounded-md border py-8 text-center text-gray-600">
+              Tidak ada pengajuan surat yang terkait dengan NIK tersebut.
+            </div>
+          )}
 
           {!isLoading && !statusData && !error && (
             <div className="rounded-md border py-8 text-center text-gray-600">
