@@ -1,35 +1,11 @@
 import {
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Button,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
-} from "flowbite-react";
-import * as React from "react";
-import {
-  BsFacebook,
-  BsInstagram,
-  BsTwitter,
-  BsGithub,
-  BsDribbble,
-} from "react-icons/bs";
-
-import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import NavbarDesa from "@/components/NavbarDesa";
+import FooterDesa from "@/components/FooterDesa";
 
 export default function InfografisIDM() {
   // Data untuk IDM
@@ -37,7 +13,7 @@ export default function InfografisIDM() {
   const kecamatan = "Batujajar";
   const kabupaten = "Bandung Barat";
   const provinsi = "Jawa Barat";
-  
+
   // Data IDM
   const tahun = "2024";
   const skorIDM = "0.7925";
@@ -45,7 +21,7 @@ export default function InfografisIDM() {
   const targetStatus = "MANDIRI";
   const skorMinimal = "0.8156";
   const penambahan = "0.0231";
-  
+
   // Data komponen IDM
   const skorIKS = "0.7943"; // Indeks Ketahanan Sosial
   const skorIKE = "0.7167"; // Indeks Ketahanan Ekonomi
@@ -53,34 +29,13 @@ export default function InfografisIDM() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Navbar */}
       {/* Navbar Section */}
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <Button>Hubungi Kami</Button>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="/#FiturDesa">Fitur Desa</NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="/infografis/penduduk" active>
-            Infografis
-          </NavbarLink>
-          <NavbarLink href="/artikeldesa">Artikel</NavbarLink>
-          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
+      <NavbarDesa />
 
       {/* Main Content */}
       <div className="container mx-auto px-4">
-         {/* Judul Halaman */}
-         <div className="mb-8 text-center">
+        {/* Judul Halaman */}
+        <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
             INFOGRAFIS DESA BATUJAJAR TIMUR
           </h1>
@@ -163,20 +118,21 @@ export default function InfografisIDM() {
           </a>
         </div>
 
-         {/* Judul Demografi */}
-         <div className="mb-8 px-4 py-8">
-         <div className="mx-auto max-w-6xl">
-          <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-          Indeks Desa Membangun (IDM)
-          </h2>
-          <p className="mt-2 text-xl text-gray-600 dark:text-gray-400">
-          Indeks Desa Membangun (IDM) merupakan indeks komposit yang dibentuk dari tiga indeks,
-          yaitu Indeks Ketahanan Sosial, Indeks Ketahanan Ekonomi, dan Indeks Ketahanan Ekologi/Lingkungan.
-          </p>
-        </div>
+        {/* Judul Demografi */}
+        <div className="mb-8 px-4 py-8">
+          <div className="mx-auto max-w-6xl">
+            <h2 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+              Indeks Desa Membangun (IDM)
+            </h2>
+            <p className="mt-2 text-xl text-gray-600 dark:text-gray-400">
+              Indeks Desa Membangun (IDM) merupakan indeks komposit yang
+              dibentuk dari tiga indeks, yaitu Indeks Ketahanan Sosial, Indeks
+              Ketahanan Ekonomi, dan Indeks Ketahanan Ekologi/Lingkungan.
+            </p>
+          </div>
         </div>
 
-        {/* Konten IDM */} 
+        {/* Konten IDM */}
         <div className="mx-auto max-w-6xl px-4 py-8">
           {/* Skor dan Status IDM */}
           <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -185,7 +141,9 @@ export default function InfografisIDM() {
                 <CardTitle>SKOR IDM {tahun}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-5xl font-bold text-gray-700 dark:text-gray-300">{skorIDM}</p>
+                <p className="text-right text-5xl font-bold text-gray-700 dark:text-gray-300">
+                  {skorIDM}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -193,7 +151,9 @@ export default function InfografisIDM() {
                 <CardTitle>STATUS IDM {tahun}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-5xl font-bold text-gray-700 dark:text-gray-300">{statusIDM}</p>
+                <p className="text-right text-5xl font-bold text-gray-700 dark:text-gray-300">
+                  {statusIDM}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -205,7 +165,9 @@ export default function InfografisIDM() {
                 <CardTitle>Target Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">{targetStatus}</p>
+                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">
+                  {targetStatus}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -213,7 +175,9 @@ export default function InfografisIDM() {
                 <CardTitle>Skor Minimal</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">{skorMinimal}</p>
+                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">
+                  {skorMinimal}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -221,7 +185,9 @@ export default function InfografisIDM() {
                 <CardTitle>Penambahan</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">{penambahan}</p>
+                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">
+                  {penambahan}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -233,7 +199,9 @@ export default function InfografisIDM() {
                 <CardTitle>Skor IKS</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">{skorIKS}</p>
+                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">
+                  {skorIKS}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -241,7 +209,9 @@ export default function InfografisIDM() {
                 <CardTitle>Skor IKE</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">{skorIKE}</p>
+                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">
+                  {skorIKE}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -249,58 +219,17 @@ export default function InfografisIDM() {
                 <CardTitle>Skor IKL</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">{skorIKL}</p>
+                <p className="text-right text-3xl font-bold text-gray-700 dark:text-gray-300">
+                  {skorIKL}
+                </p>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
 
-
       {/* Footer */}
-      <Footer container className="rounded-none">
-        <div className="w-full">
-          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
-            <div>
-              <FooterBrand href="/" src="" name="Desa Batujajar Timur" />
-            </div>
-            <div className="grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6">
-              <div>
-                <FooterTitle title="Tentang" />
-                <FooterLinkGroup col>
-                  <FooterLink href="/profildesa">Profil Desa</FooterLink>
-                  <FooterLink href="#">Visi & Misi</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Ikuti Kami" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Facebook</FooterLink>
-                  <FooterLink href="#">Instagram</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Informasi" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Kontak</FooterLink>
-                  <FooterLink href="#">Layanan</FooterLink>
-                </FooterLinkGroup>
-              </div>
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="/" by="Desa Batujajar Timur™" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
     </div>
   );
 }

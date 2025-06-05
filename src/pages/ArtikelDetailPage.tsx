@@ -1,32 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Button as FlowbiteButton,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
-} from "flowbite-react";
-import {
-  BsFacebook,
-  BsInstagram,
-  BsTwitter,
-  BsGithub,
-  BsDribbble,
-} from "react-icons/bs";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import NavbarDesa from "@/components/NavbarDesa";
+import FooterDesa from "@/components/FooterDesa";
 
 // Fix for default marker icon in Leaflet
 if (typeof window !== "undefined") {
@@ -246,35 +225,14 @@ export default function ArtikelDetailPage() {
       </div>
 
       {/* Navbar Section */}
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <FlowbiteButton>Hubungi Kami</FlowbiteButton>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="#FiturDesa">Fitur Desa</NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="/infografis/penduduk">Infografis</NavbarLink>
-          <NavbarLink href="/artikeldesa" active>
-            Artikel
-          </NavbarLink>
-          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
+      <NavbarDesa />
 
       {/* Article Header */}
-
-      <div className="pt-16 text-center md:pt-32">
+      <div className="container mx-auto -mt-20 max-w-7xl px-4 pt-16 text-center md:pt-32">
         <h1 className="text-3xl font-bold break-normal text-gray-900 md:text-4xl dark:text-white">
           {article.title}
         </h1>
-        <div className="flex flex-wrap items-center text-xs justify-center gap-2 p-4">
+        <div className="flex flex-wrap items-center justify-center gap-2 p-4 text-xs">
           <p className="inline-block rounded bg-green-100 px-3 py-1 font-semibold text-green-800 dark:bg-green-900 dark:text-green-300">
             {article.date_created}
           </p>
@@ -293,66 +251,70 @@ export default function ArtikelDetailPage() {
         </div>
       </div>
 
+      {/* Carousel Gambar */}
+      {article.media_artikel.length > 0 && (
+        <div className="container mx-auto max-w-7xl px-4 md:px-6">
+          <div className="relative h-[70vh] w-full overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
+            <img
+              src={article.media_artikel[carouselIndex]?.url}
+              alt={
+                article.media_artikel[carouselIndex]?.name || "Gambar Artikel"
+              }
+              className="h-full w-full object-cover"
+            />
+            {article.media_artikel.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrev}
+                  className="absolute top-1/2 left-4 z-10 -translate-y-1/2 rounded-full bg-white/80 p-3 shadow-lg hover:bg-white"
+                  aria-label="Sebelumnya"
+                >
+                  &#8592;
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="absolute top-1/2 right-4 z-10 -translate-y-1/2 rounded-full bg-white/80 p-3 shadow-lg hover:bg-white"
+                  aria-label="Selanjutnya"
+                >
+                  &#8594;
+                </button>
+                <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+                  {article.media_artikel.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`inline-block h-3 w-3 rounded-full ${carouselIndex === idx ? "bg-green-600" : "bg-gray-300"}`}
+                    ></span>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Article Content */}
-      <div className="container mx-auto mt-5 max-w-5xl">
+      <div className="container mx-auto mt-3 max-w-7xl">
         <div className="mx-0 sm:mx-6">
           <div
             className="w-full rounded-lg bg-white p-8 text-xl leading-normal text-gray-800 shadow-lg md:p-24 md:text-2xl dark:bg-gray-800 dark:text-gray-200"
             style={{ fontFamily: "Georgia, serif" }}
           >
-            {/* Carousel Gambar */}
-            {article.media_artikel.length > 0 && (
-              <div className="mb-8">
-                <div className="relative h-[60vh] w-full overflow-hidden rounded-lg bg-white bg-cover shadow-lg dark:bg-gray-800">
-                  <img
-                    src={article.media_artikel[carouselIndex]?.url}
-                    alt={
-                      article.media_artikel[carouselIndex]?.name ||
-                      "Gambar Artikel"
-                    }
-                    className="h-full w-full object-contain"
-                  />
-                  {article.media_artikel.length > 1 && (
-                    <>
-                      <button
-                        onClick={handlePrev}
-                        className="absolute top-1/2 left-2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow hover:bg-white"
-                        aria-label="Sebelumnya"
-                      >
-                        &#8592;
-                      </button>
-                      <button
-                        onClick={handleNext}
-                        className="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow hover:bg-white"
-                        aria-label="Selanjutnya"
-                      >
-                        &#8594;
-                      </button>
-                      <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-                        {article.media_artikel.map((_, idx) => (
-                          <span
-                            key={idx}
-                            className={`inline-block h-2 w-2 rounded-full ${carouselIndex === idx ? "bg-green-600" : "bg-gray-300"}`}
-                          ></span>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
             {/* Post Content */}
-
-            <p className="py-6">{article.content}</p>
+            <p
+              className="-mt-23 py-6 text-justify"
+              style={{ whiteSpace: "pre-line" }}
+            >
+              {article.content}
+            </p>
             {/* Lokasi jika ada */}
             {article.location_name && (
-              <div className="mt-6 text-base text-gray-700 dark:text-gray-300">
+              <div className="mt-0 text-base text-gray-700 dark:text-gray-300">
                 <strong>Lokasi:</strong> {article.location_name}
               </div>
             )}
             {/* Leaflet Map jika ada koordinat */}
             {article.latitude && article.longitude && (
-              <div className="mt-6 mb-8">
+              <div className="mt-6 mb-0">
                 <div className="h-80 w-full overflow-hidden rounded-lg">
                   <MapContainer
                     center={[article.latitude, article.longitude]}
@@ -371,7 +333,7 @@ export default function ArtikelDetailPage() {
           </div>
 
           {/* Author */}
-          <div className="flex w-full items-center p-8 font-sans md:p-24">
+          <div className="-mt-10 flex w-full items-center p-8 font-sans md:p-24">
             <img
               className="mr-4 h-10 w-10 rounded-full"
               src={`https://ui-avatars.com/api/?name=${encodeURIComponent(article.author)}&background=random`}
@@ -421,35 +383,7 @@ export default function ArtikelDetailPage() {
       </button>
 
       {/* Footer */}
-      <Footer container className="rounded-none bg-white dark:bg-gray-900">
-        <div className="w-full text-center">
-          <div className="w-full justify-between sm:flex sm:items-center sm:justify-between">
-            <FooterBrand
-              href="/"
-              src="/flowbite-react.svg"
-              alt="Flowbite Logo"
-              name="Desa Batujajar Timur"
-            />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="#" by="Desa Batujajar Timur" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterLink href="#">Tentang</FooterLink>
-              <FooterLink href="#">Kebijakan Privasi</FooterLink>
-              <FooterLink href="#">Lisensi</FooterLink>
-              <FooterLink href="#">Kontak</FooterLink>
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
 
       {/* CSS untuk animasi dan scroll */}
       <style>{`

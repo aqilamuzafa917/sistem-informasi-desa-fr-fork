@@ -1,28 +1,5 @@
-import {
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Button,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
-} from "flowbite-react";
 import { PieChart, Pie, Cell, Label, Tooltip, LabelList } from "recharts";
 import * as React from "react";
-import {
-  BsFacebook,
-  BsInstagram,
-  BsTwitter,
-  BsGithub,
-  BsDribbble,
-} from "react-icons/bs";
 import { TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 
@@ -40,7 +17,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-
+import NavbarDesa from "@/components/NavbarDesa";
+import FooterDesa from "@/components/FooterDesa";
 export default function InfografisPenduduk() {
   // Data untuk pie chart penduduk desa
   const chartDataPenduduk = [
@@ -122,27 +100,7 @@ export default function InfografisPenduduk() {
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
       {/* Navbar Section */}
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <Button>Hubungi Kami</Button>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="/#FiturDesa">Fitur Desa</NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="/infografis/penduduk" active>
-            Infografis
-          </NavbarLink>
-          <NavbarLink href="/artikeldesa">Artikel</NavbarLink>
-          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
+      <NavbarDesa />
 
       <div className="container mx-auto px-4">
         {/* Judul Halaman */}
@@ -551,49 +509,7 @@ export default function InfografisPenduduk() {
       </div>
 
       {/* Footer Section */}
-      <Footer container className="rounded-none">
-        <div className="w-full">
-          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
-            <div>
-              <FooterBrand href="/" src="" name="Desa Batujajar Timur" />
-            </div>
-            <div className="grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6">
-              <div>
-                <FooterTitle title="Tentang" />
-                <FooterLinkGroup col>
-                  <FooterLink href="/profildesa">Profil Desa</FooterLink>
-                  <FooterLink href="#">Visi & Misi</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Ikuti Kami" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Facebook</FooterLink>
-                  <FooterLink href="#">Instagram</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Informasi" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Kontak</FooterLink>
-                  <FooterLink href="#">Layanan</FooterLink>
-                </FooterLinkGroup>
-              </div>
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="/" by="Desa Batujajar Timur™" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
     </main>
   );
 }

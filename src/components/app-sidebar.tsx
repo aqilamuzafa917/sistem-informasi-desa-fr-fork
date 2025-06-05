@@ -9,6 +9,7 @@ import {
   Images,
   MessageCircleWarning,
   Users,
+  Bolt,
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
@@ -168,6 +169,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isActive: currentPath === "/pengaduan",
       },
     ],
+    navConfigDesa: [
+      {
+        title: "Config Desa",
+        url: "/configdesa",
+        icon: Bolt,
+        isActive: currentPath === "/configdesa",
+      },
+    ],
   };
 
   return (
@@ -234,6 +243,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ))}
           <NavInfografis items={data.navInfografis} />
           {data.navPengaduan.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          {data.navConfigDesa.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
                 <a href={data.url}>

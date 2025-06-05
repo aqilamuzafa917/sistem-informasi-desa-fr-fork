@@ -40,6 +40,8 @@ import DetailKtpPages from "./pages/PendudukPage/DetailKtpPages";
 import TambahKtpPages from "./pages/PendudukPage/TambahKtpPages";
 import ArtikelCreate from "./pages/ArtikelPage/ArtikelCreate";
 import VerifikasiArtikelPage from "./pages/ArtikelPage/VerifikasiArtikelPage";
+import ConfigPages from "./pages/ConfigPage/ConfigPages";
+import VerifikasiPengaduanPage from "./pages/PengaduanPage/VerifikasiPengaduanPages";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -76,8 +78,8 @@ export default function App() {
         <Route path="/artikeldesa/:id" element={<ArtikelDetailPage />} />
         <Route path="/artikeldesa/buat" element={<ArtikelCreatePage />} />
         <Route path="/infografis/penduduk" element={<InfografisPenduduk />} />
-        <Route path="/Infografis/apbdesa" element={<InfografisAPBDesa />} />
-        <Route path="/Infografis/idm" element={<InfografisIDM />} />
+        <Route path="/infografis/apbdesa" element={<InfografisAPBDesa />} />
+        <Route path="/infografis/idm" element={<InfografisIDM />} />
         <Route path="/petafasilitasdesa" element={<PetaFasilitasDesa />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
@@ -107,6 +109,8 @@ export default function App() {
           <Route path="dataktp/tambahktp" element={<TambahKtpPages />} />
           <Route path="/datakk" element={<DataKKPages />} />
           <Route path="/pengaduan" element={<PengaduanPages />} />
+          <Route path="/pengaduan/:id" element={<VerifikasiPengaduanPage />} />
+          <Route path="/configdesa" element={<ConfigPages />} />
         </Route>
       </Routes>
     </>

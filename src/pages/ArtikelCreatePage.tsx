@@ -1,33 +1,11 @@
 import { useState } from "react";
 import {
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Button as FlowbiteButton,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
   Label,
   Select,
   Textarea,
 } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  BsFacebook,
-  BsInstagram,
-  BsTwitter,
-  BsGithub,
-  BsDribbble,
-  BsImage,
-} from "react-icons/bs";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -35,6 +13,8 @@ import dynamic from "next/dynamic";
 import axios from "axios";
 import { toast } from "sonner";
 import { Toaster } from "sonner";
+import NavbarDesa from "@/components/NavbarDesa";
+import FooterDesa from "@/components/FooterDesa";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -247,29 +227,8 @@ export default function ArtikelCreatePage() {
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-gray-900">
       <Toaster richColors position="top-center" />
-      {/* Navbar Section */}
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <FlowbiteButton>Hubungi Kami</FlowbiteButton>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="#FiturDesa">Fitur Desa</NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="infografis/penduduk">Infografis</NavbarLink>
-          <NavbarLink href="/artikeldesa" active>
-            Artikel
-          </NavbarLink>
-          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
-
+      <NavbarDesa />
+      
       <div className="container mx-auto flex-grow px-4 py-8">
         <div className="mx-auto max-w-3xl rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
           <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
@@ -349,7 +308,7 @@ export default function ArtikelCreatePage() {
                     step="any"
                     value={formData.latitude ?? ""}
                     onChange={handleInputChange}
-                    placeholder="Klik pada peta untuk mengisi koordinat"
+                    placeholder="Klik pada peta!"
                   />
                 </div>
                 <div>
@@ -361,7 +320,7 @@ export default function ArtikelCreatePage() {
                     step="any"
                     value={formData.longitude ?? ""}
                     onChange={handleInputChange}
-                    placeholder="Klik pada peta untuk mengisi koordinat"
+                    placeholder="Klik pada peta!"
                   />
                 </div>
               </div>
@@ -412,8 +371,8 @@ export default function ArtikelCreatePage() {
                   multiple
                   required
                 />
-                <p className="text-muted-foreground mt-1 text-sm">
-                  Anda dapat memilih lebih dari satu gambar
+                <p className="text-red-600 mt-1 text-sm ">
+                  Maksimal ukuran file 2MB, Anda dapat memilih lebih dari satu gambar
                 </p>
               </div>
 
@@ -469,39 +428,7 @@ export default function ArtikelCreatePage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <Footer
-        container
-        className="mt-auto rounded-none bg-white dark:bg-gray-900"
-      >
-        <div className="w-full text-center">
-          <div className="w-full justify-between sm:flex sm:items-center sm:justify-between">
-            <FooterBrand
-              href="/"
-              src="/flowbite-react.svg"
-              alt="Flowbite Logo"
-              name="Desa Batujajar Timur"
-            />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="#" by="Desa Batujajar Timur" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterLink href="#">Tentang</FooterLink>
-              <FooterLink href="#">Kebijakan Privasi</FooterLink>
-              <FooterLink href="#">Lisensi</FooterLink>
-              <FooterLink href="#">Kontak</FooterLink>
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
     </div>
   );
 }

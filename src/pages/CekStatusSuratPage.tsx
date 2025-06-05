@@ -1,19 +1,6 @@
 import { useState } from "react";
 import {
   Button,
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
   Table,
   Spinner,
   TableHead,
@@ -23,14 +10,8 @@ import {
   TableHeadCell,
 } from "flowbite-react";
 import { Card } from "@/components/ui/card";
-import {
-  BsFacebook,
-  BsInstagram,
-  BsTwitter,
-  BsGithub,
-  BsDribbble,
-} from "react-icons/bs";
-
+import NavbarDesa from "@/components/NavbarDesa";
+import FooterDesa from "@/components/FooterDesa";
 // Define the interface for the API response
 interface SuratApiResponse {
   id_surat: number;
@@ -211,27 +192,7 @@ export default function CekStatusSuratPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <Button>Hubungi Kami</Button>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="/#FiturDesa" active>
-            Fitur Desa
-          </NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="/infografis/penduduk">Infografis</NavbarLink>
-          <NavbarLink href="/artikeldesa">Artikel</NavbarLink>
-          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
+      <NavbarDesa />
 
       <div className="container mx-auto flex-grow px-4 py-8">
         <Card className="p-6">
@@ -344,49 +305,7 @@ export default function CekStatusSuratPage() {
         </Card>
       </div>
 
-      <Footer container className="mt-auto rounded-none">
-        <div className="w-full">
-          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
-            <div>
-              <FooterBrand href="/" src="" name="Desa Batujajar Timur" />
-            </div>
-            <div className="grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6">
-              <div>
-                <FooterTitle title="Tentang" />
-                <FooterLinkGroup col>
-                  <FooterLink href="/profildesa">Profil Desa</FooterLink>
-                  <FooterLink href="#">Visi & Misi</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Ikuti Kami" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Facebook</FooterLink>
-                  <FooterLink href="#">Instagram</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Informasi" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Kontak</FooterLink>
-                  <FooterLink href="#">Layanan</FooterLink>
-                </FooterLinkGroup>
-              </div>
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="/" by="Desa Batujajar Timur™" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
     </div>
   );
 }
