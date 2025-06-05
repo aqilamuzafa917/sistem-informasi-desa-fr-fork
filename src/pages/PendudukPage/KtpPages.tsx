@@ -37,6 +37,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { API_CONFIG } from "../../config/api";
 
 interface Penduduk {
   nik: string;
@@ -141,12 +142,12 @@ export default function DataKTPPages() {
           navigate("/");
           return;
         }
-        const response = await axios.get<Penduduk[]>(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/penduduk?page=${currentPage}&per_page=${itemsPerPage}`,
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/penduduk?page=${currentPage}&per_page=${itemsPerPage}`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );
@@ -207,12 +208,12 @@ export default function DataKTPPages() {
         if (!token) {
           return;
         }
-        const response = await axios.get<PendudukStatsResponse>(
-          "https://thankful-urgently-silkworm.ngrok-free.app/api/penduduk/stats",
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/penduduk/stats`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );
@@ -316,8 +317,11 @@ export default function DataKTPPages() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div className="mb-0 flex justify-end">
-            <Button onClick={() => navigate("/dataktp/tambahktp")} className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700">
+          <div className="mb-0 flex justify-end">
+            <Button
+              onClick={() => navigate("/dataktp/tambahktp")}
+              className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+            >
               Tambah KTP
             </Button>
           </div>

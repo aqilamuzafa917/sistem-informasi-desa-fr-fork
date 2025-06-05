@@ -22,6 +22,7 @@ interface Fasilitas {
 export default function PetaFasilitasDesa() {
   // Fix untuk icon Leaflet di React
   React.useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl;
 
     L.Icon.Default.mergeOptions({
@@ -125,7 +126,6 @@ export default function PetaFasilitasDesa() {
 
   // Fungsi untuk mendapatkan icon berdasarkan kategori
   const getMarkerIcon = (kategori: string) => {
-    let iconUrl = "";
     let iconColor = "";
 
     switch (kategori) {
@@ -218,8 +218,8 @@ export default function PetaFasilitasDesa() {
         </div>
 
         {/* Peta */}
-        <div className="mt-8 mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="h-[600px] w-full">
+        <div className="z-0 mt-8 mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="z-0 h-[600px] w-full">
             <MapContainer
               center={[-6.9175, 107.5019]}
               zoom={14}

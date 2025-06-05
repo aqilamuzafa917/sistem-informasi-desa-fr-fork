@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
+import { API_CONFIG } from "@/config/api";
 
 // Fix for default marker icon in Leaflet
 if (typeof window !== "undefined") {
@@ -47,11 +48,9 @@ export default function ArtikelDetailPage() {
       setLoading(true);
       try {
         const response = await axios.get(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/artikel/${id}`,
+          `${API_CONFIG.baseURL}/api/publik/artikel/${id}`,
           {
-            headers: {
-              "ngrok-skip-browser-warning": "69420",
-            },
+            headers: API_CONFIG.headers,
           },
         );
         if (response.data.status === "success") {

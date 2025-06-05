@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Spinner } from "flowbite-react"; // For loading indicator
+import { API_CONFIG } from "../../config/api";
 
 interface PendudukDetail {
   created_at: string;
@@ -96,12 +97,12 @@ export default function DetailKtpPages() {
           navigate("/");
           return;
         }
-        const response = await axios.get<PendudukDetail[]>(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/penduduk/cari?query=${nik}`,
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/penduduk/cari?query=${nik}`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );

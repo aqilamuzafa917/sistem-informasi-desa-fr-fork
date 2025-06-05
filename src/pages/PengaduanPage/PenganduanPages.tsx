@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/popover";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { API_CONFIG } from "../../config/api";
 
 const kategoriOptions = [
   { value: "Umum", label: "Umum" },
@@ -111,24 +112,18 @@ export default function PengaduanPages() {
         if (!token) throw new Error("Token tidak ditemukan");
 
         const [pengaduanResponse, statsResponse] = await Promise.all([
-          axios.get<PengaduanResponse>(
-            "https://thankful-urgently-silkworm.ngrok-free.app/api/pengaduan",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "ngrok-skip-browser-warning": "69420",
-              },
+          axios.get(`${API_CONFIG.baseURL}/api/pengaduan`, {
+            headers: {
+              ...API_CONFIG.headers,
+              Authorization: `Bearer ${token}`,
             },
-          ),
-          axios.get<StatsResponse>(
-            "https://thankful-urgently-silkworm.ngrok-free.app/api/pengaduan/stats",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "ngrok-skip-browser-warning": "69420",
-              },
+          }),
+          axios.get(`${API_CONFIG.baseURL}/api/pengaduan/stats`, {
+            headers: {
+              ...API_CONFIG.headers,
+              Authorization: `Bearer ${token}`,
             },
-          ),
+          }),
         ]);
 
         setPengaduanList(

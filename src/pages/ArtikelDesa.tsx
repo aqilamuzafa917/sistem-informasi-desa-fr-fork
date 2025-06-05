@@ -2,14 +2,11 @@ import { useState, useEffect } from "react";
 import NavbarDesa from "../components/NavbarDesa";
 import FooterDesa from "../components/FooterDesa";
 
-import {
-  Card,
-  Spinner,
-  Pagination,
-} from "flowbite-react";
+import { Card, Pagination } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
+import { API_CONFIG } from "../config/api";
 
 interface Artikel {
   id_artikel: number;
@@ -54,10 +51,10 @@ export default function ArtikelDesa() {
       setLoading(true);
       try {
         const response = await axios.get<ArtikelResponse>(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
+          `${API_CONFIG.baseURL}/api/publik/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
           {
             headers: {
-              "ngrok-skip-browser-warning": "69420",
+              ...API_CONFIG.headers,
             },
           },
         );
@@ -181,8 +178,37 @@ export default function ArtikelDesa() {
 
         {/* Articles Grid */}
         {loading ? (
-          <div className="flex h-40 items-center justify-center">
-            <Spinner size="xl" />
+          <div className="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(9)].map((_, index) => (
+              <Card
+                key={index}
+                className="flex h-[500px] max-w-sm animate-pulse flex-col"
+                theme={{
+                  img: {
+                    base: "h-48 w-full bg-gray-200 dark:bg-gray-700",
+                  },
+                  root: {
+                    base: "flex h-full flex-col",
+                  },
+                }}
+              >
+                <div className="flex flex-grow flex-col">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="h-5 w-20 rounded bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </div>
+                  <div className="h-8 w-3/4 rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="mt-2 space-y-2">
+                    <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="h-4 w-5/6 rounded bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="h-4 w-4/6 rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </div>
+                </div>
+                <div className="mt-auto pt-4">
+                  <div className="h-10 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              </Card>
+            ))}
           </div>
         ) : error ? (
           <div className="py-12 text-center">

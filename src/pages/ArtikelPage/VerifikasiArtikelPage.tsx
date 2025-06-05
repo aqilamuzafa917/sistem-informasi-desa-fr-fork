@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { API_CONFIG } from "../../config/api";
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -115,11 +116,11 @@ export default function VerifikasiArtikelPage() {
         const token =
           localStorage.getItem("token") || localStorage.getItem("authToken");
         const response = await axios.get(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/artikel/${id}`,
+          `${API_CONFIG.baseURL}/api/artikel/${id}`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );
@@ -145,14 +146,14 @@ export default function VerifikasiArtikelPage() {
       const token =
         localStorage.getItem("token") || localStorage.getItem("authToken");
       await axios.patch(
-        `https://thankful-urgently-silkworm.ngrok-free.app/api/artikel/${id}/status`,
+        `${API_CONFIG.baseURL}/api/artikel/${id}/status`,
         {
           status_artikel: status,
         },
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
           },
         },
       );
@@ -195,15 +196,12 @@ export default function VerifikasiArtikelPage() {
       setIsDeleting(true);
       const token =
         localStorage.getItem("token") || localStorage.getItem("authToken");
-      await axios.delete(
-        `https://thankful-urgently-silkworm.ngrok-free.app/api/artikel/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
-          },
+      await axios.delete(`${API_CONFIG.baseURL}/api/artikel/${id}`, {
+        headers: {
+          ...API_CONFIG.headers,
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       toast.success("Artikel berhasil dihapus!", {
         description: "Artikel telah dihapus dari sistem",
