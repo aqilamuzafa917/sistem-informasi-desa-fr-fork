@@ -1,30 +1,318 @@
 // HomePage.tsx untuk Sistem Informasi Desa Bajujajar Timur
-import { Carousel } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import * as React from "react";
-// import { TrendingUp } from "lucide-react";
-import { Label, Pie, PieChart, Tooltip, Cell } from "recharts";
+import {
+  Label,
+  Pie,
+  PieChart,
+  Tooltip,
+  Cell,
+  ResponsiveContainer,
+} from "recharts";
+import { Users, Home, Info, AlertCircle, RefreshCw } from "lucide-react";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { CHATBOT_MINIMIZE_EVENT } from "@/components/NavbarDesa";
 import { PengaduanPopup } from "@/components/PengaduanPopup";
+import axios from "axios";
+import { API_CONFIG } from "@/config/api";
+import { useState, useEffect } from "react";
+import EnhancedCarousel from "@/components/EnhancedCarousel";
+
+interface DetailPendapatan {
+  "Pendapatan Asli Desa": string;
+  "Pendapatan Transfer": string;
+  "Pendapatan Lain-lain": string | number;
+}
+
+interface DetailBelanja {
+  "Belanja Barang/Jasa": string;
+  "Belanja Modal": string;
+  "Belanja Tak Terduga": string;
+}
+
+interface APBDesaData {
+  tahun_anggaran: number;
+  total_pendapatan: string;
+  total_belanja: string;
+  saldo_sisa: string;
+  detail_pendapatan: DetailPendapatan;
+  detail_belanja: DetailBelanja;
+}
+
+interface APBDesaResponse {
+  status: string;
+  data: APBDesaData[];
+}
+
+interface Article {
+  id_artikel: number;
+  jenis_artikel: string;
+  status_artikel: string;
+  judul_artikel: string;
+  kategori_artikel: string;
+  isi_artikel: string;
+  penulis_artikel: string;
+  tanggal_publikasi_artikel: string;
+  media_artikel: Array<{
+    path: string;
+    type: string;
+    name: string;
+    url: string;
+  }>;
+}
+
+interface ArticleResponse {
+  status: string;
+  data: {
+    current_page: number;
+    data: Article[];
+    last_page: number;
+    total: number;
+    per_page: number;
+  };
+}
+
+interface PendudukStats {
+  total_penduduk: number;
+  total_laki_laki: number;
+  total_perempuan: number;
+  total_kk: number;
+}
+
+const StatCard = ({
+  title,
+  value,
+  unit,
+  icon: Icon,
+  loading,
+}: {
+  title: string;
+  value: number;
+  unit: string;
+  icon: React.ElementType;
+  loading: boolean;
+}) => (
+  <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-lg dark:border-gray-700 dark:from-gray-800 dark:to-gray-900">
+    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+    <div className="relative">
+      <div className="mb-3 flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className="rounded-lg p-2"
+            style={{ backgroundColor: "#6CA7E0" }}
+          >
+            <Icon className="h-5 w-5 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+            {title}
+          </h3>
+        </div>
+      </div>
+      <div className="flex items-baseline gap-2">
+        {loading ? (
+          <div className="h-9 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+        ) : (
+          <>
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
+              {value.toLocaleString()}
+            </span>
+            <span className="text-lg font-medium text-gray-600 dark:text-gray-400">
+              {unit}
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      gender: string;
+      jumlah: number;
+      percentage: number;
+    };
+  }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-opacity-80 rounded-md bg-black p-2 text-sm text-white">
+        <div className="font-bold">{data.gender}</div>
+        <div>{data.jumlah.toLocaleString()} Jiwa</div>
+      </div>
+    );
+  }
+  return null;
+};
+
+interface ErrorStateProps {
+  error: string;
+  onRetry: () => void;
+}
+
+const ErrorState = ({ error, onRetry }: ErrorStateProps) => {
+  return (
+    <div className="py-12 text-center">
+      <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
+      <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+        Terjadi Kesalahan
+      </h3>
+      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{error}</p>
+      <button
+        onClick={onRetry}
+        className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+      >
+        <RefreshCw className="h-4 w-4" />
+        Coba Lagi
+      </button>
+    </div>
+  );
+};
 
 export default function HomePage() {
+  // State for population stats
+  const [pendudukStats, setPendudukStats] = useState<PendudukStats | null>(
+    null,
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // Data untuk pie chart penduduk desa
-  const chartDataPenduduk = [
-    { gender: "Laki-laki", jumlah: 2750, fill: "#94a3b8" }, // slate-400
-    { gender: "Perempuan", jumlah: 2500, fill: "#cbd5e1" }, // slate-300
-  ];
+  const chartDataPenduduk = React.useMemo(() => {
+    if (!pendudukStats) return [];
+    const total = pendudukStats.total_penduduk;
+    return [
+      {
+        gender: "Laki-laki",
+        jumlah: pendudukStats.total_laki_laki,
+        fill: "#578EC8",
+        percentage: parseFloat(
+          ((pendudukStats.total_laki_laki / total) * 100).toFixed(1),
+        ),
+      },
+      {
+        gender: "Perempuan",
+        jumlah: pendudukStats.total_perempuan,
+        fill: "#55A84D",
+        percentage: parseFloat(
+          ((pendudukStats.total_perempuan / total) * 100).toFixed(1),
+        ),
+      },
+    ];
+  }, [pendudukStats]);
 
   // Menghitung total penduduk
   const totalPenduduk = React.useMemo(() => {
-    return chartDataPenduduk.reduce((acc, curr) => acc + curr.jumlah, 0);
-  }, [chartDataPenduduk]);
+    return pendudukStats?.total_penduduk || 0;
+  }, [pendudukStats]);
 
   // Jumlah kepala keluarga
-  const jumlahKK = 1250;
+  const jumlahKK = pendudukStats?.total_kk || 0;
+
+  // Fetch population stats
+  const fetchPendudukStats = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await axios.get<PendudukStats>(
+        `${API_CONFIG.baseURL}/api/publik/penduduk/stats`,
+        {
+          headers: API_CONFIG.headers,
+        },
+      );
+      setPendudukStats(response.data);
+    } catch (error) {
+      console.error("Error fetching population stats:", error);
+      setError("Gagal mengambil data statistik penduduk");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchPendudukStats();
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchPendudukStats, 300000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [isPengaduanOpen, setIsPengaduanOpen] = React.useState(false);
+  const [apbDesaData, setApbDesaData] = React.useState<APBDesaData[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [articles, setArticles] = useState<Article[]>([]);
+
+  // Fetch APBDesa data
+  React.useEffect(() => {
+    const fetchAPBDesa = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get<APBDesaResponse>(
+          `${API_CONFIG.baseURL}/api/publik/apbdesa/multi-tahun`,
+          {
+            headers: API_CONFIG.headers,
+          },
+        );
+        const data = response.data.data;
+        setApbDesaData(data);
+      } catch (error) {
+        console.error("Error fetching APBDesa data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAPBDesa();
+  }, []);
+
+  // Get latest year data
+  const latestYearData =
+    apbDesaData.length > 0 ? apbDesaData[apbDesaData.length - 1] : null;
+
+  // Format angka ke format rupiah
+  const formatRupiah = (angka: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+      .format(angka)
+      .replace("IDR", "Rp")
+      .replace(",00", ",00");
+  };
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const response = await axios.get<ArticleResponse>(
+          `${API_CONFIG.baseURL}/api/publik/artikel`,
+          {
+            headers: API_CONFIG.headers,
+          },
+        );
+
+        if (response.data.status === "success") {
+          // Filter for official articles and take first 5
+          const officialArticles = response.data.data.data
+            .filter((article) => article.jenis_artikel === "resmi")
+            .slice(0, 5);
+          setArticles(officialArticles);
+        }
+      } catch (error) {
+        console.error("Error fetching articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, []);
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
@@ -32,42 +320,12 @@ export default function HomePage() {
       <NavbarDesa />
 
       {/* Carousel Section */}
-      <div className="container mx-auto mb-12 px-4">
-        <div className="h-72 overflow-hidden rounded-lg sm:h-96 md:h-[400px] lg:h-[500px] xl:h-[550px] 2xl:h-[600px]">
-          <Carousel slideInterval={5000} className="h-full w-full">
-            <img
-              src="https://flowbite.com/docs/images/carousel/carousel-1.svg"
-              alt="Slide 1"
-              className="h-full w-full object-cover"
-            />
-            <img
-              src="https://flowbite.com/docs/images/carousel/carousel-2.svg"
-              alt="Slide 2"
-              className="h-full w-full object-cover"
-            />
-            <img
-              src="https://flowbite.com/docs/images/carousel/carousel-3.svg"
-              alt="Slide 3"
-              className="h-full w-full object-cover"
-            />
-            <img
-              src="https://flowbite.com/docs/images/carousel/carousel-4.svg"
-              alt="Slide 4"
-              className="h-full w-full object-cover"
-            />
-            <img
-              src="https://flowbite.com/docs/images/carousel/carousel-5.svg"
-              alt="Slide 5"
-              className="h-full w-full object-cover"
-            />
-          </Carousel>
-        </div>
-      </div>
+      <EnhancedCarousel articles={articles} loading={loading} />
 
       {/* Fitur Desa */}
       <section
         id="FiturDesa"
-        className="mb-28 w-full bg-sky-50 py-12 dark:bg-gray-800"
+        className="w-full bg-sky-50 py-12 dark:bg-gray-800"
       >
         <div className="container mx-auto mb-12 px-4">
           <h2 className="mb-10 text-center text-3xl font-bold text-gray-900 dark:text-white">
@@ -76,1911 +334,699 @@ export default function HomePage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Card 1 - Request Official Letters */}
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
-                <svg
-                  className="h-6 w-6 text-green-600 dark:text-green-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
-                Pengajuan Surat Keterangan
-              </h3>
-              <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                Pengajuan Surat Keterangan
-              </p>
-              <p className="mb-6 text-gray-700 dark:text-gray-300">
-                Ajukan permohonan surat keterangan dan sertifikat yang
-                diperlukan untuk keperluan administrasi.
-              </p>
-              <Button
-                onClick={() => (window.location.href = "/pengajuansurat")}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Ajukan Surat
-              </Button>
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="h-12 w-12 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-6 w-3/4 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-1/2 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-10 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
+                    <svg
+                      className="h-6 w-6 text-green-600 dark:text-green-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+                    Pengajuan Surat Keterangan
+                  </h3>
+                  <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                    Pengajuan Surat Keterangan
+                  </p>
+                  <p className="mb-6 text-gray-700 dark:text-gray-300">
+                    Ajukan permohonan surat keterangan dan sertifikat yang
+                    diperlukan untuk keperluan administrasi.
+                  </p>
+                  <Button
+                    onClick={() => (window.location.href = "/pengajuansurat")}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Ajukan Surat
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Card 2 - Track Document Status */}
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
-                <svg
-                  className="h-auto w-6 text-blue-600 dark:text-blue-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
-              </div>
-              <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
-                Lacak Status Dokumen
-              </h3>
-              <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                Memantau Status SK
-              </p>
-              <p className="mb-6 text-gray-700 dark:text-gray-300">
-                Periksa status dokumen dan sertifikat yang Anda ajukan secara
-                real-time.
-              </p>
-
-              <Button
-                onClick={() => (window.location.href = "/cekstatussurat")}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Lacak Surat
-              </Button>
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="h-12 w-12 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-6 w-3/4 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-1/2 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-10 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
+                    <svg
+                      className="h-auto w-6 text-blue-600 dark:text-blue-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+                    Lacak Status Dokumen
+                  </h3>
+                  <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                    Memantau Status SK
+                  </p>
+                  <p className="mb-6 text-gray-700 dark:text-gray-300">
+                    Periksa status dokumen dan sertifikat yang Anda ajukan
+                    secara real-time.
+                  </p>
+                  <Button
+                    onClick={() => (window.location.href = "/cekstatussurat")}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Lacak Surat
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Card 3 - Emergency Information */}
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900">
-                <svg
-                  className="h-6 w-6 text-red-600 dark:text-red-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
-                Pengaduan Warga
-              </h3>
-              <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                Laporkan masalah atau keluhan yang Anda hadapi.
-              </p>
-              <p className="mb-6 text-gray-700 dark:text-gray-300">
-                Berikan informasi yang jelas dan lengkap tentang masalah Anda.
-              </p>
-              <Button
-                onClick={() => {
-                  const event = new CustomEvent(CHATBOT_MINIMIZE_EVENT, {
-                    detail: { minimize: true },
-                  });
-                  window.dispatchEvent(event);
-                  setIsPengaduanOpen(true);
-                }}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Laporkan Pengaduan
-              </Button>
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="h-12 w-12 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-6 w-3/4 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-1/2 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-10 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900">
+                    <svg
+                      className="h-6 w-6 text-red-600 dark:text-red-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+                    Pengaduan Warga
+                  </h3>
+                  <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                    Laporkan masalah atau keluhan yang Anda hadapi.
+                  </p>
+                  <p className="mb-6 text-gray-700 dark:text-gray-300">
+                    Berikan informasi yang jelas dan lengkap tentang masalah
+                    Anda.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      const event = new CustomEvent(CHATBOT_MINIMIZE_EVENT, {
+                        detail: { minimize: true },
+                      });
+                      window.dispatchEvent(event);
+                      setIsPengaduanOpen(true);
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Laporkan Pengaduan
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
       </section>
-
       {/* Infografis Desa */}
-      <h2 className="mb-10 text-center text-3xl font-bold text-gray-900 dark:text-white">
-        Infografis Desa
-      </h2>
-      <div className="container mx-auto mb-12 px-4">
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-0 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex flex-col items-stretch md:flex-row">
-            {/* Bagian Kiri - Pie Chart */}
-            <div className="from-white-50 to-white-100 flex flex-shrink-0 flex-col items-center justify-center bg-gradient-to-br p-8 md:w-1/2 dark:from-gray-800 dark:to-gray-700">
-              <div className="mx-auto aspect-square max-h-[350px]">
-                <PieChart width={350} height={350}>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        return (
-                          <div className="bg-opacity-80 rounded-md bg-black p-2 text-sm text-white">
-                            <div className="font-bold">{data.gender}</div>
-                            <div>{data.jumlah.toLocaleString()} jiwa</div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Pie
-                    data={chartDataPenduduk}
-                    dataKey="jumlah"
-                    nameKey="gender"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={120}
-                    outerRadius={170}
-                    fill="#8884d8"
-                    stroke="#fff"
-                    strokeWidth={2}
-                    isAnimationActive={true}
-                  >
-                    {chartDataPenduduk.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                    <Label
-                      content={({ viewBox }) => {
-                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                          return (
-                            <text
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                            >
-                              <tspan
-                                x={viewBox.cx}
-                                y={viewBox.cy}
-                                className="fill-gray-900 text-3xl font-bold dark:fill-white"
-                              >
-                                {totalPenduduk.toLocaleString()}
-                              </tspan>
-                              <tspan
-                                x={viewBox.cx}
-                                y={(viewBox.cy || 0) + 28}
-                                className="fill-gray-600 text-base dark:fill-gray-400"
-                              >
-                                Total Penduduk
-                              </tspan>
-                            </text>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                  </Pie>
-                </PieChart>
-              </div>
-              <div className="mt-4 w-full max-w-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-4 w-4 rounded-full"
-                      style={{ backgroundColor: "#94a3b8" }}
-                    ></div>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      Laki-laki
-                    </span>
-                  </div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {chartDataPenduduk[0].jumlah.toLocaleString()} jiwa
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-4 w-4 rounded-full"
-                      style={{ backgroundColor: "#cbd5e1" }}
-                    ></div>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      Perempuan
-                    </span>
-                  </div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {chartDataPenduduk[1].jumlah.toLocaleString()} jiwa
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bagian Kanan - Informasi Tambahan */}
-            <div className="flex-1 p-8">
-              <h2 className="mb-2 text-3xl font-bold text-gray-700 dark:text-indigo-400">
-                Data Penduduk
-              </h2>
-              <p className="mb-6 text-gray-600 dark:text-gray-400">
-                Informasi statistik penduduk dan kepala keluarga desa
-              </p>
-
-              <div className="space-y-12">
-                {/* Total Penduduk */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-3xl font-bold text-gray-700 dark:text-gray-300">
-                    Total Penduduk
-                  </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    {totalPenduduk.toLocaleString()}{" "}
-                    <span className="text-3xl font-bold text-gray-700 dark:text-gray-400">
-                      jiwa
-                    </span>
-                  </p>
-                </div>
-
-                {/* Jumlah Kepala Keluarga */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-3xl font-bold text-gray-700 dark:text-gray-300">
-                    Jumlah Kepala Keluarga
-                  </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    {jumlahKK.toLocaleString()}{" "}
-                    <span className="text-3xl font-bold text-gray-700 dark:text-gray-400">
-                      KK
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 text-right">
-                <a href="/infografis/penduduk">
-                  <Button className="justify-end-safe text-xl" variant="link">
-                    LIHAT DATA LEBIH LENGKAP
-                  </Button>
-                </a>
-              </div>
-            </div>
+      <section className="bg-gradient-to-br from-gray-50 via-green-50/30 to-blue-50/30 py-4 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+        <div className="container mx-auto px-4">
+          {/* Header */}
+          <div className="mb-2 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 md:text-3xl dark:text-white">
+              Infografis Desa
+            </h2>
+            <p className="mx-auto max-w-2xl text-sm text-gray-600 dark:text-gray-400">
+              Visualisasi data statistik penduduk dan demografi desa terkini
+            </p>
           </div>
+
+          {error ? (
+            <ErrorState error={error} onRetry={fetchPendudukStats} />
+          ) : isLoading ? (
+            <div className="space-y-6">
+              <div className="h-[400px] w-full animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="h-40 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-40 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-40 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex flex-col lg:flex-row">
+                {/* Chart Section */}
+                <div className="bg-gradient-to-br from-green-50 to-blue-100 p-8 lg:w-1/2 dark:from-gray-800 dark:to-gray-700">
+                  <div className="flex flex-col items-center">
+                    <div className="aspect-square w-full max-w-md">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Tooltip content={<CustomTooltip />} />
+                          <Pie
+                            data={chartDataPenduduk}
+                            dataKey="jumlah"
+                            nameKey="gender"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={80}
+                            outerRadius={140}
+                            paddingAngle={2}
+                            animationBegin={0}
+                            animationDuration={1000}
+                          >
+                            {chartDataPenduduk.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={entry.fill}
+                                stroke="#fff"
+                                strokeWidth={3}
+                              />
+                            ))}
+                            <Label
+                              content={({ viewBox }) => {
+                                if (
+                                  viewBox &&
+                                  "cx" in viewBox &&
+                                  "cy" in viewBox
+                                ) {
+                                  return (
+                                    <text
+                                      x={viewBox.cx}
+                                      y={viewBox.cy}
+                                      textAnchor="middle"
+                                      dominantBaseline="middle"
+                                    >
+                                      <tspan
+                                        x={viewBox.cx}
+                                        y={viewBox.cy}
+                                        className="fill-gray-900 text-3xl font-bold dark:fill-white"
+                                      >
+                                        {totalPenduduk.toLocaleString()}
+                                      </tspan>
+                                      <tspan
+                                        x={viewBox.cx}
+                                        y={(viewBox.cy || 0) + 24}
+                                        className="fill-gray-600 text-sm font-medium dark:fill-gray-400"
+                                      >
+                                        Total Penduduk
+                                      </tspan>
+                                    </text>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="mt-6 w-full max-w-sm space-y-3">
+                      {chartDataPenduduk.map((entry, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-lg bg-white/70 p-3 backdrop-blur-sm dark:bg-gray-800/70"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="h-4 w-4 rounded-full border-2 border-white shadow-sm"
+                              style={{ backgroundColor: entry.fill }}
+                            />
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              {entry.gender}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-gray-900 dark:text-white">
+                              {entry.jumlah.toLocaleString()}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {entry.percentage}%
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Section */}
+                <div className="p-4 lg:w-1/2">
+                  <div className="mb-4">
+                    <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+                      Data Statistik Penduduk
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <StatCard
+                      title="Total Penduduk"
+                      value={totalPenduduk}
+                      unit="Jiwa"
+                      icon={Users}
+                      loading={isLoading}
+                    />
+
+                    <StatCard
+                      title="Jumlah Kepala Keluarga"
+                      value={jumlahKK}
+                      unit="KK"
+                      icon={Home}
+                      loading={isLoading}
+                    />
+
+                    <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
+                      <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Info className="h-4 w-4" />
+                        <span>
+                          Rasio jenis kelamin:{" "}
+                          {(() => {
+                            const maleCount = chartDataPenduduk[0]?.jumlah || 0;
+                            const femaleCount =
+                              chartDataPenduduk[1]?.jumlah || 0;
+                            if (maleCount === 0 && femaleCount === 0) {
+                              return "Belum ada data";
+                            } else if (femaleCount === 0) {
+                              return "Laki-laki saja";
+                            } else if (maleCount === 0) {
+                              return "Perempuan saja";
+                            } else if (maleCount >= femaleCount) {
+                              const rawRatio = maleCount / femaleCount;
+                              const formattedRatio =
+                                rawRatio % 1 === 0
+                                  ? rawRatio.toString()
+                                  : rawRatio.toFixed(2);
+                              return `${formattedRatio} : 1 (L:P)`;
+                            } else {
+                              const rawRatio = femaleCount / maleCount;
+                              const formattedRatio =
+                                rawRatio % 1 === 0
+                                  ? rawRatio.toString()
+                                  : rawRatio.toFixed(2);
+                              return `1 : ${formattedRatio} (L:P)`;
+                            }
+                          })()}
+                        </span>
+                      </div>
+
+                      <button
+                        className="w-full transform rounded-lg px-6 py-3 font-semibold text-white transition-all duration-300 hover:scale-[1.02] focus:ring-2 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-gray-800"
+                        style={{
+                          background:
+                            "linear-gradient(to right, #578EC8, #6CA7E0)",
+                          boxShadow: "0 4px 12px rgba(87, 142, 200, 0.3)",
+                        }}
+                        onMouseEnter={(
+                          e: React.MouseEvent<HTMLButtonElement>,
+                        ) => {
+                          const target = e.target as HTMLButtonElement;
+                          target.style.background =
+                            "linear-gradient(to right, #49904D, #55A84D)";
+                        }}
+                        onMouseLeave={(
+                          e: React.MouseEvent<HTMLButtonElement>,
+                        ) => {
+                          const target = e.target as HTMLButtonElement;
+                          target.style.background =
+                            "linear-gradient(to right, #578EC8, #6CA7E0)";
+                        }}
+                        onClick={() =>
+                          (window.location.href = "/infografis/penduduk")
+                        }
+                      >
+                        LIHAT DATA LEBIH LENGKAP
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Additional Info Cards */}
+          {!isLoading && !error ? (
+            <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <div
+                  className="mb-2 text-2xl font-bold"
+                  style={{ color: "#578EC1" }}
+                >
+                  {totalPenduduk && jumlahKK
+                    ? (totalPenduduk / jumlahKK).toFixed(1)
+                    : "N/A"}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Rata-rata Anggota per KK
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <div
+                  className="mb-2 text-2xl font-bold"
+                  style={{ color: "#578EC8" }}
+                >
+                  {chartDataPenduduk[0]?.percentage || 0}%
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Proporsi Laki-laki
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <div
+                  className="mb-2 text-2xl font-bold"
+                  style={{ color: "#55A84D" }}
+                >
+                  {chartDataPenduduk[1]?.percentage || 0}%
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Proporsi Perempuan
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <div className="mx-auto mb-2 h-8 w-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                <div className="mx-auto h-4 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <div className="mx-auto mb-2 h-8 w-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                <div className="mx-auto h-4 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <div className="mx-auto mb-2 h-8 w-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                <div className="mx-auto h-4 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
       {/* APB Desa */}
       <div className="container mx-auto mb-12 px-4">
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-0 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
           <div className="flex flex-col items-stretch md:flex-row">
-            {/* Bagian Kiri - SVG */}
-            <div className="from-white-100 to-white-200 flex flex-shrink-0 items-center justify-center bg-gradient-to-br p-8 md:w-1/2 dark:from-blue-900 dark:to-blue-800">
-              <svg
-                className="h-auto w-full max-w-xl"
-                aria-hidden="true"
-                viewBox="0 0 806 593"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M39 69H707L707 587C707 590.314 704.314 593 701 593H45.9886C42.6793 593 39.9949 590.321 39.9886 587.011L39 69Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M39 69H707L707 587C707 590.314 704.314 593 701 593H45.9886C42.6793 593 39.9949 590.321 39.9886 587.011L39 69Z"
-                  fill="url(#paint0_linear_383_363)"
-                />
-                <path
-                  d="M39 69H707L707 587C707 590.314 704.314 593 701 593H45.9886C42.6793 593 39.9949 590.321 39.9886 587.011L39 69Z"
-                  fill="url(#paint1_radial_383_363)"
-                />
-                <path
-                  d="M40 56.0003C39.9998 52.6865 42.6862 50 46 50L702.001 50C705.314 50 708.001 52.6863 708.001 56V69H40.0006L40 56.0003Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M40 69H708V70H40V69Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M59.3203 59.0166C59.3203 61.1508 57.5902 62.8809 55.4561 62.8809C53.3219 62.8809 51.5918 61.1508 51.5918 59.0166C51.5918 56.8824 53.3219 55.1523 55.4561 55.1523C57.5902 55.1523 59.3203 56.8824 59.3203 59.0166Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M73.4903 59.0166C73.4903 61.1508 71.7602 62.8809 69.626 62.8809C67.4918 62.8809 65.7617 61.1508 65.7617 59.0166C65.7617 56.8824 67.4918 55.1523 69.626 55.1523C71.7602 55.1523 73.4903 56.8824 73.4903 59.0166Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M87.6582 59.0166C87.6582 61.1508 85.9281 62.8809 83.794 62.8809C81.6598 62.8809 79.9297 61.1508 79.9297 59.0166C79.9297 56.8824 81.6598 55.1523 83.794 55.1523C85.9281 55.1523 87.6582 56.8824 87.6582 59.0166Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint2_linear_383_363)"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint3_linear_383_363)"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint4_linear_383_363)"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint5_linear_383_363)"
-                />
-                <path d="M540 501H574V535H540V501Z" fill="#c8d8fa" />
-                <path
-                  d="M540 501H574V535H540V501Z"
-                  fill="url(#paint6_linear_383_363)"
-                />
-                <path
-                  d="M455.714 422.541C455.356 421.265 456.315 420 457.64 420H612.351C613.247 420 614.034 420.596 614.277 421.459L639.286 510.459C639.645 511.735 638.686 513 637.361 513H482.65C481.753 513 480.967 512.404 480.724 511.541L455.714 422.541Z"
-                  fill="white"
-                />
-                <path
-                  d="M501.71 445.538C501.353 444.263 502.312 443 503.636 443H579.345C580.242 443 581.03 443.598 581.271 444.462L593.291 487.462C593.647 488.737 592.689 490 591.365 490H515.655C514.758 490 513.971 489.402 513.729 488.538L501.71 445.538Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M478.324 503L477.762 501H636.628L637.19 503H478.324Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M428 535H651V547H434C430.686 547 428 544.314 428 541V535Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M614 525.5C620 525.1 626.167 526.667 628.5 527.5L623.5 535H600C600 530.5 606.5 526 614 525.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M630.27 525.349L677.999 547H629.499L616.383 539.893C615.571 539.453 615.153 538.508 615.491 537.648C617.955 531.375 624.791 527.06 628.72 525.326C629.214 525.108 629.777 525.126 630.27 525.349Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M630.27 525.349L677.999 547H629.499L616.383 539.893C615.571 539.453 615.153 538.508 615.491 537.648C617.955 531.375 624.791 527.06 628.72 525.326C629.214 525.108 629.777 525.126 630.27 525.349Z"
-                  fill="url(#paint7_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  d="M558.5 525.5C564.5 525.1 570.667 526.667 573 527.5L568 535H544.5C544.5 530.5 551 526 558.5 525.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M574.27 525.349L621.999 547H573.499L560.383 539.893C559.571 539.453 559.153 538.508 559.491 537.648C561.955 531.375 568.791 527.06 572.72 525.326C573.214 525.108 573.777 525.126 574.27 525.349Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M574.27 525.349L621.999 547H573.499L560.383 539.893C559.571 539.453 559.153 538.508 559.491 537.648C561.955 531.375 568.791 527.06 572.72 525.326C573.214 525.108 573.777 525.126 574.27 525.349Z"
-                  fill="url(#paint8_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  d="M726.5 388C704.1 384 694.833 399.667 693 408L707.5 444.5L724.5 451.5C725.5 447 734.5 434 741.5 426.5C748.5 419 754.5 393 726.5 388Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M773 376.5C773 388.926 762.926 399 750.5 399C738.074 399 728 388.926 728 376.5C728 364.074 738.074 354 750.5 354C762.926 354 773 364.074 773 376.5Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M706.002 472.5L698.502 473.5L699.5 479L721.5 487.5L741 476L738.5 471.5L727.5 469.5L724.5 451C720.667 447.666 713.9 442 713.5 438C713.225 435.25 715.14 431.082 716.905 427.934C718.018 425.948 717.636 423.408 715.858 421.986C713.639 420.21 710.391 421.03 708.735 423.34C707.761 424.7 706.755 425.688 706.002 425.5C704.004 425 704 421 702.5 415.5C701.3 411.1 695.668 408.666 693.002 408C691.003 418.5 688.003 435 692.002 446C694.206 452.061 699.669 452 703.002 451L706.002 472.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M698.504 473.5L706.004 472.5L703.004 451L703.002 451C707.32 449.201 711.638 444.812 714.465 440.256C717.114 444.118 721.791 448.642 724.502 451L726.833 465.376L719.5 480L701.346 479.712L699.502 479L698.504 473.5Z"
-                  fill="url(#paint9_linear_383_363)"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M689.828 428.014C690.22 428.067 690.495 428.429 690.442 428.821L689.112 438.6C689.089 438.775 689.232 438.927 689.407 438.914L693.624 438.603C694.019 438.573 694.363 438.87 694.392 439.265C694.421 439.66 694.125 440.004 693.73 440.033L689.513 440.345C688.428 440.425 687.544 439.486 687.691 438.407L689.02 428.628C689.074 428.235 689.435 427.961 689.828 428.014Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M692.435 447.029C692.531 446.996 692.626 446.96 692.722 446.923C693.711 446.539 694.674 445.972 695.963 445.181C696.301 444.973 696.407 444.532 696.199 444.194C695.992 443.856 695.551 443.751 695.213 443.958C693.913 444.756 693.054 445.255 692.202 445.586C692.101 445.625 691.998 445.663 691.895 445.698C691.93 445.799 691.966 445.9 692.003 446C692.135 446.365 692.28 446.707 692.435 447.029Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M713.162 429.146C713.435 428.128 713.238 427.183 712.854 426.233C712.705 425.866 712.882 425.448 713.249 425.299C713.616 425.15 714.035 425.327 714.183 425.695C714.628 426.791 714.934 428.077 714.548 429.517C714.164 430.95 713.129 432.415 711.146 433.951C710.833 434.194 710.382 434.137 710.14 433.824C709.897 433.51 709.954 433.06 710.267 432.817C712.103 431.395 712.887 430.172 713.162 429.146Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M696.02 433.737C696.588 432.52 696.975 430.742 696.97 428.703C696.964 426.664 696.567 424.887 695.992 423.674C695.365 422.35 694.781 422.152 694.61 422.152C694.439 422.153 693.856 422.354 693.236 423.681C692.668 424.898 692.281 426.676 692.286 428.716C692.292 430.755 692.689 432.531 693.264 433.745C693.891 435.068 694.475 435.267 694.646 435.266C694.817 435.266 695.4 435.064 696.02 433.737ZM694.65 436.671C696.719 436.666 698.387 433.096 698.375 428.699C698.363 424.302 696.676 420.741 694.606 420.747C692.537 420.753 690.869 424.322 690.881 428.719C690.893 433.117 692.58 436.677 694.65 436.671Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M688.118 432.195C688.686 430.978 689.073 429.2 689.067 427.161C689.062 425.122 688.665 423.345 688.09 422.132C687.463 420.808 686.878 420.61 686.708 420.61C686.537 420.611 685.954 420.812 685.334 422.139C684.765 423.356 684.378 425.134 684.384 427.174C684.389 429.213 684.786 430.989 685.361 432.203C685.989 433.526 686.573 433.725 686.744 433.724C686.914 433.724 687.497 433.522 688.118 432.195ZM686.747 435.129C688.817 435.124 690.485 431.554 690.473 427.157C690.461 422.76 688.773 419.199 686.704 419.205C684.635 419.211 682.967 422.78 682.979 427.177C682.991 431.575 684.678 435.135 686.747 435.129Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M672.5 487.5C679.857 478.594 691.869 474.28 697.467 473.106C697.799 473.036 698.138 473.148 698.379 473.386C701.851 476.821 710.718 483 721.5 483C732.056 483 736.927 475.597 738.289 471.258C738.428 470.817 738.823 470.496 739.284 470.531C745.527 471.009 757.146 476.959 760.5 487.5C763.3 496.3 764.333 530.833 764.5 547H645C651 531 664.9 496.7 672.5 487.5Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M672.5 487.5C679.857 478.594 691.869 474.28 697.467 473.106C697.799 473.036 698.138 473.148 698.379 473.386C701.851 476.821 710.718 483 721.5 483C732.056 483 736.927 475.597 738.289 471.258C738.428 470.817 738.823 470.496 739.284 470.531C745.527 471.009 757.146 476.959 760.5 487.5C763.3 496.3 764.333 530.833 764.5 547H645C651 531 664.9 496.7 672.5 487.5Z"
-                  fill="url(#paint10_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M688.445 513.26C688.964 513.45 689.231 514.024 689.041 514.543L677.541 546.043C677.352 546.561 676.778 546.828 676.259 546.639C675.74 546.45 675.473 545.876 675.662 545.357L687.162 513.857C687.352 513.338 687.926 513.071 688.445 513.26Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M788 547H694C697.5 533.5 718 486 756.5 486C787.3 486 790.333 526.667 788 547Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M670.944 331C672.069 331 672.98 331.912 672.98 333.036V372.744C672.98 373.869 672.069 374.781 670.944 374.781H658.217V380.98C658.217 381.748 657.401 382.239 656.723 381.88L643.312 374.781H564.038C562.913 374.781 562.001 373.869 562.001 372.744V333.036C562.001 331.912 562.913 331 564.038 331H670.944Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M571 346C571 345.448 571.448 345 572 345H650.5C651.052 345 651.5 345.448 651.5 346C651.5 346.552 651.052 347 650.5 347H572C571.448 347 571 346.552 571 346Z"
-                  fill="#2563eb"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M571 354C571 353.448 571.448 353 572 353H623C623.552 353 624 353.448 624 354C624 354.552 623.552 355 623 355H572C571.448 355 571 354.552 571 354Z"
-                  fill="#2563eb"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="url(#paint11_linear_383_363)"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="url(#paint12_linear_383_363)"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="url(#paint13_linear_383_363)"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M87.7904 459.999C85.8739 451.07 82.1545 437.132 77.6116 428.917C76.7569 427.371 74.719 427.938 74.5786 429.698C73.9012 438.196 73.2808 451.158 74.1852 459.999H87.7904ZM73.4995 459.999C68.879 448.914 58.4524 429.254 45.1286 418.478C43.7152 417.335 41.8411 418.66 42.318 420.414C45.6638 432.72 51.1453 451.6 54.7965 459.999H73.4995ZM53.7428 459.999H36.806C28.7482 445.573 19.6718 428.085 23.5023 430C27.9247 432.211 44.2873 449.588 53.7428 459.999Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M151.5 270C163.5 274.8 158.833 284.667 155 289L146.5 317L134 330.5L124 329.5C117.833 322.167 105.1 304.8 103.5 294C101.9 283.2 109.167 281.167 113 281.5C114 266.5 136.5 264 151.5 270Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M146 329.5L150 352C140 357.2 125.833 354.833 120 353C122.8 347.8 123.833 335.167 124 329.5C135 326.5 139.5 314.5 138.5 311C138.069 309.492 136.168 307.433 134.22 305.541C131.933 303.321 132.032 299.789 134.47 297.736C137.108 295.514 140.958 296.269 142.735 299.225C143.965 301.271 145.205 303 146 303C148 303 147.5 299 147 294C146.5 289 148.5 283 152.5 283C156.5 283 159 298.5 158 316.5C157.2 330.9 149.667 331.167 146 329.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M135.464 320.88C138.862 325.424 143.532 328.391 145.996 329.5L145.996 329.501L149.996 352C140.108 357.142 126.146 354.886 120.195 353.062L120.021 352.953C122.803 347.725 123.83 335.15 123.996 329.5C129.284 328.058 133.069 324.537 135.464 320.88Z"
-                  fill="url(#paint14_linear_383_363)"
-                />
-                <path
-                  d="M153.011 300.571C152.806 301.289 153.223 302.037 153.941 302.242C154.659 302.446 155.408 302.03 155.612 301.311C155.817 300.593 155.4 299.845 154.682 299.64C153.963 299.436 153.215 299.852 153.011 300.571Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M157.396 294.859C157.466 295.386 157.532 295.928 157.594 296.482C156.992 296.049 156.339 295.752 155.557 295.715C154.595 295.668 153.323 296.007 151.587 297.199C151.291 297.402 150.886 297.327 150.683 297.031C150.479 296.734 150.555 296.33 150.851 296.126C152.726 294.84 154.277 294.351 155.62 294.416C156.286 294.448 156.873 294.615 157.396 294.859Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M157.747 302.497C157.399 302.589 157.192 302.944 157.284 303.292L159.566 311.943C159.607 312.097 159.495 312.25 159.336 312.258L155.507 312.446C155.148 312.463 154.872 312.768 154.89 313.127C154.907 313.486 155.212 313.762 155.571 313.745L159.399 313.557C160.385 313.508 161.076 312.565 160.824 311.611L158.541 302.96C158.45 302.613 158.094 302.405 157.747 302.497Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M157.974 316.852C157.823 319.206 157.489 321.172 157.02 322.807C151.689 322.628 149.122 319.719 148.16 315.77L157.974 316.852Z"
-                  fill="white"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M136.74 303.299C136.467 302.382 136.622 301.521 136.947 300.651C137.073 300.315 136.902 299.94 136.565 299.814C136.229 299.689 135.854 299.86 135.729 300.196C135.353 301.201 135.108 302.374 135.494 303.67C135.877 304.958 136.853 306.26 138.687 307.603C138.977 307.815 139.384 307.752 139.596 307.462C139.808 307.172 139.745 306.765 139.456 306.553C137.757 305.31 137.015 304.222 136.74 303.299Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M219.521 341.196C218.681 344.401 220.686 347 224 347H380.306C383.619 347 386.986 344.401 387.826 341.196L409.673 257.804C410.512 254.599 408.507 252 405.193 252H248.887C245.574 252 242.207 254.599 241.367 257.804L219.521 341.196Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M269.863 283.902C269.443 285.505 267.759 286.804 266.103 286.804C264.446 286.804 263.443 285.505 263.863 283.902C264.283 282.299 265.966 281 267.623 281C269.28 281 270.283 282.299 269.863 283.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M273.863 283.902C274.283 282.299 275.966 281 277.623 281H372.623C374.28 281 375.283 282.299 374.863 283.902C374.443 285.505 372.759 286.804 371.103 286.804H276.103C274.446 286.804 273.443 285.505 273.863 283.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M265.863 299.902C265.443 301.505 263.759 302.804 262.103 302.804C260.446 302.804 259.443 301.505 259.863 299.902C260.283 298.299 261.966 297 263.623 297C265.28 297 266.283 298.299 265.863 299.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M269.863 299.902C270.283 298.299 271.966 297 273.623 297H368.623C370.28 297 371.283 298.299 370.863 299.902C370.443 301.505 368.759 302.804 367.103 302.804H272.103C270.446 302.804 269.443 301.505 269.863 299.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M261.761 315.902C261.341 317.505 259.658 318.804 258.001 318.804C256.344 318.804 255.341 317.505 255.761 315.902C256.181 314.299 257.865 313 259.521 313C261.178 313 262.181 314.299 261.761 315.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M265.761 315.902C266.181 314.299 267.865 313 269.521 313H364.521C366.178 313 367.181 314.299 366.761 315.902C366.341 317.505 364.658 318.804 363.001 318.804H268.001C266.344 318.804 265.341 317.505 265.761 315.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M289 336C283.8 341.6 273.833 359.333 269.5 367.5L284 382L295.5 345.5C296.667 344.167 300.9 340.7 308.5 337.5C318 333.5 315.5 327.5 311 326.5C306.5 325.5 295.5 329 289 336Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M289 336C283.8 341.6 273.833 359.333 269.5 367.5L284 382L295.5 345.5C296.667 344.167 300.9 340.7 308.5 337.5C318 333.5 315.5 327.5 311 326.5C306.5 325.5 295.5 329 289 336Z"
-                  fill="url(#paint15_linear_383_363)"
-                />
-                <path
-                  d="M243.999 466C233.199 466 207.832 443 196.499 431.5V460H98.999C96.5001 420.5 96.9985 383.5 109.499 356.5C112.209 350.647 117.832 350.167 119.999 350.5C133.999 355.7 146.166 352 150.499 349.5C154.332 350.333 165.399 353.3 178.999 358.5C192.599 363.7 225.666 396 240.499 411.5L267.465 366.236C268.034 365.28 269.274 364.973 270.224 365.552L287.613 376.155C288.421 376.647 288.781 377.617 288.463 378.508C277.712 408.628 254.619 466 243.999 466Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M243.999 466C233.199 466 207.832 443 196.499 431.5V460H98.999C96.5001 420.5 96.9985 383.5 109.499 356.5C112.209 350.647 117.832 350.167 119.999 350.5C133.999 355.7 146.166 352 150.499 349.5C154.332 350.333 165.399 353.3 178.999 358.5C192.599 363.7 225.666 396 240.499 411.5L267.465 366.236C268.034 365.28 269.274 364.973 270.224 365.552L287.613 376.155C288.421 376.647 288.781 377.617 288.463 378.508C277.712 408.628 254.619 466 243.999 466Z"
-                  fill="url(#paint16_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M196.501 431.501C196.501 431.501 196.5 431.5 196.5 431.5V460H158.66L166.501 402.5L196.501 431.5L196.501 431.501Z"
-                  fill="url(#paint17_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M164.036 191C162.912 191 162 191.912 162 193.036V232.744C162 233.869 162.912 234.781 164.036 234.781H176.763V240.98C176.763 241.748 177.58 242.239 178.258 241.88L191.668 234.781H270.943C272.068 234.781 272.979 233.869 272.979 232.744V193.036C272.979 191.912 272.068 191 270.943 191H164.036Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M173 206C173 205.448 173.448 205 174 205H252.5C253.052 205 253.5 205.448 253.5 206C253.5 206.552 253.052 207 252.5 207H174C173.448 207 173 206.552 173 206Z"
-                  fill="white"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="url(#paint18_linear_383_363)"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="url(#paint19_linear_383_363)"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="url(#paint20_linear_383_363)"
-                />
-                <path
-                  d="M318.521 25.8041C317.681 22.5986 319.686 20 323 20H434.946C438.259 20 441.626 22.5986 442.466 25.8041L469.835 130.279C470.675 133.484 468.67 136.083 465.356 136.083H353.41C350.097 136.083 346.73 133.484 345.89 130.279L318.521 25.8041Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M425.582 78.1186C430.024 95.0762 419.415 108.823 401.885 108.823C384.355 108.823 366.543 95.0762 362.1 78.1186C357.658 61.1609 368.267 47.4141 385.797 47.4141C403.327 47.4141 421.139 61.1609 425.582 78.1186Z"
-                  fill="white"
-                />
-                <path
-                  d="M393.605 76.561C396.882 76.561 398.865 73.9909 398.035 70.8205C397.204 67.6501 393.874 65.08 390.597 65.08C387.319 65.08 385.336 67.6501 386.166 70.8205C386.997 73.9909 390.327 76.561 393.605 76.561Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M391.503 81.4815H398.285C400.083 81.4815 401.989 82.1727 403.584 83.403C405.178 84.6334 406.329 86.3021 406.785 88.042L407.645 91.3223H387.299L386.439 88.042C385.983 86.3021 386.261 84.6334 387.21 83.403C388.16 82.1727 389.704 81.4815 391.503 81.4815Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M452.876 25.8041C452.036 22.5986 454.042 20 457.355 20H569.301C572.615 20 575.982 22.5986 576.822 25.8041L604.191 130.279C605.031 133.484 603.025 136.083 599.711 136.083H487.766C484.452 136.083 481.085 133.484 480.245 130.279L452.876 25.8041Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M490.262 79H510.203L518.848 112H498.907L490.262 79Z"
-                  fill="white"
-                />
-                <path
-                  d="M514.012 63H533.953L546.79 112H526.848L514.012 63Z"
-                  fill="white"
-                />
-                <path
-                  d="M537.238 45H557.179L574.732 112H554.79L537.238 45Z"
-                  fill="white"
-                />
-                <path
-                  d="M587.231 25.8041C586.392 22.5986 588.397 20 591.711 20H703.656C706.97 20 710.337 22.5986 711.177 25.8041L738.546 130.279C739.386 133.484 737.381 136.083 734.067 136.083H622.121C618.808 136.083 615.441 133.484 614.601 130.279L587.231 25.8041Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M671.998 109C645.5 118.5 653.332 83.0001 660.499 64.5001L667.999 64.0001L687.499 75.5001L708.499 131L678.999 133L671.998 109Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M678.535 131.41L672.001 109.01L672 109C674.833 107.667 681.1 104.2 683.5 101C685.9 97.8001 696.5 119.667 701.5 131L678.535 131.41Z"
-                  fill="url(#paint21_linear_383_363)"
-                />
-                <path
-                  d="M661.408 85.2997C661.344 86.1008 660.643 86.6989 659.842 86.6356C659.041 86.5723 658.443 85.8715 658.506 85.0703C658.57 84.2692 659.271 83.6711 660.072 83.7344C660.873 83.7977 661.471 84.4985 661.408 85.2997Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M660.192 79.6726C659.165 79.6043 658.298 79.9714 657.463 80.5191C657.139 80.7308 656.706 80.6405 656.494 80.3173C656.282 79.9941 656.372 79.5604 656.696 79.3486C657.661 78.716 658.833 78.1797 660.285 78.2764C661.728 78.3725 663.326 79.0865 665.171 80.6927C665.462 80.9464 665.493 81.3884 665.239 81.6798C664.985 81.9713 664.543 82.0019 664.252 81.7482C662.544 80.2609 661.226 79.7415 660.192 79.6726Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M654.75 83.5295C655.122 83.6358 655.337 84.0232 655.231 84.3947L652.582 93.6496C652.535 93.8148 652.652 93.9817 652.823 93.9937L656.937 94.2812C657.323 94.3081 657.614 94.6424 657.587 95.0279C657.56 95.4134 657.225 95.7041 656.84 95.6771L652.726 95.3896C651.667 95.3156 650.945 94.2852 651.237 93.2646L653.885 84.0097C653.992 83.6382 654.379 83.4232 654.75 83.5295Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M654.366 102.495C654.244 102.033 654.138 101.556 654.047 101.066C654.632 101.125 655.14 101.124 655.654 101.071C656.541 100.979 657.477 100.731 658.906 100.316C659.277 100.208 659.665 100.421 659.773 100.792C659.881 101.163 659.668 101.552 659.297 101.659C657.88 102.071 656.828 102.356 655.798 102.463C655.321 102.512 654.856 102.523 654.366 102.495Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M679.581 89.0006C679.98 88.0528 679.916 87.1136 679.672 86.1448C679.577 85.7702 679.804 85.3897 680.179 85.2951C680.553 85.2004 680.934 85.4274 681.028 85.802C681.311 86.921 681.435 88.2043 680.87 89.5444C680.308 90.8774 679.111 92.1543 676.991 93.3739C676.656 93.5665 676.228 93.4511 676.035 93.1161C675.843 92.7812 675.958 92.3534 676.293 92.1608C678.257 91.0316 679.178 89.9554 679.581 89.0006Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M669.002 79.0003C669.002 71.0003 663.335 66.0003 660.502 64.5003C679.002 33.5002 711.502 57.5001 711.502 75.0003C711.502 91.7708 720.502 102.5 735.002 110C749.502 117.5 751.002 128 754.502 138C758.002 148 768.002 150 775.502 159.5C781.502 167.1 780.335 180 779.002 185.5H725.002C724.335 179.334 722.502 164.4 720.502 154C718.002 141 704.002 134 692.502 123C685.332 116.142 682.353 106.613 681.388 100.137C680.932 97.0842 681.478 94.0032 682.414 91.0619L683.687 87.061C684.188 85.4881 683.769 83.7673 682.602 82.6002C680.702 80.7002 677.553 80.9202 676.037 83.1384C675.46 83.9824 674.916 84.8107 674.502 85.5003C673.002 88.0003 669.002 89.0003 669.002 79.0003Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M570.5 112.5L616.5 178.5C621.667 187.167 631.3 205 628.5 207C625 209.5 614 211.5 603.5 203C593 194.5 563.5 122 555.5 112.5C547.5 103 537 102 535 96.5C533.4 92.1 538.667 89 541.5 88L532.867 79.8206C532.392 79.371 532.382 78.6186 532.844 78.1564C533.228 77.7726 533.824 77.7033 534.279 77.9987C549.237 87.7026 564.603 104.964 570.5 112.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M570.5 112.5L616.5 178.5C621.667 187.167 631.3 205 628.5 207C625 209.5 614 211.5 603.5 203C593 194.5 563.5 122 555.5 112.5C547.5 103 537 102 535 96.5C533.4 92.1 538.667 89 541.5 88L532.867 79.8206C532.392 79.371 532.382 78.6186 532.844 78.1564C533.228 77.7726 533.824 77.7033 534.279 77.9987C549.237 87.7026 564.603 104.964 570.5 112.5Z"
-                  fill="url(#paint22_linear_383_363)"
-                />
-                <path
-                  d="M627.339 220.414L616.5 178C628.833 167 655.5 143 663.5 135C673.5 125 709.5 118.5 726 150.5C739.2 176.1 740.833 225.167 740 246.5H649L641.5 215L630.296 221.639C629.149 222.319 627.669 221.706 627.339 220.414Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M627.339 220.414L616.5 178C628.833 167 655.5 143 663.5 135C673.5 125 709.5 118.5 726 150.5C739.2 176.1 740.833 225.167 740 246.5H649L641.5 215L630.296 221.639C629.149 222.319 627.669 221.706 627.339 220.414Z"
-                  fill="url(#paint23_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M716.317 137.53C713.473 140.877 709.234 143 704.499 143C695.938 143 688.999 136.06 688.999 127.5C688.999 127.272 689.004 127.046 689.013 126.821C698.177 126.984 708.097 129.924 716.317 137.53ZM729.569 158.693C728.563 160.748 727.999 163.058 727.999 165.5C727.999 170.92 730.781 175.691 734.995 178.461C733.569 171.404 731.785 164.675 729.569 158.693ZM737.045 190.404C731.706 192.852 727.999 198.243 727.999 204.5C727.999 211.772 733.006 217.874 739.761 219.546C739.314 210.344 738.47 200.284 737.045 190.404ZM740.081 228.378C733.165 229.935 727.999 236.114 727.999 243.5C727.999 244.526 728.099 245.53 728.289 246.5H739.999C740.187 241.679 740.249 235.441 740.081 228.378ZM719.709 246.5C719.899 245.53 719.999 244.526 719.999 243.5C719.999 234.94 713.059 228 704.499 228C695.938 228 688.999 234.94 688.999 243.5C688.999 244.526 689.099 245.53 689.289 246.5H719.709ZM680.709 246.5C680.899 245.53 680.999 244.526 680.999 243.5C680.999 234.94 674.059 228 665.499 228C656.938 228 649.999 234.94 649.999 243.5C649.999 244.526 650.099 245.53 650.289 246.5H680.709ZM627.228 219.983C635.45 219.603 641.999 212.816 641.999 204.5C641.999 195.94 635.059 189 626.499 189C624.064 189 621.76 189.562 619.709 190.562L627.228 219.983ZM616.883 177.658C619.525 179.75 622.866 181 626.499 181C635.059 181 641.999 174.06 641.999 165.5C641.999 162.453 641.119 159.61 639.6 157.214C631.201 164.838 622.605 172.552 616.883 177.658ZM657.487 140.772C659.825 142.186 662.567 143 665.499 143C674.059 143 680.999 136.06 680.999 127.5C680.999 127.459 680.999 127.419 680.998 127.378C673.344 128.586 666.909 131.59 663.499 135C662.045 136.454 659.975 138.436 657.487 140.772ZM704.499 181C713.059 181 719.999 174.06 719.999 165.5C719.999 156.94 713.059 150 704.499 150C695.938 150 688.999 156.94 688.999 165.5C688.999 174.06 695.938 181 704.499 181ZM719.999 204.5C719.999 213.06 713.059 220 704.499 220C695.938 220 688.999 213.06 688.999 204.5C688.999 195.94 695.938 189 704.499 189C713.059 189 719.999 195.94 719.999 204.5ZM680.999 204.5C680.999 213.06 674.059 220 665.499 220C656.938 220 649.999 213.06 649.999 204.5C649.999 195.94 656.938 189 665.499 189C674.059 189 680.999 195.94 680.999 204.5ZM665.499 181C674.059 181 680.999 174.06 680.999 165.5C680.999 156.94 674.059 150 665.499 150C656.938 150 649.999 156.94 649.999 165.5C649.999 174.06 656.938 181 665.499 181Z"
-                  fill="#c8d8fa"
-                  fill-opacity="0.2"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M694.377 246.5H649L641.508 215.034L677 193.5L694.377 246.5Z"
-                  fill="url(#paint24_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <defs>
-                  <linearGradient
-                    id="paint0_linear_383_363"
-                    x1="373.992"
-                    y1="299"
-                    x2="373.992"
-                    y2="800.5"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <radialGradient
-                    id="paint1_radial_383_363"
-                    cx="0"
-                    cy="0"
-                    r="1"
-                    gradientUnits="userSpaceOnUse"
-                    gradientTransform="translate(400 283.5) rotate(90) scale(329 353.9)"
-                  >
-                    <stop stop-color="white" />
-                    <stop offset="1" stop-color="white" stop-opacity="0" />
-                  </radialGradient>
-                  <linearGradient
-                    id="paint2_linear_383_363"
-                    x1="617"
-                    y1="515.001"
-                    x2="617"
-                    y2="281.501"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint3_linear_383_363"
-                    x1="617"
-                    y1="483.5"
-                    x2="617"
-                    y2="617"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint4_linear_383_363"
-                    x1="600.5"
-                    y1="327.5"
-                    x2="444.5"
-                    y2="51"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint5_linear_383_363"
-                    x1="600.5"
-                    y1="327.5"
-                    x2="742"
-                    y2="-18"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint6_linear_383_363"
-                    x1="557"
-                    y1="521.06"
-                    x2="557"
-                    y2="476.86"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#2563eb" stop-opacity="0" />
-                    <stop offset="1" stop-color="#2563eb" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint7_linear_383_363"
-                    x1="630.707"
-                    y1="552.863"
-                    x2="629.484"
-                    y2="536.644"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint8_linear_383_363"
-                    x1="574.707"
-                    y1="552.863"
-                    x2="573.484"
-                    y2="536.644"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint9_linear_383_363"
-                    x1="690"
-                    y1="441"
-                    x2="710.592"
-                    y2="454.018"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint10_linear_383_363"
-                    x1="674.794"
-                    y1="567.387"
-                    x2="667.104"
-                    y2="511.73"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint11_linear_383_363"
-                    x1="189"
-                    y1="428"
-                    x2="189"
-                    y2="194.5"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint12_linear_383_363"
-                    x1="189"
-                    y1="396.499"
-                    x2="189"
-                    y2="529.999"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint13_linear_383_363"
-                    x1="300.5"
-                    y1="318"
-                    x2="477.5"
-                    y2="158"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint14_linear_383_363"
-                    x1="190.998"
-                    y1="313"
-                    x2="144.4"
-                    y2="354.523"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint15_linear_383_363"
-                    x1="270"
-                    y1="458"
-                    x2="322.747"
-                    y2="375.512"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint16_linear_383_363"
-                    x1="106"
-                    y1="541"
-                    x2="127.951"
-                    y2="407.783"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint17_linear_383_363"
-                    x1="208.5"
-                    y1="430.5"
-                    x2="169.592"
-                    y2="427.118"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint18_linear_383_363"
-                    x1="617"
-                    y1="215.001"
-                    x2="617"
-                    y2="-18.499"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint19_linear_383_363"
-                    x1="617"
-                    y1="183.5"
-                    x2="617"
-                    y2="317"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint20_linear_383_363"
-                    x1="592"
-                    y1="83"
-                    x2="657.5"
-                    y2="-349"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint21_linear_383_363"
-                    x1="663.145"
-                    y1="101.26"
-                    x2="680.586"
-                    y2="116.068"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint22_linear_383_363"
-                    x1="714.5"
-                    y1="265.5"
-                    x2="643.482"
-                    y2="149.289"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint23_linear_383_363"
-                    x1="733.5"
-                    y1="298"
-                    x2="629.255"
-                    y2="211.43"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint24_linear_383_363"
-                    x1="631"
-                    y1="212.5"
-                    x2="660.076"
-                    y2="215.608"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
+            {/* Bagian Kiri - SVG dengan Design Baru (Diperkecil) */}
+            <div
+              className="relative flex flex-shrink-0 items-center justify-center overflow-hidden p-4 md:w-1/4"
+              style={{
+                background: `linear-gradient(135deg, #49904D 0%, #55A84D 50%, #69B458 100%)`,
+              }}
+            >
+              {/* Background Decorative Elements */}
+              <div className="absolute inset-0 opacity-10">
+                <div
+                  className="absolute top-8 left-8 h-20 w-20 rounded-full"
+                  style={{ backgroundColor: "#F4EB3C" }}
+                ></div>
+                <div
+                  className="absolute right-6 bottom-12 h-16 w-16 rounded-full"
+                  style={{ backgroundColor: "#DEDF41" }}
+                ></div>
+                <div
+                  className="absolute top-1/2 left-1/4 h-12 w-12 rounded-full"
+                  style={{ backgroundColor: "#6CA7E0" }}
+                ></div>
+                <div
+                  className="absolute top-16 right-16 h-8 w-8 rounded-full"
+                  style={{ backgroundColor: "rgba(255,255,255,0.3)" }}
+                ></div>
+              </div>
+
+              {/* Modern SVG Replacement */}
+              <div className="relative z-10 text-center text-white">
+                <div className="mb-2">
+                  <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M3 21h18" />
+                      <path d="M5 21V7l8-4v18" />
+                      <path d="M19 21V11l-6-4" />
+                    </svg>
+                  </div>
+                  <h3 className="mb-2 text-2xl font-bold">Transparansi</h3>
+                  <p className="text-lg opacity-90">Keuangan Desa</p>
+                </div>
+              </div>
             </div>
 
             {/* Bagian Kanan - Informasi APB */}
-            <div className="flex-1 p-8">
-              <h2 className="mb-2 text-3xl font-bold text-gray-700 dark:text-indigo-400">
-                APB DESA 2025
-              </h2>
-              <p className="mb-6 text-gray-600 dark:text-gray-400">
-                Akses cepat dan transparan terhadap APB Desa serta proyek
-                pembangunan
-              </p>
+            <div className="flex-1 bg-gradient-to-br from-white to-gray-50 p-8 dark:from-gray-800 dark:to-gray-900">
+              <div className="mb-8">
+                <h2 className="mb-2 text-2xl font-bold text-black dark:text-white">
+                  APB DESA{" "}
+                  {loading ? (
+                    <span className="inline-block h-6 w-20 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></span>
+                  ) : (
+                    <span className="text-black dark:text-white">
+                      {latestYearData?.tahun_anggaran}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Akses cepat dan transparan terhadap APB Desa
+                </p>
+              </div>
 
-              <div className="space-y-12">
+              <div className="space-y-6">
                 {/* Pendapatan Desa */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-3xl font-bold text-gray-700 dark:text-gray-300">
-                    Pendapatan Desa
-                  </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    Rp3.274.172.780,00
-                  </p>
+                <div
+                  className="relative overflow-hidden rounded-2xl border-2 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-900"
+                  style={{ borderColor: "#6CA7E040" }}
+                >
+                  <div
+                    className="absolute top-0 left-0 h-full w-2 rounded-r-lg"
+                    style={{ backgroundColor: "#6CA7E0" }}
+                  ></div>
+
+                  <div className="mb-4 flex items-center gap-4">
+                    <div
+                      className="rounded-xl p-3"
+                      style={{ backgroundColor: "#6CA7E020" }}
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#6CA7E0"
+                        strokeWidth="2"
+                      >
+                        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-black dark:text-white">
+                      Pendapatan Desa
+                    </h3>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-black dark:text-white">
+                      {loading ? (
+                        <span className="inline-block h-10 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></span>
+                      ) : latestYearData ? (
+                        formatRupiah(
+                          parseFloat(latestYearData.total_pendapatan),
+                        )
+                      ) : (
+                        "Rp0,00"
+                      )}
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      💰 Total penerimaan desa
+                    </div>
+                  </div>
                 </div>
 
                 {/* Belanja Desa */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-3xl font-bold text-gray-700 dark:text-gray-300">
-                    Belanja Desa
-                  </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    Rp3.301.178.128,00
-                  </p>
+                <div
+                  className="relative overflow-hidden rounded-2xl border-2 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-900"
+                  style={{ borderColor: "#F4EB3C40" }}
+                >
+                  <div
+                    className="absolute top-0 left-0 h-full w-2 rounded-r-lg"
+                    style={{ backgroundColor: "#F4EB3C" }}
+                  ></div>
+
+                  <div className="mb-4 flex items-center gap-4">
+                    <div
+                      className="rounded-xl p-3"
+                      style={{ backgroundColor: "#F4EB3C20" }}
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#F4EB3C"
+                        strokeWidth="2"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12,6 L12,12 L16,14" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-black dark:text-white">
+                      Belanja Desa
+                    </h3>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-black dark:text-white">
+                      {loading ? (
+                        <span className="inline-block h-10 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></span>
+                      ) : latestYearData ? (
+                        formatRupiah(parseFloat(latestYearData.total_belanja))
+                      ) : (
+                        "Rp0,00"
+                      )}
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      💸 Total pengeluaran desa
+                    </div>
+                  </div>
                 </div>
+
+                {/* Budget Balance Indicator */}
+                {loading ? (
+                  <div
+                    className="rounded-2xl border-2 p-6"
+                    style={{
+                      backgroundColor: "#6CA7E010",
+                      borderColor: "#6CA7E030",
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                        <div className="h-6 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                      </div>
+                      <div className="h-8 w-48 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                    </div>
+                  </div>
+                ) : (
+                  latestYearData && (
+                    <div
+                      className="rounded-2xl border-2 p-6"
+                      style={{
+                        backgroundColor: "#6CA7E010",
+                        borderColor: "#6CA7E030",
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="rounded-lg p-2"
+                            style={{ backgroundColor: "#6CA7E020" }}
+                          >
+                            <svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#6CA7E0"
+                              strokeWidth="2"
+                            >
+                              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                              <path d="M2 17l10 5 10-5" />
+                              <path d="M2 12l10 5 10-5" />
+                            </svg>
+                          </div>
+                          <span className="text-base font-semibold text-black dark:text-white">
+                            Saldo Anggaran
+                          </span>
+                        </div>
+                        <span
+                          className="text-xl font-bold"
+                          style={{
+                            color:
+                              parseFloat(latestYearData.total_pendapatan) -
+                                parseFloat(latestYearData.total_belanja) >=
+                              0
+                                ? "#6CA7E0"
+                                : "#ef4444",
+                          }}
+                        >
+                          {formatRupiah(
+                            parseFloat(latestYearData.total_pendapatan) -
+                              parseFloat(latestYearData.total_belanja),
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
 
-              <div className="mt-6 text-right">
-                <a href="/Infografis/apbdesa">
-                  <Button className="justify-end-safe text-xl" variant="link">
+              <div className="mt-8">
+                <a href="/Infografis/apbdesa" className="block">
+                  <button
+                    className="group flex w-full items-center justify-center gap-3 rounded-2xl px-8 py-4 text-base font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, #6CA7E0 0%, #578EC8 100%)`,
+                    }}
+                  >
                     LIHAT DATA LEBIH LENGKAP
-                  </Button>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="transition-transform duration-300 group-hover:translate-x-1"
+                    >
+                      <polyline points="9,18 15,12 9,6" />
+                    </svg>
+                  </button>
                 </a>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Data IDM */}
-      <div className="container mx-auto mb-12 px-4">
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-0 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex flex-col items-stretch md:flex-row">
-            {/* Bagian Kanan - Informasi IDM */}
-            <div className="flex-1 p-8">
-              <h2 className="mb-2 text-3xl font-bold text-gray-700 dark:text-indigo-400">
-                Data IDM 2025
-              </h2>
-              <p className="mb-6 text-gray-600 dark:text-gray-400">
-                Informasi Data Indeks Desa Membangun (IDM)
-              </p>
-
-              <div className="space-y-12">
-                {/* Pendapatan Desa */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-3xl font-bold text-gray-700 dark:text-gray-300">
-                    Skor IDM
-                  </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    0.7925
-                  </p>
-                </div>
-
-                {/* Belanja Desa */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-3xl font-bold text-gray-700 dark:text-gray-300">
-                    Status IDM
-                  </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    MAJU
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 text-right">
-                <a href="#">
-                  <Button className="justify-end-safe text-xl" variant="link">
-                    LIHAT DATA LEBIH LENGKAP
-                  </Button>
-                </a>
-              </div>
-            </div>
-
-            {/* Bagian Kanan - SVG */}
-            <div className="from-white-100 to-white-200 flex flex-shrink-0 items-center justify-center bg-gradient-to-br p-8 md:w-1/2 dark:from-blue-900 dark:to-blue-800">
-              <svg
-                className="h-auto w-full max-w-xl"
-                aria-hidden="true"
-                viewBox="0 0 806 593"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M39 69H707L707 587C707 590.314 704.314 593 701 593H45.9886C42.6793 593 39.9949 590.321 39.9886 587.011L39 69Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M39 69H707L707 587C707 590.314 704.314 593 701 593H45.9886C42.6793 593 39.9949 590.321 39.9886 587.011L39 69Z"
-                  fill="url(#paint0_linear_383_363)"
-                />
-                <path
-                  d="M39 69H707L707 587C707 590.314 704.314 593 701 593H45.9886C42.6793 593 39.9949 590.321 39.9886 587.011L39 69Z"
-                  fill="url(#paint1_radial_383_363)"
-                />
-                <path
-                  d="M40 56.0003C39.9998 52.6865 42.6862 50 46 50L702.001 50C705.314 50 708.001 52.6863 708.001 56V69H40.0006L40 56.0003Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M40 69H708V70H40V69Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M59.3203 59.0166C59.3203 61.1508 57.5902 62.8809 55.4561 62.8809C53.3219 62.8809 51.5918 61.1508 51.5918 59.0166C51.5918 56.8824 53.3219 55.1523 55.4561 55.1523C57.5902 55.1523 59.3203 56.8824 59.3203 59.0166Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M73.4903 59.0166C73.4903 61.1508 71.7602 62.8809 69.626 62.8809C67.4918 62.8809 65.7617 61.1508 65.7617 59.0166C65.7617 56.8824 67.4918 55.1523 69.626 55.1523C71.7602 55.1523 73.4903 56.8824 73.4903 59.0166Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M87.6582 59.0166C87.6582 61.1508 85.9281 62.8809 83.794 62.8809C81.6598 62.8809 79.9297 61.1508 79.9297 59.0166C79.9297 56.8824 81.6598 55.1523 83.794 55.1523C85.9281 55.1523 87.6582 56.8824 87.6582 59.0166Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint2_linear_383_363)"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint3_linear_383_363)"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint4_linear_383_363)"
-                />
-                <path
-                  d="M428 306C428 302.686 430.686 300 434 300H800C803.314 300 806 302.686 806 306V541C806 544.314 803.314 547 800 547H434C430.686 547 428 544.314 428 541V306Z"
-                  fill="url(#paint5_linear_383_363)"
-                />
-                <path d="M540 501H574V535H540V501Z" fill="#c8d8fa" />
-                <path
-                  d="M540 501H574V535H540V501Z"
-                  fill="url(#paint6_linear_383_363)"
-                />
-                <path
-                  d="M455.714 422.541C455.356 421.265 456.315 420 457.64 420H612.351C613.247 420 614.034 420.596 614.277 421.459L639.286 510.459C639.645 511.735 638.686 513 637.361 513H482.65C481.753 513 480.967 512.404 480.724 511.541L455.714 422.541Z"
-                  fill="white"
-                />
-                <path
-                  d="M501.71 445.538C501.353 444.263 502.312 443 503.636 443H579.345C580.242 443 581.03 443.598 581.271 444.462L593.291 487.462C593.647 488.737 592.689 490 591.365 490H515.655C514.758 490 513.971 489.402 513.729 488.538L501.71 445.538Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M478.324 503L477.762 501H636.628L637.19 503H478.324Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M428 535H651V547H434C430.686 547 428 544.314 428 541V535Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M614 525.5C620 525.1 626.167 526.667 628.5 527.5L623.5 535H600C600 530.5 606.5 526 614 525.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M630.27 525.349L677.999 547H629.499L616.383 539.893C615.571 539.453 615.153 538.508 615.491 537.648C617.955 531.375 624.791 527.06 628.72 525.326C629.214 525.108 629.777 525.126 630.27 525.349Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M630.27 525.349L677.999 547H629.499L616.383 539.893C615.571 539.453 615.153 538.508 615.491 537.648C617.955 531.375 624.791 527.06 628.72 525.326C629.214 525.108 629.777 525.126 630.27 525.349Z"
-                  fill="url(#paint7_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  d="M558.5 525.5C564.5 525.1 570.667 526.667 573 527.5L568 535H544.5C544.5 530.5 551 526 558.5 525.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M574.27 525.349L621.999 547H573.499L560.383 539.893C559.571 539.453 559.153 538.508 559.491 537.648C561.955 531.375 568.791 527.06 572.72 525.326C573.214 525.108 573.777 525.126 574.27 525.349Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M574.27 525.349L621.999 547H573.499L560.383 539.893C559.571 539.453 559.153 538.508 559.491 537.648C561.955 531.375 568.791 527.06 572.72 525.326C573.214 525.108 573.777 525.126 574.27 525.349Z"
-                  fill="url(#paint8_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  d="M726.5 388C704.1 384 694.833 399.667 693 408L707.5 444.5L724.5 451.5C725.5 447 734.5 434 741.5 426.5C748.5 419 754.5 393 726.5 388Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M773 376.5C773 388.926 762.926 399 750.5 399C738.074 399 728 388.926 728 376.5C728 364.074 738.074 354 750.5 354C762.926 354 773 364.074 773 376.5Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M706.002 472.5L698.502 473.5L699.5 479L721.5 487.5L741 476L738.5 471.5L727.5 469.5L724.5 451C720.667 447.666 713.9 442 713.5 438C713.225 435.25 715.14 431.082 716.905 427.934C718.018 425.948 717.636 423.408 715.858 421.986C713.639 420.21 710.391 421.03 708.735 423.34C707.761 424.7 706.755 425.688 706.002 425.5C704.004 425 704 421 702.5 415.5C701.3 411.1 695.668 408.666 693.002 408C691.003 418.5 688.003 435 692.002 446C694.206 452.061 699.669 452 703.002 451L706.002 472.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M698.504 473.5L706.004 472.5L703.004 451L703.002 451C707.32 449.201 711.638 444.812 714.465 440.256C717.114 444.118 721.791 448.642 724.502 451L726.833 465.376L719.5 480L701.346 479.712L699.502 479L698.504 473.5Z"
-                  fill="url(#paint9_linear_383_363)"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M689.828 428.014C690.22 428.067 690.495 428.429 690.442 428.821L689.112 438.6C689.089 438.775 689.232 438.927 689.407 438.914L693.624 438.603C694.019 438.573 694.363 438.87 694.392 439.265C694.421 439.66 694.125 440.004 693.73 440.033L689.513 440.345C688.428 440.425 687.544 439.486 687.691 438.407L689.02 428.628C689.074 428.235 689.435 427.961 689.828 428.014Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M692.435 447.029C692.531 446.996 692.626 446.96 692.722 446.923C693.711 446.539 694.674 445.972 695.963 445.181C696.301 444.973 696.407 444.532 696.199 444.194C695.992 443.856 695.551 443.751 695.213 443.958C693.913 444.756 693.054 445.255 692.202 445.586C692.101 445.625 691.998 445.663 691.895 445.698C691.93 445.799 691.966 445.9 692.003 446C692.135 446.365 692.28 446.707 692.435 447.029Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M713.162 429.146C713.435 428.128 713.238 427.183 712.854 426.233C712.705 425.866 712.882 425.448 713.249 425.299C713.616 425.15 714.035 425.327 714.183 425.695C714.628 426.791 714.934 428.077 714.548 429.517C714.164 430.95 713.129 432.415 711.146 433.951C710.833 434.194 710.382 434.137 710.14 433.824C709.897 433.51 709.954 433.06 710.267 432.817C712.103 431.395 712.887 430.172 713.162 429.146Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M696.02 433.737C696.588 432.52 696.975 430.742 696.97 428.703C696.964 426.664 696.567 424.887 695.992 423.674C695.365 422.35 694.781 422.152 694.61 422.152C694.439 422.153 693.856 422.354 693.236 423.681C692.668 424.898 692.281 426.676 692.286 428.716C692.292 430.755 692.689 432.531 693.264 433.745C693.891 435.068 694.475 435.267 694.646 435.266C694.817 435.266 695.4 435.064 696.02 433.737ZM694.65 436.671C696.719 436.666 698.387 433.096 698.375 428.699C698.363 424.302 696.676 420.741 694.606 420.747C692.537 420.753 690.869 424.322 690.881 428.719C690.893 433.117 692.58 436.677 694.65 436.671Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M688.118 432.195C688.686 430.978 689.073 429.2 689.067 427.161C689.062 425.122 688.665 423.345 688.09 422.132C687.463 420.808 686.878 420.61 686.708 420.61C686.537 420.611 685.954 420.812 685.334 422.139C684.765 423.356 684.378 425.134 684.384 427.174C684.389 429.213 684.786 430.989 685.361 432.203C685.989 433.526 686.573 433.725 686.744 433.724C686.914 433.724 687.497 433.522 688.118 432.195ZM686.747 435.129C688.817 435.124 690.485 431.554 690.473 427.157C690.461 422.76 688.773 419.199 686.704 419.205C684.635 419.211 682.967 422.78 682.979 427.177C682.991 431.575 684.678 435.135 686.747 435.129Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M672.5 487.5C679.857 478.594 691.869 474.28 697.467 473.106C697.799 473.036 698.138 473.148 698.379 473.386C701.851 476.821 710.718 483 721.5 483C732.056 483 736.927 475.597 738.289 471.258C738.428 470.817 738.823 470.496 739.284 470.531C745.527 471.009 757.146 476.959 760.5 487.5C763.3 496.3 764.333 530.833 764.5 547H645C651 531 664.9 496.7 672.5 487.5Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M672.5 487.5C679.857 478.594 691.869 474.28 697.467 473.106C697.799 473.036 698.138 473.148 698.379 473.386C701.851 476.821 710.718 483 721.5 483C732.056 483 736.927 475.597 738.289 471.258C738.428 470.817 738.823 470.496 739.284 470.531C745.527 471.009 757.146 476.959 760.5 487.5C763.3 496.3 764.333 530.833 764.5 547H645C651 531 664.9 496.7 672.5 487.5Z"
-                  fill="url(#paint10_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M688.445 513.26C688.964 513.45 689.231 514.024 689.041 514.543L677.541 546.043C677.352 546.561 676.778 546.828 676.259 546.639C675.74 546.45 675.473 545.876 675.662 545.357L687.162 513.857C687.352 513.338 687.926 513.071 688.445 513.26Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M788 547H694C697.5 533.5 718 486 756.5 486C787.3 486 790.333 526.667 788 547Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M670.944 331C672.069 331 672.98 331.912 672.98 333.036V372.744C672.98 373.869 672.069 374.781 670.944 374.781H658.217V380.98C658.217 381.748 657.401 382.239 656.723 381.88L643.312 374.781H564.038C562.913 374.781 562.001 373.869 562.001 372.744V333.036C562.001 331.912 562.913 331 564.038 331H670.944Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M571 346C571 345.448 571.448 345 572 345H650.5C651.052 345 651.5 345.448 651.5 346C651.5 346.552 651.052 347 650.5 347H572C571.448 347 571 346.552 571 346Z"
-                  fill="#2563eb"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M571 354C571 353.448 571.448 353 572 353H623C623.552 353 624 353.448 624 354C624 354.552 623.552 355 623 355H572C571.448 355 571 354.552 571 354Z"
-                  fill="#2563eb"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="url(#paint11_linear_383_363)"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="url(#paint12_linear_383_363)"
-                />
-                <path
-                  d="M0 218.999C0 215.685 2.68629 212.999 6 212.999H372C375.314 212.999 378 215.685 378 218.999V453.999C378 457.313 375.314 459.999 372 459.999H6C2.68629 459.999 0 457.313 0 453.999V218.999Z"
-                  fill="url(#paint13_linear_383_363)"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M87.7904 459.999C85.8739 451.07 82.1545 437.132 77.6116 428.917C76.7569 427.371 74.719 427.938 74.5786 429.698C73.9012 438.196 73.2808 451.158 74.1852 459.999H87.7904ZM73.4995 459.999C68.879 448.914 58.4524 429.254 45.1286 418.478C43.7152 417.335 41.8411 418.66 42.318 420.414C45.6638 432.72 51.1453 451.6 54.7965 459.999H73.4995ZM53.7428 459.999H36.806C28.7482 445.573 19.6718 428.085 23.5023 430C27.9247 432.211 44.2873 449.588 53.7428 459.999Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M151.5 270C163.5 274.8 158.833 284.667 155 289L146.5 317L134 330.5L124 329.5C117.833 322.167 105.1 304.8 103.5 294C101.9 283.2 109.167 281.167 113 281.5C114 266.5 136.5 264 151.5 270Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M146 329.5L150 352C140 357.2 125.833 354.833 120 353C122.8 347.8 123.833 335.167 124 329.5C135 326.5 139.5 314.5 138.5 311C138.069 309.492 136.168 307.433 134.22 305.541C131.933 303.321 132.032 299.789 134.47 297.736C137.108 295.514 140.958 296.269 142.735 299.225C143.965 301.271 145.205 303 146 303C148 303 147.5 299 147 294C146.5 289 148.5 283 152.5 283C156.5 283 159 298.5 158 316.5C157.2 330.9 149.667 331.167 146 329.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M135.464 320.88C138.862 325.424 143.532 328.391 145.996 329.5L145.996 329.501L149.996 352C140.108 357.142 126.146 354.886 120.195 353.062L120.021 352.953C122.803 347.725 123.83 335.15 123.996 329.5C129.284 328.058 133.069 324.537 135.464 320.88Z"
-                  fill="url(#paint14_linear_383_363)"
-                />
-                <path
-                  d="M153.011 300.571C152.806 301.289 153.223 302.037 153.941 302.242C154.659 302.446 155.408 302.03 155.612 301.311C155.817 300.593 155.4 299.845 154.682 299.64C153.963 299.436 153.215 299.852 153.011 300.571Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M157.396 294.859C157.466 295.386 157.532 295.928 157.594 296.482C156.992 296.049 156.339 295.752 155.557 295.715C154.595 295.668 153.323 296.007 151.587 297.199C151.291 297.402 150.886 297.327 150.683 297.031C150.479 296.734 150.555 296.33 150.851 296.126C152.726 294.84 154.277 294.351 155.62 294.416C156.286 294.448 156.873 294.615 157.396 294.859Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M157.747 302.497C157.399 302.589 157.192 302.944 157.284 303.292L159.566 311.943C159.607 312.097 159.495 312.25 159.336 312.258L155.507 312.446C155.148 312.463 154.872 312.768 154.89 313.127C154.907 313.486 155.212 313.762 155.571 313.745L159.399 313.557C160.385 313.508 161.076 312.565 160.824 311.611L158.541 302.96C158.45 302.613 158.094 302.405 157.747 302.497Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M157.974 316.852C157.823 319.206 157.489 321.172 157.02 322.807C151.689 322.628 149.122 319.719 148.16 315.77L157.974 316.852Z"
-                  fill="white"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M136.74 303.299C136.467 302.382 136.622 301.521 136.947 300.651C137.073 300.315 136.902 299.94 136.565 299.814C136.229 299.689 135.854 299.86 135.729 300.196C135.353 301.201 135.108 302.374 135.494 303.67C135.877 304.958 136.853 306.26 138.687 307.603C138.977 307.815 139.384 307.752 139.596 307.462C139.808 307.172 139.745 306.765 139.456 306.553C137.757 305.31 137.015 304.222 136.74 303.299Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M219.521 341.196C218.681 344.401 220.686 347 224 347H380.306C383.619 347 386.986 344.401 387.826 341.196L409.673 257.804C410.512 254.599 408.507 252 405.193 252H248.887C245.574 252 242.207 254.599 241.367 257.804L219.521 341.196Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M269.863 283.902C269.443 285.505 267.759 286.804 266.103 286.804C264.446 286.804 263.443 285.505 263.863 283.902C264.283 282.299 265.966 281 267.623 281C269.28 281 270.283 282.299 269.863 283.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M273.863 283.902C274.283 282.299 275.966 281 277.623 281H372.623C374.28 281 375.283 282.299 374.863 283.902C374.443 285.505 372.759 286.804 371.103 286.804H276.103C274.446 286.804 273.443 285.505 273.863 283.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M265.863 299.902C265.443 301.505 263.759 302.804 262.103 302.804C260.446 302.804 259.443 301.505 259.863 299.902C260.283 298.299 261.966 297 263.623 297C265.28 297 266.283 298.299 265.863 299.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M269.863 299.902C270.283 298.299 271.966 297 273.623 297H368.623C370.28 297 371.283 298.299 370.863 299.902C370.443 301.505 368.759 302.804 367.103 302.804H272.103C270.446 302.804 269.443 301.505 269.863 299.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M261.761 315.902C261.341 317.505 259.658 318.804 258.001 318.804C256.344 318.804 255.341 317.505 255.761 315.902C256.181 314.299 257.865 313 259.521 313C261.178 313 262.181 314.299 261.761 315.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M265.761 315.902C266.181 314.299 267.865 313 269.521 313H364.521C366.178 313 367.181 314.299 366.761 315.902C366.341 317.505 364.658 318.804 363.001 318.804H268.001C266.344 318.804 265.341 317.505 265.761 315.902Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M289 336C283.8 341.6 273.833 359.333 269.5 367.5L284 382L295.5 345.5C296.667 344.167 300.9 340.7 308.5 337.5C318 333.5 315.5 327.5 311 326.5C306.5 325.5 295.5 329 289 336Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M289 336C283.8 341.6 273.833 359.333 269.5 367.5L284 382L295.5 345.5C296.667 344.167 300.9 340.7 308.5 337.5C318 333.5 315.5 327.5 311 326.5C306.5 325.5 295.5 329 289 336Z"
-                  fill="url(#paint15_linear_383_363)"
-                />
-                <path
-                  d="M243.999 466C233.199 466 207.832 443 196.499 431.5V460H98.999C96.5001 420.5 96.9985 383.5 109.499 356.5C112.209 350.647 117.832 350.167 119.999 350.5C133.999 355.7 146.166 352 150.499 349.5C154.332 350.333 165.399 353.3 178.999 358.5C192.599 363.7 225.666 396 240.499 411.5L267.465 366.236C268.034 365.28 269.274 364.973 270.224 365.552L287.613 376.155C288.421 376.647 288.781 377.617 288.463 378.508C277.712 408.628 254.619 466 243.999 466Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M243.999 466C233.199 466 207.832 443 196.499 431.5V460H98.999C96.5001 420.5 96.9985 383.5 109.499 356.5C112.209 350.647 117.832 350.167 119.999 350.5C133.999 355.7 146.166 352 150.499 349.5C154.332 350.333 165.399 353.3 178.999 358.5C192.599 363.7 225.666 396 240.499 411.5L267.465 366.236C268.034 365.28 269.274 364.973 270.224 365.552L287.613 376.155C288.421 376.647 288.781 377.617 288.463 378.508C277.712 408.628 254.619 466 243.999 466Z"
-                  fill="url(#paint16_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M196.501 431.501C196.501 431.501 196.5 431.5 196.5 431.5V460H158.66L166.501 402.5L196.501 431.5L196.501 431.501Z"
-                  fill="url(#paint17_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M164.036 191C162.912 191 162 191.912 162 193.036V232.744C162 233.869 162.912 234.781 164.036 234.781H176.763V240.98C176.763 241.748 177.58 242.239 178.258 241.88L191.668 234.781H270.943C272.068 234.781 272.979 233.869 272.979 232.744V193.036C272.979 191.912 272.068 191 270.943 191H164.036Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M173 206C173 205.448 173.448 205 174 205H252.5C253.052 205 253.5 205.448 253.5 206C253.5 206.552 253.052 207 252.5 207H174C173.448 207 173 206.552 173 206Z"
-                  fill="white"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="#d6e2fb"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="url(#paint18_linear_383_363)"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="url(#paint19_linear_383_363)"
-                />
-                <path
-                  d="M428 6C428 2.6863 430.686 0 434 0H800C803.314 0 806 2.68629 806 6V241C806 244.314 803.314 247 800 247H434C430.686 247 428 244.314 428 241V6Z"
-                  fill="url(#paint20_linear_383_363)"
-                />
-                <path
-                  d="M318.521 25.8041C317.681 22.5986 319.686 20 323 20H434.946C438.259 20 441.626 22.5986 442.466 25.8041L469.835 130.279C470.675 133.484 468.67 136.083 465.356 136.083H353.41C350.097 136.083 346.73 133.484 345.89 130.279L318.521 25.8041Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M425.582 78.1186C430.024 95.0762 419.415 108.823 401.885 108.823C384.355 108.823 366.543 95.0762 362.1 78.1186C357.658 61.1609 368.267 47.4141 385.797 47.4141C403.327 47.4141 421.139 61.1609 425.582 78.1186Z"
-                  fill="white"
-                />
-                <path
-                  d="M393.605 76.561C396.882 76.561 398.865 73.9909 398.035 70.8205C397.204 67.6501 393.874 65.08 390.597 65.08C387.319 65.08 385.336 67.6501 386.166 70.8205C386.997 73.9909 390.327 76.561 393.605 76.561Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M391.503 81.4815H398.285C400.083 81.4815 401.989 82.1727 403.584 83.403C405.178 84.6334 406.329 86.3021 406.785 88.042L407.645 91.3223H387.299L386.439 88.042C385.983 86.3021 386.261 84.6334 387.21 83.403C388.16 82.1727 389.704 81.4815 391.503 81.4815Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M452.876 25.8041C452.036 22.5986 454.042 20 457.355 20H569.301C572.615 20 575.982 22.5986 576.822 25.8041L604.191 130.279C605.031 133.484 603.025 136.083 599.711 136.083H487.766C484.452 136.083 481.085 133.484 480.245 130.279L452.876 25.8041Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M490.262 79H510.203L518.848 112H498.907L490.262 79Z"
-                  fill="white"
-                />
-                <path
-                  d="M514.012 63H533.953L546.79 112H526.848L514.012 63Z"
-                  fill="white"
-                />
-                <path
-                  d="M537.238 45H557.179L574.732 112H554.79L537.238 45Z"
-                  fill="white"
-                />
-                <path
-                  d="M587.231 25.8041C586.392 22.5986 588.397 20 591.711 20H703.656C706.97 20 710.337 22.5986 711.177 25.8041L738.546 130.279C739.386 133.484 737.381 136.083 734.067 136.083H622.121C618.808 136.083 615.441 133.484 614.601 130.279L587.231 25.8041Z"
-                  fill="#c8d8fa"
-                />
-                <path
-                  d="M671.998 109C645.5 118.5 653.332 83.0001 660.499 64.5001L667.999 64.0001L687.499 75.5001L708.499 131L678.999 133L671.998 109Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M678.535 131.41L672.001 109.01L672 109C674.833 107.667 681.1 104.2 683.5 101C685.9 97.8001 696.5 119.667 701.5 131L678.535 131.41Z"
-                  fill="url(#paint21_linear_383_363)"
-                />
-                <path
-                  d="M661.408 85.2997C661.344 86.1008 660.643 86.6989 659.842 86.6356C659.041 86.5723 658.443 85.8715 658.506 85.0703C658.57 84.2692 659.271 83.6711 660.072 83.7344C660.873 83.7977 661.471 84.4985 661.408 85.2997Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M660.192 79.6726C659.165 79.6043 658.298 79.9714 657.463 80.5191C657.139 80.7308 656.706 80.6405 656.494 80.3173C656.282 79.9941 656.372 79.5604 656.696 79.3486C657.661 78.716 658.833 78.1797 660.285 78.2764C661.728 78.3725 663.326 79.0865 665.171 80.6927C665.462 80.9464 665.493 81.3884 665.239 81.6798C664.985 81.9713 664.543 82.0019 664.252 81.7482C662.544 80.2609 661.226 79.7415 660.192 79.6726Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M654.75 83.5295C655.122 83.6358 655.337 84.0232 655.231 84.3947L652.582 93.6496C652.535 93.8148 652.652 93.9817 652.823 93.9937L656.937 94.2812C657.323 94.3081 657.614 94.6424 657.587 95.0279C657.56 95.4134 657.225 95.7041 656.84 95.6771L652.726 95.3896C651.667 95.3156 650.945 94.2852 651.237 93.2646L653.885 84.0097C653.992 83.6382 654.379 83.4232 654.75 83.5295Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M654.366 102.495C654.244 102.033 654.138 101.556 654.047 101.066C654.632 101.125 655.14 101.124 655.654 101.071C656.541 100.979 657.477 100.731 658.906 100.316C659.277 100.208 659.665 100.421 659.773 100.792C659.881 101.163 659.668 101.552 659.297 101.659C657.88 102.071 656.828 102.356 655.798 102.463C655.321 102.512 654.856 102.523 654.366 102.495Z"
-                  fill="#111928"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M679.581 89.0006C679.98 88.0528 679.916 87.1136 679.672 86.1448C679.577 85.7702 679.804 85.3897 680.179 85.2951C680.553 85.2004 680.934 85.4274 681.028 85.802C681.311 86.921 681.435 88.2043 680.87 89.5444C680.308 90.8774 679.111 92.1543 676.991 93.3739C676.656 93.5665 676.228 93.4511 676.035 93.1161C675.843 92.7812 675.958 92.3534 676.293 92.1608C678.257 91.0316 679.178 89.9554 679.581 89.0006Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M669.002 79.0003C669.002 71.0003 663.335 66.0003 660.502 64.5003C679.002 33.5002 711.502 57.5001 711.502 75.0003C711.502 91.7708 720.502 102.5 735.002 110C749.502 117.5 751.002 128 754.502 138C758.002 148 768.002 150 775.502 159.5C781.502 167.1 780.335 180 779.002 185.5H725.002C724.335 179.334 722.502 164.4 720.502 154C718.002 141 704.002 134 692.502 123C685.332 116.142 682.353 106.613 681.388 100.137C680.932 97.0842 681.478 94.0032 682.414 91.0619L683.687 87.061C684.188 85.4881 683.769 83.7673 682.602 82.6002C680.702 80.7002 677.553 80.9202 676.037 83.1384C675.46 83.9824 674.916 84.8107 674.502 85.5003C673.002 88.0003 669.002 89.0003 669.002 79.0003Z"
-                  fill="#111928"
-                />
-                <path
-                  d="M570.5 112.5L616.5 178.5C621.667 187.167 631.3 205 628.5 207C625 209.5 614 211.5 603.5 203C593 194.5 563.5 122 555.5 112.5C547.5 103 537 102 535 96.5C533.4 92.1 538.667 89 541.5 88L532.867 79.8206C532.392 79.371 532.382 78.6186 532.844 78.1564C533.228 77.7726 533.824 77.7033 534.279 77.9987C549.237 87.7026 564.603 104.964 570.5 112.5Z"
-                  fill="#FDBA8C"
-                />
-                <path
-                  d="M570.5 112.5L616.5 178.5C621.667 187.167 631.3 205 628.5 207C625 209.5 614 211.5 603.5 203C593 194.5 563.5 122 555.5 112.5C547.5 103 537 102 535 96.5C533.4 92.1 538.667 89 541.5 88L532.867 79.8206C532.392 79.371 532.382 78.6186 532.844 78.1564C533.228 77.7726 533.824 77.7033 534.279 77.9987C549.237 87.7026 564.603 104.964 570.5 112.5Z"
-                  fill="url(#paint22_linear_383_363)"
-                />
-                <path
-                  d="M627.339 220.414L616.5 178C628.833 167 655.5 143 663.5 135C673.5 125 709.5 118.5 726 150.5C739.2 176.1 740.833 225.167 740 246.5H649L641.5 215L630.296 221.639C629.149 222.319 627.669 221.706 627.339 220.414Z"
-                  fill="#F9FAFB"
-                />
-                <path
-                  d="M627.339 220.414L616.5 178C628.833 167 655.5 143 663.5 135C673.5 125 709.5 118.5 726 150.5C739.2 176.1 740.833 225.167 740 246.5H649L641.5 215L630.296 221.639C629.149 222.319 627.669 221.706 627.339 220.414Z"
-                  fill="url(#paint23_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M716.317 137.53C713.473 140.877 709.234 143 704.499 143C695.938 143 688.999 136.06 688.999 127.5C688.999 127.272 689.004 127.046 689.013 126.821C698.177 126.984 708.097 129.924 716.317 137.53ZM729.569 158.693C728.563 160.748 727.999 163.058 727.999 165.5C727.999 170.92 730.781 175.691 734.995 178.461C733.569 171.404 731.785 164.675 729.569 158.693ZM737.045 190.404C731.706 192.852 727.999 198.243 727.999 204.5C727.999 211.772 733.006 217.874 739.761 219.546C739.314 210.344 738.47 200.284 737.045 190.404ZM740.081 228.378C733.165 229.935 727.999 236.114 727.999 243.5C727.999 244.526 728.099 245.53 728.289 246.5H739.999C740.187 241.679 740.249 235.441 740.081 228.378ZM719.709 246.5C719.899 245.53 719.999 244.526 719.999 243.5C719.999 234.94 713.059 228 704.499 228C695.938 228 688.999 234.94 688.999 243.5C688.999 244.526 689.099 245.53 689.289 246.5H719.709ZM680.709 246.5C680.899 245.53 680.999 244.526 680.999 243.5C680.999 234.94 674.059 228 665.499 228C656.938 228 649.999 234.94 649.999 243.5C649.999 244.526 650.099 245.53 650.289 246.5H680.709ZM627.228 219.983C635.45 219.603 641.999 212.816 641.999 204.5C641.999 195.94 635.059 189 626.499 189C624.064 189 621.76 189.562 619.709 190.562L627.228 219.983ZM616.883 177.658C619.525 179.75 622.866 181 626.499 181C635.059 181 641.999 174.06 641.999 165.5C641.999 162.453 641.119 159.61 639.6 157.214C631.201 164.838 622.605 172.552 616.883 177.658ZM657.487 140.772C659.825 142.186 662.567 143 665.499 143C674.059 143 680.999 136.06 680.999 127.5C680.999 127.459 680.999 127.419 680.998 127.378C673.344 128.586 666.909 131.59 663.499 135C662.045 136.454 659.975 138.436 657.487 140.772ZM704.499 181C713.059 181 719.999 174.06 719.999 165.5C719.999 156.94 713.059 150 704.499 150C695.938 150 688.999 156.94 688.999 165.5C688.999 174.06 695.938 181 704.499 181ZM719.999 204.5C719.999 213.06 713.059 220 704.499 220C695.938 220 688.999 213.06 688.999 204.5C688.999 195.94 695.938 189 704.499 189C713.059 189 719.999 195.94 719.999 204.5ZM680.999 204.5C680.999 213.06 674.059 220 665.499 220C656.938 220 649.999 213.06 649.999 204.5C649.999 195.94 656.938 189 665.499 189C674.059 189 680.999 195.94 680.999 204.5ZM665.499 181C674.059 181 680.999 174.06 680.999 165.5C680.999 156.94 674.059 150 665.499 150C656.938 150 649.999 156.94 649.999 165.5C649.999 174.06 656.938 181 665.499 181Z"
-                  fill="#c8d8fa"
-                  fill-opacity="0.2"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M694.377 246.5H649L641.508 215.034L677 193.5L694.377 246.5Z"
-                  fill="url(#paint24_linear_383_363)"
-                  fill-opacity="0.7"
-                />
-                <defs>
-                  <linearGradient
-                    id="paint0_linear_383_363"
-                    x1="373.992"
-                    y1="299"
-                    x2="373.992"
-                    y2="800.5"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <radialGradient
-                    id="paint1_radial_383_363"
-                    cx="0"
-                    cy="0"
-                    r="1"
-                    gradientUnits="userSpaceOnUse"
-                    gradientTransform="translate(400 283.5) rotate(90) scale(329 353.9)"
-                  >
-                    <stop stop-color="white" />
-                    <stop offset="1" stop-color="white" stop-opacity="0" />
-                  </radialGradient>
-                  <linearGradient
-                    id="paint2_linear_383_363"
-                    x1="617"
-                    y1="515.001"
-                    x2="617"
-                    y2="281.501"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint3_linear_383_363"
-                    x1="617"
-                    y1="483.5"
-                    x2="617"
-                    y2="617"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint4_linear_383_363"
-                    x1="600.5"
-                    y1="327.5"
-                    x2="444.5"
-                    y2="51"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint5_linear_383_363"
-                    x1="600.5"
-                    y1="327.5"
-                    x2="742"
-                    y2="-18"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint6_linear_383_363"
-                    x1="557"
-                    y1="521.06"
-                    x2="557"
-                    y2="476.86"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#2563eb" stop-opacity="0" />
-                    <stop offset="1" stop-color="#2563eb" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint7_linear_383_363"
-                    x1="630.707"
-                    y1="552.863"
-                    x2="629.484"
-                    y2="536.644"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint8_linear_383_363"
-                    x1="574.707"
-                    y1="552.863"
-                    x2="573.484"
-                    y2="536.644"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint9_linear_383_363"
-                    x1="690"
-                    y1="441"
-                    x2="710.592"
-                    y2="454.018"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint10_linear_383_363"
-                    x1="674.794"
-                    y1="567.387"
-                    x2="667.104"
-                    y2="511.73"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint11_linear_383_363"
-                    x1="189"
-                    y1="428"
-                    x2="189"
-                    y2="194.5"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint12_linear_383_363"
-                    x1="189"
-                    y1="396.499"
-                    x2="189"
-                    y2="529.999"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint13_linear_383_363"
-                    x1="300.5"
-                    y1="318"
-                    x2="477.5"
-                    y2="158"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint14_linear_383_363"
-                    x1="190.998"
-                    y1="313"
-                    x2="144.4"
-                    y2="354.523"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint15_linear_383_363"
-                    x1="270"
-                    y1="458"
-                    x2="322.747"
-                    y2="375.512"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint16_linear_383_363"
-                    x1="106"
-                    y1="541"
-                    x2="127.951"
-                    y2="407.783"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint17_linear_383_363"
-                    x1="208.5"
-                    y1="430.5"
-                    x2="169.592"
-                    y2="427.118"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint18_linear_383_363"
-                    x1="617"
-                    y1="215.001"
-                    x2="617"
-                    y2="-18.499"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="white" stop-opacity="0" />
-                    <stop offset="1" stop-color="white" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint19_linear_383_363"
-                    x1="617"
-                    y1="183.5"
-                    x2="617"
-                    y2="317"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint20_linear_383_363"
-                    x1="592"
-                    y1="83"
-                    x2="657.5"
-                    y2="-349"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" stop-opacity="0" />
-                    <stop offset="1" stop-color="#c8d8fa" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint21_linear_383_363"
-                    x1="663.145"
-                    y1="101.26"
-                    x2="680.586"
-                    y2="116.068"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint22_linear_383_363"
-                    x1="714.5"
-                    y1="265.5"
-                    x2="643.482"
-                    y2="149.289"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#7F270F" />
-                    <stop offset="1" stop-color="#7F270F" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint23_linear_383_363"
-                    x1="733.5"
-                    y1="298"
-                    x2="629.255"
-                    y2="211.43"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint24_linear_383_363"
-                    x1="631"
-                    y1="212.5"
-                    x2="660.076"
-                    y2="215.608"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stop-color="#c8d8fa" />
-                    <stop offset="1" stop-color="#c8d8fa" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-24 w-full bg-sky-50 px-4 py-12 dark:bg-gray-800">
-        {/* Informasi Terkini Section */}
-        <section className="container mx-auto mb-12 px-4">
-          <h2 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            Informasi Terkini
-          </h2>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {/* Card 1 */}
-            <div className="overflow-hidden rounded-lg bg-white shadow-md dark:bg-gray-800">
-              <div className="flex h-48 items-center justify-center bg-gray-200 dark:bg-gray-700">
-                <p className="text-gray-500 dark:text-gray-400">
-                  Gambar Berita
-                </p>
-              </div>
-              <div className="p-4">
-                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  Pengumuman Desa
-                </h3>
-                <p className="mb-4 text-gray-600 dark:text-gray-400">
-                  Informasi terbaru mengenai kegiatan dan pengumuman penting
-                  dari desa.
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Baca selengkapnya
-                </a>
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className="overflow-hidden rounded-lg bg-white shadow-md dark:bg-gray-800">
-              <div className="flex h-48 items-center justify-center bg-gray-200 dark:bg-gray-700">
-                <p className="text-gray-500 dark:text-gray-400">
-                  Gambar Layanan
-                </p>
-              </div>
-              <div className="p-4">
-                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  Layanan Masyarakat
-                </h3>
-                <p className="mb-4 text-gray-600 dark:text-gray-400">
-                  Informasi tentang layanan administrasi dan pelayanan publik di
-                  desa.
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Baca selengkapnya
-                </a>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="overflow-hidden rounded-lg bg-white shadow-md dark:bg-gray-800">
-              <div className="flex h-48 items-center justify-center bg-gray-200 dark:bg-gray-700">
-                <p className="text-gray-500 dark:text-gray-400">
-                  Gambar Potensi
-                </p>
-              </div>
-              <div className="p-4">
-                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  Potensi Desa
-                </h3>
-                <p className="mb-4 text-gray-600 dark:text-gray-400">
-                  Informasi mengenai potensi ekonomi, wisata, dan budaya di desa
-                  kami.
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Baca selengkapnya
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
       {/* Footer Section */}
       <FooterDesa />

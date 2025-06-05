@@ -2,6 +2,8 @@ import { PieChart, Pie, Cell, Label, Tooltip, LabelList } from "recharts";
 import * as React from "react";
 import { TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import axios from "axios";
+import { API_CONFIG } from "@/config/api";
 
 import {
   Card,
@@ -19,83 +21,266 @@ import {
 } from "@/components/ui/chart";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
+import InfografisNav from "@/components/InfografisNav";
+import { useDesa } from "@/contexts/DesaContext";
+
+interface PendudukStats {
+  total_penduduk: number;
+  total_laki_laki: number;
+  total_perempuan: number;
+  total_kk: number;
+  data_usia: {
+    [key: string]: number;
+  };
+  data_pendidikan: {
+    [key: string]: number;
+  };
+  data_pekerjaan: {
+    [key: string]: number;
+  };
+  data_status_perkawinan: {
+    [key: string]: number;
+  };
+  data_agama: {
+    [key: string]: number;
+  };
+}
+
+const COLORS = {
+  primary: "#49904D", // Forest green
+  secondary: "#55A84D", // Light forest green
+  accent1: "#69B458", // Lime green
+  accent2: "#6CA7E0", // Sky blue
+  accent3: "#578EC8", // Steel blue
+  yellow: "#F4EB3C", // Bright yellow
+  lightYellow: "#DEDF41", // Light yellow
+};
+
 export default function InfografisPenduduk() {
+  const { loading } = useDesa();
+  const [stats, setStats] = React.useState<PendudukStats | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/publik/penduduk/stats`,
+          {
+            headers: API_CONFIG.headers,
+          },
+        );
+        setStats(response.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   // Data untuk pie chart penduduk desa
-  const chartDataPenduduk = [
-    { gender: "Laki-laki", jumlah: 2750, fill: "#94a3b8" }, // slate-400
-    { gender: "Perempuan", jumlah: 2500, fill: "#cbd5e1" }, // slate-300
-  ];
+  const chartDataPenduduk = React.useMemo(() => {
+    if (!stats) return [];
+    return [
+      {
+        gender: "Laki-laki",
+        jumlah: stats.total_laki_laki,
+        fill: "#2563EB", // Deep blue for male
+      },
+      {
+        gender: "Perempuan",
+        jumlah: stats.total_perempuan,
+        fill: "#EC4899", // Pink for female
+      },
+    ];
+  }, [stats]);
 
-  // Menghitung total penduduk
-  const totalPenduduk = React.useMemo(() => {
-    return chartDataPenduduk.reduce((acc, curr) => acc + curr.jumlah, 0);
-  }, [chartDataPenduduk]);
+  // Data umur penduduk
+  const chartDataUmur = React.useMemo(() => {
+    if (!stats) return [];
+    return Object.entries(stats.data_usia).map(([kelompokUmur, jumlah]) => ({
+      kelompokUmur: kelompokUmur.replace("_", "-"),
+      laki: Math.floor(jumlah / 2), // Assuming equal distribution
+      perempuan: Math.ceil(jumlah / 2),
+    }));
+  }, [stats]);
 
-  // Jumlah kepala keluarga
-  const jumlahKK = 1250;
-
-  // Data agama penduduk
-  const dataAgama = [
-    { name: "Islam", jumlah: 4500 },
-    { name: "Kristen", jumlah: 350 },
-    { name: "Katolik", jumlah: 200 },
-    { name: "Hindu", jumlah: 100 },
-    { name: "Buddha", jumlah: 50 },
-    { name: "Konghucu", jumlah: 50 },
-  ];
+  // Data pendidikan penduduk
+  const chartDataPendidikan = React.useMemo(() => {
+    if (!stats) return [];
+    return Object.entries(stats.data_pendidikan).map(([tingkat, jumlah]) => ({
+      tingkat,
+      jumlah,
+    }));
+  }, [stats]);
 
   // Data pekerjaan penduduk
-  const dataPekerjaan = [
-    { name: "Telah Bekerja", jumlah: 1200 },
-    { name: "Belum/Tidak Bekerja", jumlah: 950 },
-    { name: "Pelajar/Mahasiswa", jumlah: 450 },
-  ];
+  const dataPekerjaan = React.useMemo(() => {
+    if (!stats) return [];
+    return Object.entries(stats.data_pekerjaan).map(([name, jumlah]) => ({
+      name,
+      jumlah,
+    }));
+  }, [stats]);
 
   // Data status penduduk
-  const dataStatus = [
-    { name: "Belum Kawin", jumlah: 2100 },
-    { name: "Kawin", jumlah: 2700 },
-  ];
+  const dataStatus = React.useMemo(() => {
+    if (!stats) return [];
+    return [
+      {
+        name: "Belum Menikah",
+        jumlah: stats.data_status_perkawinan.belum_menikah,
+      },
+      { name: "Menikah", jumlah: stats.data_status_perkawinan.menikah },
+      { name: "Cerai Hidup", jumlah: stats.data_status_perkawinan.cerai_hidup },
+      { name: "Cerai Mati", jumlah: stats.data_status_perkawinan.cerai_mati },
+    ];
+  }, [stats]);
 
-  const chartDataUmur = [
-    { kelompokUmur: "0-4", laki: 186, perempuan: 170 },
-    { kelompokUmur: "5-9", laki: 210, perempuan: 190 },
-    { kelompokUmur: "10-14", laki: 245, perempuan: 220 },
-    { kelompokUmur: "15-19", laki: 230, perempuan: 215 },
-    { kelompokUmur: "20-24", laki: 280, perempuan: 260 },
-    { kelompokUmur: "25-29", laki: 320, perempuan: 290 },
-  ];
+  // Data agama penduduk
+  const dataAgama = React.useMemo(() => {
+    if (!stats) return [];
+    return Object.entries(stats.data_agama).map(([name, jumlah]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      jumlah,
+    }));
+  }, [stats]);
 
   const chartConfigUmur = {
     laki: {
       label: "Laki-laki",
-      color: "#94a3b8", // slate-400
+      color: COLORS.primary,
     },
     perempuan: {
       label: "Perempuan",
-      color: "#cbd5e1", // slate-300
+      color: COLORS.secondary,
     },
   } satisfies ChartConfig;
-
-  const chartDataPendidikan = [
-    { tingkat: "Tidak/Belum Sekolah", jumlah: 998 },
-    { tingkat: "Belum Tamat SD", jumlah: 644 },
-    { tingkat: "Tamat SD", jumlah: 3164 },
-    { tingkat: "SLTP/Sederajat", jumlah: 416 },
-    { tingkat: "SLTA/Sederajat", jumlah: 238 },
-    { tingkat: "Diploma I/II", jumlah: 7 },
-    { tingkat: "Diploma III", jumlah: 4 },
-    { tingkat: "Diploma IV/S1", jumlah: 21 },
-    { tingkat: "Strata II", jumlah: 0 },
-    { tingkat: "Strata III", jumlah: 152 },
-  ];
 
   const chartConfigPendidikan = {
     pendidikan: {
       label: "Pendidikan",
-      color: "#3b82f6", // blue-500
+      color: COLORS.accent2,
     },
   } satisfies ChartConfig;
+
+  if (loading || !stats) {
+    return (
+      <main className="min-h-screen bg-white dark:bg-gray-900">
+        <NavbarDesa />
+        <div className="container mx-auto px-4">
+          <InfografisNav activeTab="penduduk" />
+
+          {/* Judul Demografi Placeholder */}
+          <div className="mb-8">
+            <div className="h-8 w-64 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="mt-2 h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          </div>
+
+          {/* Bagian 1: Total Penduduk dan Jenis Kelamin Placeholder */}
+          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex flex-col items-stretch md:flex-row">
+              <div className="flex-shrink-0 p-8 md:w-1/2">
+                <div className="mx-auto aspect-square max-h-[350px] animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+              <div className="flex-1 p-8">
+                <div className="mb-6 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="space-y-6">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                    <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                    <div className="mb-2 h-6 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bagian 2: Data Umur Warga Placeholder */}
+          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="p-6">
+              <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-[300px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            </div>
+          </div>
+
+          {/* Bagian 3: Data Pendidikan Warga Placeholder */}
+          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="p-6">
+              <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-[300px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            </div>
+          </div>
+
+          {/* Bagian 4: Data Pekerjaan Warga Placeholder */}
+          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bagian 5: Data Status Warga Placeholder */}
+          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bagian 6: Data Agama Warga Placeholder */}
+          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-white dark:bg-gray-900">
+        <NavbarDesa />
+        <div className="container mx-auto px-4">
+          <InfografisNav activeTab="penduduk" />
+          <div className="flex h-64 items-center justify-center">
+            <p className="text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
@@ -103,93 +288,11 @@ export default function InfografisPenduduk() {
       <NavbarDesa />
 
       <div className="container mx-auto px-4">
-        {/* Judul Halaman */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-            INFOGRAFIS DESA BATUJAJAR TIMUR
-          </h1>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-            Informasi statistik dan data desa dalam bentuk visual
-          </p>
-        </div>
-
-        {/* Navigasi Tab */}
-        <div className="mb-8 flex flex-wrap justify-center gap-8">
-          <a href="/Infografis/penduduk" className="flex flex-col items-center">
-            <div className="flex flex-col items-center">
-              <div className="mb-2 rounded-full bg-gray-100 p-3 dark:bg-gray-700">
-                <svg
-                  className="h-6 w-6 text-blue-600 dark:text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                Penduduk
-              </span>
-              <div className="mt-1 h-1 w-16 rounded-full bg-blue-600 dark:bg-blue-400"></div>
-            </div>
-          </a>
-
-          <a href="/Infografis/apbdesa" className="flex flex-col items-center">
-            <div className="mb-2 rounded-full bg-gray-100 p-3 dark:bg-gray-700">
-              <svg
-                className="h-6 w-6 text-gray-600 dark:text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              APBDes
-            </span>
-          </a>
-
-          <a href="/Infografis/idm" className="flex flex-col items-center">
-            <div className="flex flex-col items-center">
-              <div className="mb-2 rounded-full bg-gray-100 p-3 dark:bg-gray-700">
-                <svg
-                  className="h-6 w-6 text-gray-600 dark:text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                IDM
-              </span>
-            </div>
-          </a>
-        </div>
+        <InfografisNav activeTab="penduduk" />
 
         {/* Judul Demografi */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+          <h2 className="text-3xl font-bold" style={{ color: COLORS.primary }}>
             DEMOGRAFI PENDUDUK
           </h2>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -214,7 +317,7 @@ export default function InfografisPenduduk() {
                         return (
                           <div className="bg-opacity-80 rounded-md bg-black p-2 text-sm text-white">
                             <div className="font-bold">{data.gender}</div>
-                            <div>{data.jumlah.toLocaleString()} jiwa</div>
+                            <div>{data.jumlah.toLocaleString()} Jiwa</div>
                           </div>
                         );
                       }
@@ -250,14 +353,16 @@ export default function InfografisPenduduk() {
                               <tspan
                                 x={viewBox.cx}
                                 y={viewBox.cy}
-                                className="fill-gray-900 text-3xl font-bold dark:fill-white"
+                                className="text-3xl font-bold"
+                                style={{ fill: COLORS.primary }}
                               >
-                                {totalPenduduk.toLocaleString()}
+                                {stats.total_penduduk.toLocaleString()}
                               </tspan>
                               <tspan
                                 x={viewBox.cx}
                                 y={(viewBox.cy || 0) + 28}
-                                className="fill-gray-600 text-base dark:fill-gray-400"
+                                className="text-base"
+                                style={{ fill: COLORS.secondary }}
                               >
                                 Total Penduduk
                               </tspan>
@@ -275,28 +380,28 @@ export default function InfografisPenduduk() {
                   <div className="flex items-center gap-2">
                     <div
                       className="h-4 w-4 rounded-full"
-                      style={{ backgroundColor: "#94a3b8" }}
+                      style={{ backgroundColor: COLORS.primary }}
                     ></div>
                     <span className="text-gray-700 dark:text-gray-300">
                       Laki-laki
                     </span>
                   </div>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {chartDataPenduduk[0].jumlah.toLocaleString()} jiwa
+                    {stats.total_laki_laki.toLocaleString()} jiwa
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div
                       className="h-4 w-4 rounded-full"
-                      style={{ backgroundColor: "#cbd5e1" }}
+                      style={{ backgroundColor: COLORS.secondary }}
                     ></div>
                     <span className="text-gray-700 dark:text-gray-300">
                       Perempuan
                     </span>
                   </div>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {chartDataPenduduk[1].jumlah.toLocaleString()} jiwa
+                    {stats.total_perempuan.toLocaleString()} jiwa
                   </span>
                 </div>
               </div>
@@ -304,7 +409,10 @@ export default function InfografisPenduduk() {
 
             {/* Bagian Kanan - Informasi Tambahan */}
             <div className="flex-1 p-8">
-              <h2 className="mb-2 text-3xl font-bold text-gray-700 dark:text-indigo-400">
+              <h2
+                className="mb-2 text-3xl font-bold"
+                style={{ color: COLORS.primary }}
+              >
                 Data Penduduk
               </h2>
               <p className="mb-6 text-gray-600 dark:text-gray-400">
@@ -314,11 +422,14 @@ export default function InfografisPenduduk() {
               <div className="space-y-6">
                 {/* Total Penduduk */}
                 <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-xl font-bold text-gray-700 dark:text-gray-300">
+                  <h3 className="mb-1 text-xl font-bold text-black">
                     Total Penduduk
                   </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    {totalPenduduk.toLocaleString()}{" "}
+                  <p
+                    className="text-right text-3xl font-bold"
+                    style={{ color: COLORS.primary }}
+                  >
+                    {stats.total_penduduk.toLocaleString()}{" "}
                     <span className="text-xl font-bold text-gray-700 dark:text-gray-400">
                       jiwa
                     </span>
@@ -327,11 +438,14 @@ export default function InfografisPenduduk() {
 
                 {/* Jumlah Kepala Keluarga */}
                 <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-xl font-bold text-gray-700 dark:text-gray-300">
+                  <h3 className="mb-1 text-xl font-bold text-black">
                     Jumlah Kepala Keluarga
                   </h3>
-                  <p className="text-right text-3xl font-bold text-gray-900 dark:text-white">
-                    {jumlahKK.toLocaleString()}{" "}
+                  <p
+                    className="text-right text-3xl font-bold"
+                    style={{ color: COLORS.primary }}
+                  >
+                    {stats.total_kk.toLocaleString()}{" "}
                     <span className="text-xl font-bold text-gray-700 dark:text-gray-400">
                       KK
                     </span>

@@ -1,18 +1,12 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
+import InfografisNav from "@/components/InfografisNav";
+import { useDesa } from "@/contexts/DesaContext";
+import React from "react";
 
 export default function InfografisIDM() {
-  // Data untuk IDM
-  const desaNama = "Batujajar Timur";
-  const kecamatan = "Batujajar";
-  const kabupaten = "Bandung Barat";
-  const provinsi = "Jawa Barat";
+  const { loading } = useDesa();
 
   // Data IDM
   const tahun = "2024";
@@ -27,6 +21,17 @@ export default function InfografisIDM() {
   const skorIKE = "0.7167"; // Indeks Ketahanan Ekonomi
   const skorIKL = "0.8667"; // Indeks Ketahanan Ekologi/Lingkungan
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <NavbarDesa />
+        <div className="container mx-auto px-4">
+          <InfografisNav activeTab="idm" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Navbar Section */}
@@ -34,89 +39,7 @@ export default function InfografisIDM() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4">
-        {/* Judul Halaman */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-            INFOGRAFIS DESA BATUJAJAR TIMUR
-          </h1>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-            Informasi statistik dan data desa dalam bentuk visual
-          </p>
-        </div>
-
-        {/* Navigasi Tab */}
-        <div className="mb-8 flex flex-wrap justify-center gap-8">
-          <a href="/Infografis/penduduk" className="flex flex-col items-center">
-            <div className="flex flex-col items-center">
-              <div className="mb-2 rounded-full bg-gray-100 p-3 dark:bg-gray-700">
-                <svg
-                  className="h-6 w-6 text-gray-600 dark:text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Penduduk
-              </span>
-            </div>
-          </a>
-
-          <a href="/Infografis/apbdesa" className="flex flex-col items-center">
-            <div className="mb-2 rounded-full bg-gray-100 p-3 dark:bg-gray-700">
-              <svg
-                className="h-6 w-6 text-gray-600 dark:text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              APBDes
-            </span>
-          </a>
-
-          <a href="/Infografis/idm" className="flex flex-col items-center">
-            <div className="flex flex-col items-center">
-              <div className="mb-2 rounded-full bg-gray-100 p-3 dark:bg-gray-700">
-                <svg
-                  className="h-6 w-6 text-blue-600 dark:text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                IDM
-              </span>
-              <div className="mt-1 h-1 w-16 rounded-full bg-blue-600 dark:bg-blue-400"></div>
-            </div>
-          </a>
-        </div>
+        <InfografisNav activeTab="idm" />
 
         {/* Judul Demografi */}
         <div className="mb-8 px-4 py-8">

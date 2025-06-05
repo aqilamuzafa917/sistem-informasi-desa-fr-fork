@@ -185,8 +185,33 @@ export default function ArtikelDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-gray-900">
-        <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-green-500"></div>
+      <div className="bg-white font-sans leading-normal tracking-normal dark:bg-gray-900">
+        <NavbarDesa />
+        <div className="container mx-auto -mt-20 max-w-7xl px-4 pt-16 text-center md:pt-32">
+          <div className="mx-auto h-8 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div className="flex flex-wrap items-center justify-center gap-2 p-4">
+            <div className="h-6 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="h-6 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          </div>
+        </div>
+        <div className="container mx-auto max-w-7xl px-4 md:px-6">
+          <div className="h-[70vh] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+        </div>
+        <div className="container mx-auto mt-3 max-w-7xl">
+          <div className="mx-0 sm:mx-6">
+            <div className="w-full rounded-lg bg-white p-8 md:p-24 dark:bg-gray-800">
+              <div className="space-y-4">
+                <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-4 w-4/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <FooterDesa />
       </div>
     );
   }

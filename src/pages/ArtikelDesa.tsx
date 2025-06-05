@@ -158,15 +158,25 @@ export default function ArtikelDesa() {
               {categories.map((category) => (
                 <Button
                   key={category}
-                  variant={
-                    selectedCategory === category ? "default" : "outline"
-                  }
+                  variant="outline"
                   size="sm"
-                  className={
-                    selectedCategory === category
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "border-gray-200 text-gray-700 dark:border-gray-700 dark:text-gray-300"
-                  }
+                  className={`${
+                    selectedCategory === category ? "border-2" : "border"
+                  } ${
+                    category === "Semua"
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                      : category === "Berita"
+                        ? "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
+                        : category === "Kegiatan Sosial"
+                          ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800"
+                          : category === "Budaya"
+                            ? "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-300 dark:hover:bg-purple-800"
+                            : category === "Pendidikan"
+                              ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900 dark:text-yellow-300 dark:hover:bg-yellow-800"
+                              : category === "Pemerintahan"
+                                ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  }`}
                   onClick={() => setSelectedCategory(category)}
                 >
                   {capitalizeWords(category)}
@@ -254,7 +264,7 @@ export default function ArtikelDesa() {
               >
                 <div className="flex flex-grow flex-col">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="rounded bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                    <span className="rounded bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
                       {capitalizeWords(article.kategori_artikel)}
                     </span>
                     <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
