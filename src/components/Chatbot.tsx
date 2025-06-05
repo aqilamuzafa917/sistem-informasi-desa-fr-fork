@@ -6,6 +6,7 @@ import { useLocation } from "react-router-dom";
 import { CHATBOT_MINIMIZE_EVENT } from "./NavbarDesa";
 import { PengaduanPopup } from "./PengaduanPopup";
 import React from "react";
+import { useDesa } from "@/contexts/DesaContext";
 
 interface Message {
   text: string;
@@ -17,18 +18,19 @@ const STORAGE_KEY = "chatbot_messages";
 
 // Consistent theme colors
 const theme = {
-  primary: "#49904D", // Dark green
-  secondary: "#55A84D", // Medium green
-  accent: "#69B458", // Light green
-  highlight: "#6CA7E0", // Light blue
-  link: "#578EC8", // Dark blue
-  warning: "#F4EB3C", // Bright yellow
-  info: "#DEDF41", // Light yellow
+  primary: "#2563EB", // Dark blue
+  secondary: "#3B82F6", // Medium blue
+  accent: "#60A5FA", // Light blue
+  highlight: "#93C5FD", // Lighter blue
+  link: "#1D4ED8", // Darker blue
+  warning: "#22C55E", // Bright green
+  info: "#86EFAC", // Light green
 };
 
 export function Chatbot() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const { desaConfig } = useDesa();
   const [isOpen, setIsOpen] = useState(isHome);
   const [showPopup, setShowPopup] = useState(isHome);
   const [isPengaduanOpen, setIsPengaduanOpen] = useState(false);
@@ -125,7 +127,7 @@ export function Chatbot() {
       hasInitialized.current = true;
       handleSendMessage("Haloo");
     }
-  }, []);
+  });
 
   const handleSendMessage = async (message?: string) => {
     const messageToSend = message || inputMessage;
@@ -414,7 +416,7 @@ export function Chatbot() {
       {/* Chatbot Popup */}
       {showPopup && (
         <div
-          className={`fixed right-4 bottom-20 z-50 flex h-[500px] w-96 max-w-[calc(100vw-2rem)] flex-col rounded-xl border border-gray-200 bg-white shadow-2xl transition-all duration-300 ease-in-out ${
+          className={`fixed right-4 bottom-20 z-50 flex h-[500px] w-96 max-w-[calc(100vw-2rem)] flex-col rounded-xl bg-white shadow-2xl transition-all duration-300 ease-in-out ${
             isOpen
               ? "translate-y-0 scale-100 opacity-100"
               : "pointer-events-none translate-y-4 scale-95 opacity-0"
@@ -437,7 +439,7 @@ export function Chatbot() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white">
-                  Chatbot Desa
+                  AI Chatbot Desa {desaConfig?.nama_desa}
                 </h3>
                 <p className="text-xs" style={{ color: theme.warning }}>
                   Online
@@ -476,7 +478,7 @@ export function Chatbot() {
                     className={`max-w-[280px] rounded-2xl px-4 py-2 text-sm shadow-sm transition-all duration-200 ${
                       message.isUser
                         ? "rounded-br-sm text-white"
-                        : "rounded-bl-sm border border-gray-200 bg-white text-gray-800"
+                        : "rounded-bl-sm bg-white text-gray-800"
                     }`}
                     style={
                       message.isUser
@@ -530,7 +532,7 @@ export function Chatbot() {
           </div>
 
           {/* Input Area */}
-          <div className="rounded-b-xl border-t bg-white p-4">
+          <div className="rounded-b-xl bg-white p-4">
             <div className="relative flex items-center">
               <textarea
                 value={inputMessage}

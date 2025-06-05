@@ -25,10 +25,12 @@ import {
 } from "@/components/ui/sidebar";
 import { NavPenduduk } from "./nav-penduduk";
 import { NavInfografis } from "./nav-infografis";
+import { useDesa } from "@/contexts/DesaContext";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation();
   const currentPath = location.pathname.toLowerCase();
+  const { desaConfig } = useDesa();
 
   // This is sample data with isActive based on current path
   const data = {
@@ -191,7 +193,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <a href="/dashboard">
                 <ArrowUpCircleIcon className="h-5 w-5" />
                 <span className="text-base font-semibold">
-                  Admin Desa Batujajar
+                  Admin Desa {desaConfig?.nama_desa}
                 </span>
               </a>
             </SidebarMenuButton>

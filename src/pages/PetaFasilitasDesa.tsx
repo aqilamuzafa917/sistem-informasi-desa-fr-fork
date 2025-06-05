@@ -7,6 +7,7 @@ import FooterDesa from "@/components/FooterDesa";
 // Memperbaiki masalah icon Leaflet di React
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { useDesa } from "@/contexts/DesaContext";
 
 // Definisi tipe untuk data fasilitas
 interface Fasilitas {
@@ -20,6 +21,8 @@ interface Fasilitas {
 }
 
 export default function PetaFasilitasDesa() {
+  const { desaConfig } = useDesa();
+
   // Fix untuk icon Leaflet di React
   React.useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,49 +54,48 @@ export default function PetaFasilitasDesa() {
   const fasilitasDesa: Fasilitas[] = [
     {
       id: 1,
-      nama: "SDN Batujajar Timur 01",
+      nama: `SDN ${desaConfig?.nama_desa} 01`,
       kategori: "sekolah",
-      alamat: "Jl. Raya Batujajar No. 123",
-      latitude: -6.9175,
-      longitude: 107.5019,
+      alamat: `${desaConfig?.alamat_desa}`,
+      latitude: -6.9123,
+      longitude: 107.4567,
       deskripsi: "Sekolah Dasar Negeri",
     },
     {
       id: 2,
-      nama: "SMPN 1 Batujajar",
+      nama: `SMPN 1 ${desaConfig?.nama_kecamatan}`,
       kategori: "sekolah",
-      alamat: "Jl. Pendidikan No. 45",
-      latitude: -6.9165,
-      longitude: 107.5039,
+      alamat: `${desaConfig?.alamat_desa}`,
+      latitude: -6.9125,
+      longitude: 107.4569,
       deskripsi: "Sekolah Menengah Pertama Negeri",
     },
     {
       id: 3,
-      nama: "Masjid Graha Kencana Batujajar",
+      nama: `Masjid ${desaConfig?.nama_desa}`,
       kategori: "ibadah",
-      alamat:
-        "Batujajar Tim., Kec. Batujajar, Kabupaten Bandung Barat, Jawa Barat 40561",
-      latitude: -6.9169971822642795,
-      longitude: 107.50462633385881,
+      alamat: `${desaConfig?.alamat_desa}`,
+      latitude: -6.9127,
+      longitude: 107.4571,
       deskripsi: "Masjid Jami",
     },
     {
       id: 4,
-      nama: "Gereja Santo Paulus",
-      kategori: "ibadah",
-      alamat: "Jl. Gereja No. 8",
-      latitude: -6.9195,
-      longitude: 107.5049,
-      deskripsi: "Gereja Katolik",
+      nama: `Puskesmas ${desaConfig?.nama_desa}`,
+      kategori: "kesehatan",
+      alamat: `${desaConfig?.alamat_desa}`,
+      latitude: -6.9129,
+      longitude: 107.4573,
+      deskripsi: "Pusat Kesehatan Masyarakat",
     },
     {
       id: 5,
-      nama: "Puskesmas Batujajar",
-      kategori: "kesehatan",
-      alamat: "Jl. Kesehatan No. 15",
-      latitude: -6.9155,
-      longitude: 107.5009,
-      deskripsi: "Pusat Kesehatan Masyarakat",
+      nama: `Kantor Desa ${desaConfig?.nama_desa}`,
+      kategori: "lainnya",
+      alamat: `${desaConfig?.alamat_desa}`,
+      latitude: -6.9131,
+      longitude: 107.4575,
+      deskripsi: "Kantor Pemerintahan Desa",
     },
     {
       id: 6,
@@ -106,15 +108,6 @@ export default function PetaFasilitasDesa() {
     },
     {
       id: 7,
-      nama: "Kantor Desa Batujajar Timur",
-      kategori: "lainnya",
-      alamat: "Jl. Raya Batujajar No. 1",
-      latitude: -6.9175,
-      longitude: 107.5,
-      deskripsi: "Kantor Pemerintahan Desa",
-    },
-    {
-      id: 8,
       nama: "Lapangan Sepak Bola",
       kategori: "lainnya",
       alamat: "Jl. Olahraga No. 5",
@@ -178,7 +171,7 @@ export default function PetaFasilitasDesa() {
         {/* Judul Halaman */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-            PETA FASILITAS DESA BATUJAJAR TIMUR
+            PETA FASILITAS DESA {desaConfig?.nama_desa?.toUpperCase()}
           </h1>
           <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
             Informasi lokasi fasilitas desa dalam bentuk peta interaktif

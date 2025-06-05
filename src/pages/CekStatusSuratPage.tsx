@@ -13,7 +13,15 @@ import { Card } from "@/components/ui/card";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
-import { HiDownload } from "react-icons/hi";
+import {
+  HiDownload,
+  HiSearch,
+  HiDocumentText,
+  HiClock,
+  HiCheckCircle,
+  HiXCircle,
+  HiExclamationCircle,
+} from "react-icons/hi";
 
 // Define the interface for the API response
 interface SuratApiResponse {
@@ -29,10 +37,6 @@ interface SuratApiResponse {
   created_at: string;
   updated_at: string;
   attachment_bukti_pendukung: string | null;
-  // Add other fields from your JSON if needed for display or logic
-  // For example:
-  // nama_pemohon?: string;
-  // etc.
 }
 
 export default function CekStatusSuratPage() {
@@ -124,41 +128,56 @@ export default function CekStatusSuratPage() {
     }
   };
 
-  const renderStatusBadge = (status: string) => {
-    let bgColor = "";
-    let textColor = "";
-
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case "Disetujui":
-        bgColor = "bg-green-100 dark:bg-green-900";
-        textColor = "text-green-800 dark:text-green-300";
-        break;
+        return {
+          bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
+          textColor: "text-emerald-700 dark:text-emerald-300",
+          borderColor: "border-emerald-200 dark:border-emerald-800",
+          icon: <HiCheckCircle className="h-4 w-4" />,
+        };
       case "Diajukan":
-        bgColor = "bg-yellow-100 dark:bg-yellow-900";
-        textColor = "text-yellow-800 dark:text-yellow-300";
-        break;
+        return {
+          bgColor: "bg-amber-50 dark:bg-amber-900/20",
+          textColor: "text-amber-700 dark:text-amber-300",
+          borderColor: "border-amber-200 dark:border-amber-800",
+          icon: <HiClock className="h-4 w-4" />,
+        };
       case "Ditolak":
-        bgColor = "bg-red-100 dark:bg-red-900";
-        textColor = "text-red-800 dark:text-red-300";
-        break;
+        return {
+          bgColor: "bg-red-50 dark:bg-red-900/20",
+          textColor: "text-red-700 dark:text-red-300",
+          borderColor: "border-red-200 dark:border-red-800",
+          icon: <HiXCircle className="h-4 w-4" />,
+        };
       default:
-        bgColor = "bg-blue-100 dark:bg-blue-900";
-        textColor = "text-blue-800 dark:text-blue-300";
+        return {
+          bgColor: "bg-blue-50 dark:bg-blue-900/20",
+          textColor: "text-blue-700 dark:text-blue-300",
+          borderColor: "border-blue-200 dark:border-blue-800",
+          icon: <HiExclamationCircle className="h-4 w-4" />,
+        };
     }
+  };
+
+  const renderStatusBadge = (status: string) => {
+    const config = getStatusConfig(status);
 
     return (
-      <span
-        className={`${bgColor} ${textColor} rounded-full px-3 py-1 text-xs font-semibold`}
+      <div
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium ${config.bgColor} ${config.textColor} ${config.borderColor}`}
       >
-        {status}
-      </span>
+        {config.icon}
+        <span>{status}</span>
+      </div>
     );
   };
 
   const formatJenisSurat = (jenis: string) => {
     return jenis
       .split("_")
-      // .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toUpperCase())
       .join(" ");
   };
 
@@ -207,129 +226,305 @@ export default function CekStatusSuratPage() {
     }
   };
 
+  const getStatsData = () => {
+    if (!statusData || statusData.length === 0) return null;
+
+    const stats = {
+      total: statusData.length,
+      disetujui: statusData.filter((s) => s.status_surat === "Disetujui")
+        .length,
+      diajukan: statusData.filter((s) => s.status_surat === "Diajukan").length,
+      ditolak: statusData.filter((s) => s.status_surat === "Ditolak").length,
+    };
+
+    return stats;
+  };
+
+  const stats = getStatsData();
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-900">
       <NavbarDesa />
 
       <div className="container mx-auto flex-grow px-4 py-8">
-        <Card className="p-6">
-          <h2 className="mb-6 text-2xl font-bold">Cek Status Surat</h2>
-          <p className="mb-6 text-gray-600">
-            Silakan masukkan NIK Anda untuk melihat status pengajuan surat.
-            Sistem akan menampilkan semua pengajuan surat yang terkait dengan
-            NIK tersebut beserta status prosesnya.
+        {/* Header Section */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+            <HiDocumentText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+            Cek Status Surat
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Pantau perkembangan pengajuan surat Anda dengan mudah
           </p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="mb-6">
-            <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium">NIK</label>
-              <div className="flex">
-                <input
-                  type="text"
-                  className="w-full rounded-l-md border p-2 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Masukkan 16 digit NIK"
-                  value={nik}
-                  onChange={handleInputChange}
-                  maxLength={16}
-                  pattern="\d*"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="rounded-r-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300"
-                  disabled={isLoading}
-                >
-                  {isLoading ? <Spinner size="sm" /> : "Cek Status"}
-                </button>
+        {/* Search Card */}
+        <Card className="mb-8 border-0 bg-white shadow-lg dark:bg-gray-800">
+          <div className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Nomor Induk Kependudukan (NIK)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full rounded-lg border-2 border-gray-200 bg-gray-50 p-4 pr-24 text-lg transition-all duration-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400 dark:focus:bg-gray-800 dark:focus:ring-blue-900/20"
+                    placeholder="Masukkan 16 digit NIK Anda"
+                    value={nik}
+                    onChange={handleInputChange}
+                    maxLength={16}
+                    pattern="\d*"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="absolute top-2 right-2 flex h-12 w-20 items-center justify-center rounded-md bg-blue-600 text-white transition-colors duration-200 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <HiSearch className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                {error && (
+                  <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                    <HiXCircle className="h-4 w-4" />
+                    <span>{error}</span>
+                  </div>
+                )}
               </div>
-              {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-            </div>
-          </form>
-
-          {isLoading && (
-            <div className="py-8 text-center">
-              <Spinner size="xl" />
-              <p className="mt-2 text-gray-600">Memuat data...</p>
-            </div>
-          )}
-
-          {!isLoading && statusData && statusData.length > 0 && (
-            <div className="overflow-x-auto rounded-md border">
-              <Table hoverable>
-                <TableHead>
-                  <TableHeadCell>Nomor Surat</TableHeadCell>
-                  <TableHeadCell>Jenis Surat</TableHeadCell>
-                  <TableHeadCell>Tanggal Pengajuan</TableHeadCell>
-                  <TableHeadCell>Status</TableHeadCell>
-                  <TableHeadCell>Catatan</TableHeadCell>
-                  <TableHeadCell className="table-cell whitespace-nowrap">
-                    Cetak Surat
-                  </TableHeadCell>
-                </TableHead>
-                <TableBody className="divide-y">
-                  {statusData.map((surat) => (
-                    <TableRow
-                      key={surat.id_surat}
-                      className="bg-white dark:border-gray-700 dark:bg-gray-800"
-                    >
-                      <TableCell>{surat.nomor_surat || "-"}</TableCell>
-                      <TableCell>
-                        {formatJenisSurat(surat.jenis_surat)}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(surat.tanggal_pengajuan).toLocaleDateString(
-                          "id-ID",
-                          { year: "numeric", month: "long", day: "numeric" },
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {renderStatusBadge(surat.status_surat)}
-                      </TableCell>
-                      <TableCell>{surat.catatan || "-"}</TableCell>
-                      <TableCell className="table-cell whitespace-nowrap">
-                        {surat.status_surat === "Disetujui" && (
-                          <Button
-                            size="xs"
-                            color="success"
-                            onClick={() =>
-                              handleDownloadPdf(
-                                surat.nik_pemohon,
-                                surat.id_surat,
-                              )
-                            }
-                            disabled={isLoading}
-                            className="flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 font-medium text-white transition-colors duration-200 hover:bg-green-700"
-                          >
-                            {isLoading ? (
-                              <Spinner size="xs" />
-                            ) : (
-                              <>
-                                <HiDownload className="h-4 w-4" />
-                                <span>Download PDF</span>
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-
-          {!isLoading && statusData && statusData.length === 0 && !error && (
-            <div className="rounded-md border py-8 text-center text-gray-600">
-              Tidak ada pengajuan surat yang terkait dengan NIK tersebut.
-            </div>
-          )}
-
-          {!isLoading && !statusData && !error && (
-            <div className="rounded-md border py-8 text-center text-gray-600">
-              Masukkan NIK Anda untuk melihat status pengajuan surat.
-            </div>
-          )}
+            </form>
+          </div>
         </Card>
+
+        {/* Loading State */}
+        {isLoading && (
+          <Card className="border-0 bg-white shadow-lg dark:bg-gray-800">
+            <div className="flex flex-col items-center justify-center py-16">
+              <Spinner size="xl" />
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+                Mencari data pengajuan surat...
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* Statistics Cards */}
+        {!isLoading && stats && (
+          <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Total Surat
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {stats.total}
+                  </p>
+                </div>
+                <HiDocumentText className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+            <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Disetujui
+                  </p>
+                  <p className="text-2xl font-bold text-emerald-600">
+                    {stats.disetujui}
+                  </p>
+                </div>
+                <HiCheckCircle className="h-8 w-8 text-emerald-500" />
+              </div>
+            </div>
+            <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Diproses
+                  </p>
+                  <p className="text-2xl font-bold text-amber-600">
+                    {stats.diajukan}
+                  </p>
+                </div>
+                <HiClock className="h-8 w-8 text-amber-500" />
+              </div>
+            </div>
+            <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Ditolak
+                  </p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {stats.ditolak}
+                  </p>
+                </div>
+                <HiXCircle className="h-8 w-8 text-red-500" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Results Table */}
+        {!isLoading && statusData && statusData.length > 0 && (
+          <Card className="border-0 bg-white shadow-lg dark:bg-gray-800">
+            <div className="p-6">
+              <h3 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
+                Riwayat Pengajuan Surat
+              </h3>
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <Table hoverable className="min-w-full">
+                  <TableHead className="bg-gray-50 dark:bg-gray-700">
+                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                      Nomor Surat
+                    </TableHeadCell>
+                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                      Jenis Surat
+                    </TableHeadCell>
+                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                      Tanggal Pengajuan
+                    </TableHeadCell>
+                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                      Status
+                    </TableHeadCell>
+                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                      Catatan
+                    </TableHeadCell>
+                    <TableHeadCell className="px-6 py-4 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                      Aksi
+                    </TableHeadCell>
+                  </TableHead>
+                  <TableBody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                    {statusData.map((surat, index) => (
+                      <TableRow
+                        key={surat.id_surat}
+                        className={`transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                          index % 2 === 0
+                            ? "bg-white dark:bg-gray-800"
+                            : "dark:bg-gray-750 bg-gray-50/50"
+                        }`}
+                      >
+                        <TableCell className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                          {surat.nomor_surat || (
+                            <span className="text-gray-400 dark:text-gray-500">
+                              Belum tersedia
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <HiDocumentText className="h-4 w-4 text-gray-400" />
+                            {formatJenisSurat(surat.jenis_surat)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(surat.tanggal_pengajuan).toLocaleDateString(
+                            "id-ID",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              weekday: "short",
+                            },
+                          )}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          {renderStatusBadge(surat.status_surat)}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {surat.catatan ? (
+                            <div
+                              className="max-w-xs truncate"
+                              title={surat.catatan}
+                            >
+                              {surat.catatan}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-center">
+                          {surat.status_surat === "Disetujui" ? (
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                handleDownloadPdf(
+                                  surat.nik_pemohon,
+                                  surat.id_surat,
+                                )
+                              }
+                              disabled={isLoading}
+                              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
+                            >
+                              {isLoading ? (
+                                <Spinner size="xs" />
+                              ) : (
+                                <>
+                                  <HiDownload className="h-4 w-4" />
+                                  <span>Download</span>
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Empty States */}
+        {!isLoading && statusData && statusData.length === 0 && !error && (
+          <Card className="border-0 bg-white shadow-lg dark:bg-gray-800">
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
+                <HiDocumentText className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Tidak Ada Data Ditemukan
+              </h3>
+              <p className="text-center text-gray-600 dark:text-gray-400">
+                Tidak ada pengajuan surat yang terkait dengan NIK tersebut.
+                <br />
+                Pastikan NIK yang dimasukkan sudah benar.
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {!isLoading && !statusData && !error && (
+          <Card className="border-0 bg-white shadow-lg dark:bg-gray-800">
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <HiSearch className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Siap Untuk Pencarian
+              </h3>
+              <p className="text-center text-gray-600 dark:text-gray-400">
+                Masukkan NIK Anda pada kolom pencarian di atas untuk melihat
+                <br />
+                status pengajuan surat yang telah dibuat.
+              </p>
+            </div>
+          </Card>
+        )}
       </div>
 
       <FooterDesa />
