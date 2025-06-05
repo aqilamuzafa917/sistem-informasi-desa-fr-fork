@@ -42,6 +42,7 @@ import ArtikelCreate from "./pages/ArtikelPage/ArtikelCreate";
 import VerifikasiArtikelPage from "./pages/ArtikelPage/VerifikasiArtikelPage";
 import ConfigPages from "./pages/ConfigPage/ConfigPages";
 import VerifikasiPengaduanPage from "./pages/PengaduanPage/VerifikasiPengaduanPages";
+import { Chatbot } from "./components/Chatbot";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -113,6 +114,8 @@ export default function App() {
           <Route path="/configdesa" element={<ConfigPages />} />
         </Route>
       </Routes>
+
+      <Chatbot />
     </>
   );
 }

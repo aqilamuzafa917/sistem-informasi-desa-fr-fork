@@ -3,6 +3,7 @@ import axios from "axios";
 import { Card } from "@/components/ui/card";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
+import { API_CONFIG } from "../config/api";
 // Define an interface for the API payload
 interface SuratPayload {
   id_surat?: number | null;
@@ -201,11 +202,11 @@ export default function PengajuanSuratPage() {
 
     try {
       const response = await axios.post(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat",
+        `${API_CONFIG.baseURL}/api/publik/surat`,
         apiData,
         {
           headers: {
-            "ngrok-skip-browser-warning": "69420",
+            ...API_CONFIG.headers,
           },
         },
       );

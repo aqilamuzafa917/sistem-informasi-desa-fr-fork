@@ -12,6 +12,8 @@ import {
 import { Card } from "@/components/ui/card";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
+import { API_CONFIG } from "../config/api";
+
 // Define the interface for the API response
 interface SuratApiResponse {
   id_surat: number;
@@ -56,10 +58,10 @@ export default function CekStatusSuratPage() {
 
     try {
       const response = await fetch(
-        `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat/${nik}`,
+        `${API_CONFIG.baseURL}/api/publik/surat/${nik}`,
         {
           headers: {
-            "ngrok-skip-browser-warning": "69420",
+            ...API_CONFIG.headers,
           },
         },
       );
@@ -148,10 +150,10 @@ export default function CekStatusSuratPage() {
   const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
     setIsLoading(true);
     try {
-      const pdfUrl = `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
+      const pdfUrl = `${API_CONFIG.baseURL}/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
       const response = await fetch(pdfUrl, {
         headers: {
-          "ngrok-skip-browser-warning": "69420",
+          ...API_CONFIG.headers,
         },
       });
 

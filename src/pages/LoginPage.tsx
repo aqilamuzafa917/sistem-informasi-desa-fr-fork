@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Label, TextInput, Alert } from "flowbite-react";
 import axios from "axios";
+import { API_CONFIG } from "@/config/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,17 +11,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL;
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const response = await axios.post(`${baseURL}/login`, {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `${API_CONFIG.baseURL}/api/login`,
+        {
+          email,
+          password,
+        },
+        {
+          headers: API_CONFIG.headers,
+        },
+      );
 
       const data = response.data;
 
@@ -83,7 +89,7 @@ export default function LoginPage() {
           </div>
           <div>
             <div className="mb-2 block">
-              <Label htmlFor="password"  />
+              <Label htmlFor="password" />
             </div>
             <TextInput
               id="password"

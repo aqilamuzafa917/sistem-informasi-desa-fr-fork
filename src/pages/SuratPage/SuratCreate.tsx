@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea"; // Assuming you have a Textarea component
+import { API_CONFIG } from "../../config/api";
 
 // Interface for the form data, can be expanded as needed
 interface FormData {
@@ -171,13 +172,12 @@ export default function SuratCreate() {
       const token =
         localStorage.getItem("token") || localStorage.getItem("authToken");
       const response = await axios.post(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/surat", // Replace with your actual API endpoint
+        `${API_CONFIG.baseURL}/api/surat`,
         dataToSubmit,
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-            "ngrok-skip-browser-warning": "69420",
           },
         },
       );

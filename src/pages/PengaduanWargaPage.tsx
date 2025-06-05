@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "sonner";
 import axios from "axios";
+import { API_CONFIG } from "../config/api";
 
 interface FormData {
   nama: string;
@@ -112,13 +113,12 @@ export default function PengaduanWargaPage() {
         formDataToSend.append("media[]", file);
       });
 
-      await axios.post(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/publik/pengaduan",
+      const response = await axios.post(
+        `${API_CONFIG.baseURL}/api/publik/pengaduan`,
         formDataToSend,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
-            "ngrok-skip-browser-warning": "69420",
+            ...API_CONFIG.headers,
           },
         },
       );
@@ -136,11 +136,11 @@ export default function PengaduanWargaPage() {
         detail_pengaduan: "",
         media: [],
       });
-      
+
       // Cleanup preview URLs
-      previewImages.forEach(url => URL.revokeObjectURL(url));
+      previewImages.forEach((url) => URL.revokeObjectURL(url));
       setPreviewImages([]);
-      
+
       // Wait for 2 seconds to show toast before refreshing
       setTimeout(() => {
         window.location.reload();
@@ -251,11 +251,15 @@ export default function PengaduanWargaPage() {
                   Upload foto atau dokumen pendukung (JPG, PNG, PDF, maks. 5MB)
                 </p>
               </div>
-              
+
               {previewImages.length > 0 && (
-                <div className="flex flex-wrap gap-4 justify-start">
+                <div className="flex flex-wrap justify-start gap-4">
                   {previewImages.map((preview, index) => (
-                    <div key={index} className="group relative" style={{ maxWidth: '150px' }}>
+                    <div
+                      key={index}
+                      className="group relative"
+                      style={{ maxWidth: "150px" }}
+                    >
                       <img
                         src={preview}
                         alt={`Preview ${index + 1}`}

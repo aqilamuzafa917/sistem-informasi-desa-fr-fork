@@ -2,14 +2,11 @@ import { useState, useEffect } from "react";
 import NavbarDesa from "../components/NavbarDesa";
 import FooterDesa from "../components/FooterDesa";
 
-import {
-  Card,
-  Spinner,
-  Pagination,
-} from "flowbite-react";
+import { Card, Spinner, Pagination } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
+import { API_CONFIG } from "../config/api";
 
 interface Artikel {
   id_artikel: number;
@@ -53,11 +50,11 @@ export default function ArtikelDesa() {
     const fetchArticles = async () => {
       setLoading(true);
       try {
-        const response = await axios.get<ArtikelResponse>(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/publik/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
           {
             headers: {
-              "ngrok-skip-browser-warning": "69420",
+              ...API_CONFIG.headers,
             },
           },
         );

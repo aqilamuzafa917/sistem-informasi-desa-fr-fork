@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { API_CONFIG } from "../../config/api";
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -255,11 +256,11 @@ export default function VerifikasiSuratPages() {
         const token =
           localStorage.getItem("token") || localStorage.getItem("authToken");
         const response = await axios.get(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/surat/${id}`,
+          `${API_CONFIG.baseURL}/api/surat/${id}`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );
@@ -289,15 +290,15 @@ export default function VerifikasiSuratPages() {
         localStorage.getItem("token") || localStorage.getItem("authToken");
       // Mengubah metode dari PUT menjadi PATCH dan URL menjadi ${id}/status
       await axios.patch(
-        `https://thankful-urgently-silkworm.ngrok-free.app/api/surat/${id}/status`,
+        `${API_CONFIG.baseURL}/api/surat/${id}/status`,
         {
           status_surat: status,
           catatan: catatan,
         },
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
           },
         },
       );

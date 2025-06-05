@@ -18,6 +18,7 @@ import { toast, Toaster } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { API_CONFIG } from "../../config/api";
 
 interface DesaConfig {
   kode: string;
@@ -64,12 +65,12 @@ export default function ConfigPages() {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("authToken");
-      const response = await axios.get<DesaConfig>(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/desa-config",
+      const response = await axios.get(
+        `${API_CONFIG.baseURL}/api/desa-config`,
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
           },
         },
       );
@@ -89,17 +90,13 @@ export default function ConfigPages() {
       setIsSaving(true);
       const token = localStorage.getItem("authToken");
 
-      await axios.put(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/desa-config",
-        config,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
-            "Content-Type": "application/json",
-          },
+      await axios.put(`${API_CONFIG.baseURL}/api/desa-config`, config, {
+        headers: {
+          ...API_CONFIG.headers,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
+      });
 
       toast.success("Konfigurasi berhasil disimpan", {
         duration: 2000,

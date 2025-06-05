@@ -2,6 +2,7 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import { AppSidebar } from "@/components/app-sidebar";
+import { API_CONFIG } from "@/config/api";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -251,13 +252,12 @@ export default function TambahKtpPages() {
       }
 
       const response = await axios.post(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/penduduk",
+        `${API_CONFIG.baseURL}/api/penduduk`,
         formData,
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "69420",
           },
         },
       );
