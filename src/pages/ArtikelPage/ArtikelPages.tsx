@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/popover";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { API_CONFIG } from "../../config/api";
 
 const jenisArtikelOptions = [
   { value: "warga", label: "Warga" },
@@ -143,12 +144,12 @@ export default function ArtikelPages() {
           // navigate("/"); // Optional: redirect to login if no token
           return;
         }
-        const response = await axios.get<ArtikelResponse>(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420", // Standard ngrok header
             },
           },
         );
@@ -216,16 +217,12 @@ export default function ArtikelPages() {
           // setStatsLoading(false);
           return;
         }
-        const response = await axios.get<{
-          status: string;
-          data: { diajukan: number; disetujui: number };
-          message: string;
-        }>(
-          "https://thankful-urgently-silkworm.ngrok-free.app/api/artikel/stats",
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/artikel/stats`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );
@@ -363,7 +360,8 @@ export default function ArtikelPages() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="mb-0 flex justify-end">
-            <Button onClick={() => navigate("/artikel/buat")}
+            <Button
+              onClick={() => navigate("/artikel/buat")}
               className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
             >
               Buat Artikel

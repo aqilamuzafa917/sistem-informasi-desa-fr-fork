@@ -24,6 +24,7 @@ import { Card } from "@/components/ui/card";
 import axios from "axios";
 import { toast } from "sonner";
 import { Toaster } from "sonner";
+import { API_CONFIG } from "../../config/api";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -185,13 +186,12 @@ export default function ArtikelCreate() {
       });
 
       const response = await axios.post(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/artikel",
+        `${API_CONFIG.baseURL}/api/artikel`,
         formDataToSend,
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-            "ngrok-skip-browser-warning": "69420",
           },
         },
       );

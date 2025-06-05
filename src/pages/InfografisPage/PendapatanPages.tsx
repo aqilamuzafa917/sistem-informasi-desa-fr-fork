@@ -27,6 +27,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "flowbite-react";
+import { API_CONFIG } from "../../config/api";
 
 interface PendapatanData {
   tahun_anggaran: number;
@@ -133,12 +134,12 @@ export default function PendapatanPages() {
           return;
         }
 
-        const response = await axios.get<ApiResponse>(
-          "https://thankful-urgently-silkworm.ngrok-free.app/api/publik/apbdesa/multi-tahun",
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/publik/apbdesa/multi-tahun`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );

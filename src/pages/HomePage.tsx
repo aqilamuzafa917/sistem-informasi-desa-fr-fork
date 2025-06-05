@@ -1,13 +1,14 @@
 // HomePage.tsx untuk Sistem Informasi Desa Bajujajar Timur
-import {
-  Carousel,
-} from "flowbite-react";
-import { Button as Buttonsc } from "@/components/ui/button";
+import { Carousel } from "flowbite-react";
+import { Button } from "@/components/ui/button";
 import * as React from "react";
 // import { TrendingUp } from "lucide-react";
 import { Label, Pie, PieChart, Tooltip, Cell } from "recharts";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
+import { CHATBOT_MINIMIZE_EVENT } from "@/components/NavbarDesa";
+import { PengaduanPopup } from "@/components/PengaduanPopup";
+
 export default function HomePage() {
   // Data untuk pie chart penduduk desa
   const chartDataPenduduk = [
@@ -22,6 +23,8 @@ export default function HomePage() {
 
   // Jumlah kepala keluarga
   const jumlahKK = 1250;
+
+  const [isPengaduanOpen, setIsPengaduanOpen] = React.useState(false);
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
@@ -99,12 +102,12 @@ export default function HomePage() {
                 Ajukan permohonan surat keterangan dan sertifikat yang
                 diperlukan untuk keperluan administrasi.
               </p>
-              <a
-                href="/pengajuansurat"
-                className="text-sm font-medium text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+              <Button
+                onClick={() => (window.location.href = "/pengajuansurat")}
+                className="bg-green-600 hover:bg-green-700"
               >
-                Ajukan Dokumen
-              </a>
+                Ajukan Surat
+              </Button>
             </div>
 
             {/* Card 2 - Track Document Status */}
@@ -136,12 +139,12 @@ export default function HomePage() {
                 real-time.
               </p>
 
-              <a
-                href="/cekstatussurat"
-                className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              <Button
+                onClick={() => (window.location.href = "/cekstatussurat")}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                Lacak Dokumen
-              </a>
+                Lacak Surat
+              </Button>
             </div>
 
             {/* Card 3 - Emergency Information */}
@@ -171,12 +174,18 @@ export default function HomePage() {
               <p className="mb-6 text-gray-700 dark:text-gray-300">
                 Berikan informasi yang jelas dan lengkap tentang masalah Anda.
               </p>
-              <a
-                href="/pengaduanwarga"
-                className="text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+              <Button
+                onClick={() => {
+                  const event = new CustomEvent(CHATBOT_MINIMIZE_EVENT, {
+                    detail: { minimize: true },
+                  });
+                  window.dispatchEvent(event);
+                  setIsPengaduanOpen(true);
+                }}
+                className="bg-red-600 hover:bg-red-700"
               >
-                Kontak Darurat
-              </a>
+                Laporkan Pengaduan
+              </Button>
             </div>
           </div>
         </div>
@@ -327,9 +336,9 @@ export default function HomePage() {
 
               <div className="mt-6 text-right">
                 <a href="/infografis/penduduk">
-                  <Buttonsc className="justify-end-safe text-xl" variant="link">
+                  <Button className="justify-end-safe text-xl" variant="link">
                     LIHAT DATA LEBIH LENGKAP
-                  </Buttonsc>
+                  </Button>
                 </a>
               </div>
             </div>
@@ -1105,9 +1114,9 @@ export default function HomePage() {
 
               <div className="mt-6 text-right">
                 <a href="/Infografis/apbdesa">
-                  <Buttonsc className="justify-end-safe text-xl" variant="link">
+                  <Button className="justify-end-safe text-xl" variant="link">
                     LIHAT DATA LEBIH LENGKAP
-                  </Buttonsc>
+                  </Button>
                 </a>
               </div>
             </div>
@@ -1152,9 +1161,9 @@ export default function HomePage() {
 
               <div className="mt-6 text-right">
                 <a href="#">
-                  <Buttonsc className="justify-end-safe text-xl" variant="link">
+                  <Button className="justify-end-safe text-xl" variant="link">
                     LIHAT DATA LEBIH LENGKAP
-                  </Buttonsc>
+                  </Button>
                 </a>
               </div>
             </div>
@@ -1892,7 +1901,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className=" mb-24 w-full bg-sky-50 px-4 py-12 dark:bg-gray-800">
+      <div className="mb-24 w-full bg-sky-50 px-4 py-12 dark:bg-gray-800">
         {/* Informasi Terkini Section */}
         <section className="container mx-auto mb-12 px-4">
           <h2 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
@@ -1975,6 +1984,10 @@ export default function HomePage() {
       </div>
       {/* Footer Section */}
       <FooterDesa />
+      <PengaduanPopup
+        isOpen={isPengaduanOpen}
+        onClose={() => setIsPengaduanOpen(false)}
+      />
     </main>
   );
 }

@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { API_CONFIG } from "../../config/api";
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -113,11 +114,11 @@ export default function VerifikasiPengaduanPage() {
         const token =
           localStorage.getItem("token") || localStorage.getItem("authToken");
         const response = await axios.get(
-          `https://thankful-urgently-silkworm.ngrok-free.app/api/pengaduan/${id}`,
+          `${API_CONFIG.baseURL}/api/pengaduan/${id}`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );
@@ -157,16 +158,15 @@ export default function VerifikasiPengaduanPage() {
       setSubmitting(true);
       const token =
         localStorage.getItem("token") || localStorage.getItem("authToken");
-      await axios.patch(
-        `https://thankful-urgently-silkworm.ngrok-free.app/api/pengaduan/${id}/status`,
+      await axios.put(
+        `${API_CONFIG.baseURL}/api/pengaduan/${id}/status`,
         {
           status: status,
         },
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
-            "Content-Type": "application/json",
           },
         },
       );
@@ -204,15 +204,12 @@ export default function VerifikasiPengaduanPage() {
       setIsDeleting(true);
       const token =
         localStorage.getItem("token") || localStorage.getItem("authToken");
-      await axios.delete(
-        `https://thankful-urgently-silkworm.ngrok-free.app/api/pengaduan/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
-          },
+      await axios.delete(`${API_CONFIG.baseURL}/api/pengaduan/${id}`, {
+        headers: {
+          ...API_CONFIG.headers,
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       toast.success("Pengaduan berhasil dihapus!", {
         description: "Pengaduan telah dihapus dari sistem",

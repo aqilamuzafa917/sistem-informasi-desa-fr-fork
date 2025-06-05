@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/popover";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { API_CONFIG } from "../../config/api";
 
 const frameworks = [
   { value: "SK_KEHILANGAN_KTP", label: "SK Kehilangan KTP" },
@@ -104,11 +105,11 @@ export default function SuratPages() {
         const token = localStorage.getItem("authToken");
         if (!token) throw new Error("Token tidak ditemukan");
         const response = await axios.get<SuratResponse>(
-          "https://thankful-urgently-silkworm.ngrok-free.app/api/surat",
+          `${API_CONFIG.baseURL}/api/surat`,
           {
             headers: {
+              ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "69420",
             },
           },
         );
@@ -167,10 +168,10 @@ export default function SuratPages() {
 
   const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
     try {
-      const pdfUrl = `https://thankful-urgently-silkworm.ngrok-free.app/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
+      const pdfUrl = `${API_CONFIG.baseURL}/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
       const response = await fetch(pdfUrl, {
         headers: {
-          "ngrok-skip-browser-warning": "69420",
+          ...API_CONFIG.headers,
         },
       });
 

@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 import axios from "axios";
+import { API_CONFIG } from "@/config/api";
 
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -48,11 +49,10 @@ export function NavUser() {
       }
 
       try {
-        const baseURL = import.meta.env.VITE_API_BASE_URL;
-        const response = await axios.get(`${baseURL}/user`, {
+        const response = await axios.get(`${API_CONFIG.baseURL}/api/user`, {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420",
           },
         });
 

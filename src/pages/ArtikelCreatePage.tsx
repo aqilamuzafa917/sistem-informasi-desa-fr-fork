@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  Label,
-  Select,
-  Textarea,
-} from "flowbite-react";
+import { Label, Select, Textarea } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
@@ -15,6 +11,7 @@ import { toast } from "sonner";
 import { Toaster } from "sonner";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
+import { API_CONFIG } from "../config/api";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -176,13 +173,12 @@ export default function ArtikelCreatePage() {
       });
 
       const response = await axios.post(
-        "https://thankful-urgently-silkworm.ngrok-free.app/api/artikel",
+        `${API_CONFIG.baseURL}/api/artikel`,
         formDataToSend,
         {
           headers: {
+            ...API_CONFIG.headers,
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-            "ngrok-skip-browser-warning": "69420",
           },
         },
       );
@@ -228,7 +224,7 @@ export default function ArtikelCreatePage() {
     <div className="flex min-h-screen flex-col bg-white dark:bg-gray-900">
       <Toaster richColors position="top-center" />
       <NavbarDesa />
-      
+
       <div className="container mx-auto flex-grow px-4 py-8">
         <div className="mx-auto max-w-3xl rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
           <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
@@ -371,8 +367,9 @@ export default function ArtikelCreatePage() {
                   multiple
                   required
                 />
-                <p className="text-red-600 mt-1 text-sm ">
-                  Maksimal ukuran file 2MB, Anda dapat memilih lebih dari satu gambar
+                <p className="mt-1 text-sm text-red-600">
+                  Maksimal ukuran file 2MB, Anda dapat memilih lebih dari satu
+                  gambar
                 </p>
               </div>
 
