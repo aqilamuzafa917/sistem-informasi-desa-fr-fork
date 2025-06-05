@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
+import { HiDownload } from "react-icons/hi";
 
 // Define the interface for the API response
 interface SuratApiResponse {
@@ -124,27 +125,41 @@ export default function CekStatusSuratPage() {
   };
 
   const renderStatusBadge = (status: string) => {
-    let color = "";
+    let bgColor = "";
+    let textColor = "";
+
     switch (status) {
       case "Disetujui":
-        color = "success";
+        bgColor = "bg-green-100 dark:bg-green-900";
+        textColor = "text-green-800 dark:text-green-300";
         break;
       case "Diajukan":
-        color = "warning";
+        bgColor = "bg-yellow-100 dark:bg-yellow-900";
+        textColor = "text-yellow-800 dark:text-yellow-300";
         break;
       case "Ditolak":
-        color = "failure";
+        bgColor = "bg-red-100 dark:bg-red-900";
+        textColor = "text-red-800 dark:text-red-300";
         break;
       default:
-        color = "info";
+        bgColor = "bg-blue-100 dark:bg-blue-900";
+        textColor = "text-blue-800 dark:text-blue-300";
     }
+
     return (
       <span
-        className={`bg-${color}-100 text-${color}-800 rounded-full px-2.5 py-0.5 text-xs font-medium dark:bg-${color}-900 dark:text-${color}-300`}
+        className={`${bgColor} ${textColor} rounded-full px-3 py-1 text-xs font-semibold`}
       >
         {status}
       </span>
     );
+  };
+
+  const formatJenisSurat = (jenis: string) => {
+    return jenis
+      .split("_")
+      // .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
@@ -258,7 +273,9 @@ export default function CekStatusSuratPage() {
                       className="bg-white dark:border-gray-700 dark:bg-gray-800"
                     >
                       <TableCell>{surat.nomor_surat || "-"}</TableCell>
-                      <TableCell>{surat.jenis_surat}</TableCell>
+                      <TableCell>
+                        {formatJenisSurat(surat.jenis_surat)}
+                      </TableCell>
                       <TableCell>
                         {new Date(surat.tanggal_pengajuan).toLocaleDateString(
                           "id-ID",
@@ -281,8 +298,16 @@ export default function CekStatusSuratPage() {
                               )
                             }
                             disabled={isLoading}
+                            className="flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 font-medium text-white transition-colors duration-200 hover:bg-green-700"
                           >
-                            {isLoading ? <Spinner size="xs" /> : "Download PDF"}
+                            {isLoading ? (
+                              <Spinner size="xs" />
+                            ) : (
+                              <>
+                                <HiDownload className="h-4 w-4" />
+                                <span>Download PDF</span>
+                              </>
+                            )}
                           </Button>
                         )}
                       </TableCell>

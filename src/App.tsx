@@ -1,4 +1,4 @@
-import { DarkThemeToggle } from "flowbite-react";
+// import { DarkThemeToggle } from "flowbite-react";
 import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage"; // Import the HomePage
 import LoginPage from "./pages/LoginPage"; // Import the LoginPage
@@ -27,7 +27,6 @@ import VerifikasiSuratPages from "./pages/SuratPage/VerifikasiSuratPages";
 import ProfilDesa from "./pages/ProfilDesa";
 import PengajuanSuratPage from "./pages/PengajuanSuratPage";
 import CekStatusSuratPage from "./pages/CekStatusSuratPage";
-import PengaduanWargaPage from "./pages/PengaduanWargaPage";
 import ArtikelDesa from "./pages/ArtikelDesa";
 import ArtikelDetailPage from "./pages/ArtikelDetailPage";
 import ArtikelCreatePage from "./pages/ArtikelCreatePage";
@@ -50,9 +49,9 @@ import { Chatbot } from "./components/Chatbot";
 export default function App() {
   return (
     <>
-      <div className="absolute top-4 right-4 z-50">
+      {/* <div className="absolute top-4 right-4 z-50">
         <DarkThemeToggle />
-      </div>
+      </div> */}
 
       {/* Navigation example (optional, you can place this in a Navbar component) */}
       {/* <nav className="bg-gray-100 dark:bg-gray-800 p-4 absolute top-16 right-4 z-50 rounded shadow">
@@ -74,7 +73,6 @@ export default function App() {
         <Route path="/profildesa" element={<ProfilDesa />} />
         <Route path="/pengajuansurat" element={<PengajuanSuratPage />} />
         <Route path="/cekstatussurat" element={<CekStatusSuratPage />} />
-        <Route path="/pengaduanwarga" element={<PengaduanWargaPage />} />
         <Route path="/artikeldesa" element={<ArtikelDesa />} />
         <Route path="/artikeldesa/:id" element={<ArtikelDetailPage />} />
         <Route path="/artikeldesa/buat" element={<ArtikelCreatePage />} />
