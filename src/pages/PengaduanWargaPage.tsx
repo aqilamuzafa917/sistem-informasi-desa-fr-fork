@@ -1,130 +1,172 @@
 import { useState } from "react";
-import {
-  Button,
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
-  Label,
-  FileInput,
-} from "flowbite-react";
 import { Card } from "@/components/ui/card";
-import {
-  BsFacebook,
-  BsInstagram,
-  BsTwitter,
-  BsGithub,
-  BsDribbble,
-} from "react-icons/bs";
+import NavbarDesa from "@/components/NavbarDesa";
+import FooterDesa from "@/components/FooterDesa";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast, Toaster } from "sonner";
+import axios from "axios";
+
+interface FormData {
+  nama: string;
+  nomor_telepon: string;
+  kategori: string;
+  detail_pengaduan: string;
+  media: File[];
+}
+
+const kategoriOptions = [
+  { value: "", label: "Pilih Kategori Pengaduan" },
+  { value: "Umum", label: "Umum" },
+  { value: "Sosial", label: "Sosial" },
+  { value: "Keamanan", label: "Keamanan" },
+  { value: "Kesehatan", label: "Kesehatan" },
+  { value: "Kebersihan", label: "Kebersihan" },
+  { value: "Permintaan", label: "Permintaan" },
+];
 
 export default function PengaduanWargaPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     nama: "",
-    nomorHp: "",
+    nomor_telepon: "",
     kategori: "",
-    detailPengaduan: "",
-    lampiran: null,
+    detail_pengaduan: "",
+    media: [],
   });
 
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+
+      setFormData((prev) => ({
+        ...prev,
+        media: [...prev.media, ...newFiles],
+      }));
+
+      // Create preview URLs for new images
+      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+      setPreviewImages((prev) => [...prev, ...newPreviewUrls]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData((prev) => {
+      const newFiles = [...prev.media];
+      newFiles.splice(index, 1);
+      return {
+        ...prev,
+        media: newFiles,
+      };
+    });
+
+    setPreviewImages((prev) => {
+      const newPreviews = [...prev];
+      URL.revokeObjectURL(newPreviews[index]); // Cleanup the URL
+      newPreviews.splice(index, 1);
+      return newPreviews;
     });
   };
 
-  const handleFileChange = (e) => {
-    setFormData({
-      ...formData,
-      lampiran: e.target.files[0],
-    });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError("");
 
-    // Validasi nomor HP (hanya angka dan minimal 10 digit)
+    // Validasi nomor telepon (hanya angka dan minimal 10 digit)
     const phoneRegex = /^[0-9]{10,15}$/;
-    if (!phoneRegex.test(formData.nomorHp)) {
-      setSubmitError("Nomor HP harus berupa angka dan minimal 10 digit");
+    if (!phoneRegex.test(formData.nomor_telepon)) {
+      setSubmitError("Nomor telepon harus berupa angka dan minimal 10 digit");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!formData.kategori) {
+      setSubmitError("Kategori pengaduan harus dipilih");
       setIsSubmitting(false);
       return;
     }
 
-    // Simulasi pengiriman data ke server
-    setTimeout(() => {
-      console.log("Data pengaduan:", formData);
-      // Di sini nantinya akan ada kode untuk mengirim data ke API
-
-      setIsSubmitting(false);
-      setSubmitSuccess(true);
-
-      // Reset form setelah berhasil submit
-      setFormData({
-        nama: "",
-        nomorHp: "",
-        kategori: "",
-        detailPengaduan: "",
-        lampiran: null,
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("nama", formData.nama);
+      formDataToSend.append("nomor_telepon", formData.nomor_telepon);
+      formDataToSend.append("kategori", formData.kategori);
+      formDataToSend.append("detail_pengaduan", formData.detail_pengaduan);
+      formData.media.forEach((file) => {
+        formDataToSend.append("media[]", file);
       });
 
-      // Reset pesan sukses setelah beberapa detik
-      setTimeout(() => {
-        setSubmitSuccess(false);
-      }, 5000);
-    }, 1500);
-  };
+      await axios.post(
+        "https://thankful-urgently-silkworm.ngrok-free.app/api/publik/pengaduan",
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            "ngrok-skip-browser-warning": "69420",
+          },
+        },
+      );
 
-  const kategoriOptions = [
-    { value: "", label: "Pilih Kategori Pengaduan" },
-    { value: "umum", label: "Umum" },
-    { value: "sosial", label: "Sosial" },
-    { value: "keamanan", label: "Keamanan" },
-    { value: "kesehatan", label: "Kesehatan" },
-    { value: "kebersihan", label: "Kebersihan" },
-    { value: "permintaan", label: "Permintaan" },
-  ];
+      toast.success("Pengaduan berhasil dikirim!", {
+        description: "Petugas desa akan segera menindaklanjuti laporan Anda.",
+        duration: 2000,
+      });
+
+      // Reset form dan preview images
+      setFormData({
+        nama: "",
+        nomor_telepon: "",
+        kategori: "",
+        detail_pengaduan: "",
+        media: [],
+      });
+      
+      // Cleanup preview URLs
+      previewImages.forEach(url => URL.revokeObjectURL(url));
+      setPreviewImages([]);
+      
+      // Wait for 2 seconds to show toast before refreshing
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Error submitting pengaduan:", error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        toast.error("Gagal mengirim pengaduan", {
+          description: errorMessage,
+        });
+      } else {
+        toast.error("Gagal mengirim pengaduan", {
+          description:
+            "Terjadi kesalahan saat mengirim pengaduan. Silakan coba lagi.",
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <Button>Hubungi Kami</Button>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="/#FiturDesa" active>
-            Fitur Desa
-          </NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="/infografis/penduduk">Infografis</NavbarLink>
-          <NavbarLink href="/artikeldesa">Artikel</NavbarLink>
-          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
-
+      <Toaster richColors position="top-center" />
+      <NavbarDesa />
       <div className="container mx-auto flex-grow px-4 py-8">
         <Card className="p-6">
           <h2 className="mb-6 text-2xl font-bold">Pengaduan Warga</h2>
@@ -133,58 +175,41 @@ export default function PengaduanWargaPage() {
             atau masalah yang sedang Anda alami. Pengaduan Anda akan
             ditindaklanjuti oleh petugas desa dalam waktu 1-3 hari kerja.
           </p>
-
-          {submitSuccess && (
-            <div className="mb-6 rounded-lg bg-green-100 p-4 text-sm text-green-700 dark:bg-green-200 dark:text-green-800">
-              Pengaduan Anda berhasil dikirim! Petugas desa akan segera
-              menindaklanjuti laporan Anda.
-            </div>
-          )}
-
           {submitError && (
             <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm text-red-700 dark:bg-red-200 dark:text-red-800">
               {submitError}
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Nama Lengkap
-                </label>
-                <input
-                  type="text"
+              <div className="space-y-2">
+                <Label htmlFor="nama">Nama Lengkap</Label>
+                <Input
+                  id="nama"
                   name="nama"
-                  className="w-full rounded-md border p-2"
                   placeholder="Masukkan nama lengkap Anda"
                   value={formData.nama}
                   onChange={handleInputChange}
                   required
                 />
               </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Nomor HP
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="nomor_telepon">Nomor Telepon</Label>
+                <Input
                   type="tel"
-                  name="nomorHp"
-                  className="w-full rounded-md border p-2"
+                  id="nomor_telepon"
+                  name="nomor_telepon"
                   placeholder="Contoh: 081234567890"
-                  value={formData.nomorHp}
+                  value={formData.nomor_telepon}
                   onChange={handleInputChange}
                   required
                 />
               </div>
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Kategori Pengaduan
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="kategori">Kategori Pengaduan</Label>
               <select
+                id="kategori"
                 name="kategori"
                 className="w-full rounded-md border p-2"
                 value={formData.kategori}
@@ -198,91 +223,83 @@ export default function PengaduanWargaPage() {
                 ))}
               </select>
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Detail Pengaduan
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="detail_pengaduan">Detail Pengaduan</Label>
               <textarea
-                name="detailPengaduan"
-                className="w-full rounded-md border p-2"
-                rows="6"
+                id="detail_pengaduan"
+                name="detail_pengaduan"
+                className="min-h-[120px] w-full rounded-md border p-2"
                 placeholder="Jelaskan secara detail pengaduan atau masalah yang Anda alami..."
-                value={formData.detailPengaduan}
+                value={formData.detail_pengaduan}
                 onChange={handleInputChange}
                 required
-              ></textarea>
-            </div>
-
-            <div>
-              <div className="mb-2 block">
-                <Label htmlFor="lampiran" value="Lampiran (Opsional)" />
-              </div>
-              <FileInput
-                id="lampiran"
-                name="lampiran"
-                helperText="Upload foto atau dokumen pendukung (JPG, PNG, PDF, maks. 5MB)"
-                onChange={handleFileChange}
-                accept=".jpg,.jpeg,.png,.pdf"
               />
             </div>
-
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="media">Lampiran (Opsional)</Label>
+                <Input
+                  type="file"
+                  id="media"
+                  name="media"
+                  onChange={handleFileChange}
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  multiple
+                  className="cursor-pointer"
+                />
+                <p className="text-sm text-gray-500">
+                  Upload foto atau dokumen pendukung (JPG, PNG, PDF, maks. 5MB)
+                </p>
+              </div>
+              
+              {previewImages.length > 0 && (
+                <div className="flex flex-wrap gap-4 justify-start">
+                  {previewImages.map((preview, index) => (
+                    <div key={index} className="group relative" style={{ maxWidth: '150px' }}>
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="h-32 w-full rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="bg-destructive text-destructive-foreground absolute top-2 right-2 rounded-full p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="Hapus gambar"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 6 6 18" />
+                          <path d="m6 6 12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="flex justify-end">
-              <button
+              <Button
                 type="submit"
-                className="rounded-md bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 disabled:opacity-50"
                 disabled={isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {isSubmitting ? "Mengirim..." : "Kirim Pengaduan"}
-              </button>
+              </Button>
             </div>
           </form>
         </Card>
       </div>
-
-      <Footer container className="mt-auto rounded-none">
-        <div className="w-full">
-          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
-            <div>
-              <FooterBrand href="/" src="" name="Desa Batujajar Timur" />
-            </div>
-            <div className="grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6">
-              <div>
-                <FooterTitle title="Tentang" />
-                <FooterLinkGroup col>
-                  <FooterLink href="/profildesa">Profil Desa</FooterLink>
-                  <FooterLink href="#">Visi & Misi</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Ikuti Kami" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Facebook</FooterLink>
-                  <FooterLink href="#">Instagram</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Informasi" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Kontak</FooterLink>
-                  <FooterLink href="#">Layanan</FooterLink>
-                </FooterLinkGroup>
-              </div>
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="/" by="Desa Batujajar Timur™" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
     </div>
   );
 }

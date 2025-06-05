@@ -1,25 +1,9 @@
-import {
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Button,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
-} from "flowbite-react";
 import * as React from "react";
-import { BsFacebook, BsInstagram, BsTwitter, BsGithub, BsDribbble } from "react-icons/bs";
-import { MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
+import NavbarDesa from "@/components/NavbarDesa";
+import FooterDesa from "@/components/FooterDesa";
 // Memperbaiki masalah icon Leaflet di React
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -39,7 +23,7 @@ export default function PetaFasilitasDesa() {
   // Fix untuk icon Leaflet di React
   React.useEffect(() => {
     delete (L.Icon.Default.prototype as any)._getIconUrl;
-    
+
     L.Icon.Default.mergeOptions({
       iconUrl: icon,
       shadowUrl: iconShadow,
@@ -86,8 +70,9 @@ export default function PetaFasilitasDesa() {
       id: 3,
       nama: "Masjid Graha Kencana Batujajar",
       kategori: "ibadah",
-      alamat: "Batujajar Tim., Kec. Batujajar, Kabupaten Bandung Barat, Jawa Barat 40561",
-      latitude: -6.9169971822642795, 
+      alamat:
+        "Batujajar Tim., Kec. Batujajar, Kabupaten Bandung Barat, Jawa Barat 40561",
+      latitude: -6.9169971822642795,
       longitude: 107.50462633385881,
       deskripsi: "Masjid Jami",
     },
@@ -124,7 +109,7 @@ export default function PetaFasilitasDesa() {
       kategori: "lainnya",
       alamat: "Jl. Raya Batujajar No. 1",
       latitude: -6.9175,
-      longitude: 107.5000,
+      longitude: 107.5,
       deskripsi: "Kantor Pemerintahan Desa",
     },
     {
@@ -142,7 +127,7 @@ export default function PetaFasilitasDesa() {
   const getMarkerIcon = (kategori: string) => {
     let iconUrl = "";
     let iconColor = "";
-    
+
     switch (kategori) {
       case "sekolah":
         iconColor = "green";
@@ -159,10 +144,11 @@ export default function PetaFasilitasDesa() {
       default:
         iconColor = "gray";
     }
-    
+
     return new L.Icon({
       iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${iconColor}.png`,
-      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+      shadowUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
       iconSize: [25, 41],
       iconAnchor: [12, 41],
       popupAnchor: [1, -34],
@@ -172,7 +158,7 @@ export default function PetaFasilitasDesa() {
 
   // Toggle kategori
   const toggleCategory = (kategori: keyof typeof activeCategories) => {
-    setActiveCategories(prev => ({
+    setActiveCategories((prev) => ({
       ...prev,
       [kategori]: !prev[kategori],
     }));
@@ -180,31 +166,13 @@ export default function PetaFasilitasDesa() {
 
   // Filter fasilitas berdasarkan kategori yang aktif
   const filteredFasilitas = fasilitasDesa.filter(
-    (fasilitas) => activeCategories[fasilitas.kategori]
+    (fasilitas) => activeCategories[fasilitas.kategori],
   );
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
       {/* Navbar Section */}
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <Button>Hubungi Kami</Button>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="/#FiturDesa">Fitur Desa</NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="/infografis/penduduk">Infografis</NavbarLink>
-          <NavbarLink href="/artikeldesa">Artikel</NavbarLink>
-          <NavbarLink href="/petafasilitas" active>Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
+      <NavbarDesa />
 
       <div className="container mx-auto px-4">
         {/* Judul Halaman */}
@@ -250,7 +218,7 @@ export default function PetaFasilitasDesa() {
         </div>
 
         {/* Peta */}
-        <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="mt-8 mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="h-[600px] w-full">
             <MapContainer
               center={[-6.9175, 107.5019]}
@@ -261,7 +229,7 @@ export default function PetaFasilitasDesa() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              
+
               {filteredFasilitas.map((fasilitas) => (
                 <Marker
                   key={fasilitas.id}
@@ -271,7 +239,9 @@ export default function PetaFasilitasDesa() {
                   <Popup>
                     <div>
                       <h3 className="font-bold">{fasilitas.nama}</h3>
-                      <p className="text-sm text-gray-600">{fasilitas.alamat}</p>
+                      <p className="text-sm text-gray-600">
+                        {fasilitas.alamat}
+                      </p>
                       {fasilitas.deskripsi && (
                         <p className="mt-1 text-sm">{fasilitas.deskripsi}</p>
                       )}
@@ -286,7 +256,9 @@ export default function PetaFasilitasDesa() {
         {/* Daftar Fasilitas */}
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Sekolah */}
-          <div className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.sekolah ? 'opacity-50' : ''}`}>
+          <div
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.sekolah ? "opacity-50" : ""}`}
+          >
             <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
               Sekolah
             </h3>
@@ -294,7 +266,10 @@ export default function PetaFasilitasDesa() {
               {fasilitasDesa
                 .filter((f) => f.kategori === "sekolah")
                 .map((fasilitas) => (
-                  <div key={fasilitas.id} className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900">
+                  <div
+                    key={fasilitas.id}
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                  >
                     <h4 className="font-semibold text-gray-700 dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
@@ -307,7 +282,9 @@ export default function PetaFasilitasDesa() {
           </div>
 
           {/* Tempat Ibadah */}
-          <div className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.ibadah ? 'opacity-50' : ''}`}>
+          <div
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.ibadah ? "opacity-50" : ""}`}
+          >
             <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
               Tempat Ibadah
             </h3>
@@ -315,7 +292,10 @@ export default function PetaFasilitasDesa() {
               {fasilitasDesa
                 .filter((f) => f.kategori === "ibadah")
                 .map((fasilitas) => (
-                  <div key={fasilitas.id} className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900">
+                  <div
+                    key={fasilitas.id}
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                  >
                     <h4 className="font-semibold text-gray-700 dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
@@ -328,7 +308,9 @@ export default function PetaFasilitasDesa() {
           </div>
 
           {/* Kesehatan */}
-          <div className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.kesehatan ? 'opacity-50' : ''}`}>
+          <div
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.kesehatan ? "opacity-50" : ""}`}
+          >
             <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
               Kesehatan
             </h3>
@@ -336,7 +318,10 @@ export default function PetaFasilitasDesa() {
               {fasilitasDesa
                 .filter((f) => f.kategori === "kesehatan")
                 .map((fasilitas) => (
-                  <div key={fasilitas.id} className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900">
+                  <div
+                    key={fasilitas.id}
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                  >
                     <h4 className="font-semibold text-gray-700 dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
@@ -349,7 +334,9 @@ export default function PetaFasilitasDesa() {
           </div>
 
           {/* Fasilitas Lainnya */}
-          <div className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.lainnya ? 'opacity-50' : ''}`}>
+          <div
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.lainnya ? "opacity-50" : ""}`}
+          >
             <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
               Fasilitas Lainnya
             </h3>
@@ -357,7 +344,10 @@ export default function PetaFasilitasDesa() {
               {fasilitasDesa
                 .filter((f) => f.kategori === "lainnya")
                 .map((fasilitas) => (
-                  <div key={fasilitas.id} className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900">
+                  <div
+                    key={fasilitas.id}
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                  >
                     <h4 className="font-semibold text-gray-700 dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
@@ -372,49 +362,7 @@ export default function PetaFasilitasDesa() {
       </div>
 
       {/* Footer Section */}
-      <Footer container className="rounded-none">
-        <div className="w-full">
-          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
-            <div>
-              <FooterBrand href="/" src="" name="Desa Batujajar Timur" />
-            </div>
-            <div className="grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6">
-              <div>
-                <FooterTitle title="Tentang" />
-                <FooterLinkGroup col>
-                  <FooterLink href="/profildesa">Profil Desa</FooterLink>
-                  <FooterLink href="#">Visi & Misi</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Ikuti Kami" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Facebook</FooterLink>
-                  <FooterLink href="#">Instagram</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Informasi" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Kontak</FooterLink>
-                  <FooterLink href="#">Layanan</FooterLink>
-                </FooterLinkGroup>
-              </div>
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="/" by="Desa Batujajar Timur™" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
     </main>
   );
 }

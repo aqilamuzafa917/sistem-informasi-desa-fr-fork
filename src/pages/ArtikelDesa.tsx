@@ -1,32 +1,14 @@
 import { useState, useEffect } from "react";
+import NavbarDesa from "../components/NavbarDesa";
+import FooterDesa from "../components/FooterDesa";
+
 import {
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle,
-  Button as FlowbiteButton,
-  Footer,
-  FooterBrand,
-  FooterCopyright,
-  FooterDivider,
-  FooterIcon,
-  FooterLink,
-  FooterLinkGroup,
-  FooterTitle,
   Card,
   Spinner,
   Pagination,
 } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  BsFacebook,
-  BsInstagram,
-  BsTwitter,
-  BsGithub,
-  BsDribbble,
-} from "react-icons/bs";
 import axios from "axios";
 
 interface Artikel {
@@ -137,27 +119,7 @@ export default function ArtikelDesa() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Navbar Section */}
-      <Navbar fluid rounded className="mb-8 border-y-2">
-        <NavbarBrand href="/">
-          <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-            Desa Batujajar Timur
-          </span>
-        </NavbarBrand>
-        <div className="flex md:order-2">
-          <FlowbiteButton>Hubungi Kami</FlowbiteButton>
-          <NavbarToggle />
-        </div>
-        <NavbarCollapse>
-          <NavbarLink href="/">Beranda</NavbarLink>
-          <NavbarLink href="/#FiturDesa">Fitur Desa</NavbarLink>
-          <NavbarLink href="/profildesa">Profil Desa</NavbarLink>
-          <NavbarLink href="/infografis/penduduk">Infografis</NavbarLink>
-          <NavbarLink href="/artikeldesa" active>
-            Artikel
-          </NavbarLink>
-          <NavbarLink href="/petafasilitasdesa">Peta Fasilitas</NavbarLink>
-        </NavbarCollapse>
-      </Navbar>
+      <NavbarDesa />
 
       <main className="container mx-auto px-6 py-2">
         <div className="mb-8 flex items-center justify-between">
@@ -249,7 +211,7 @@ export default function ArtikelDesa() {
             {filteredArticles.map((article) => (
               <Card
                 key={article.id_artikel}
-                className="max-w-sm"
+                className="flex h-[500px] max-w-sm flex-col"
                 imgAlt={article.judul_artikel}
                 imgSrc={
                   article.media_artikel?.[0]?.url ||
@@ -259,40 +221,52 @@ export default function ArtikelDesa() {
                   img: {
                     base: "h-48 w-full object-cover",
                   },
+                  root: {
+                    base: "flex h-full flex-col",
+                  },
                 }}
               >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="rounded bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                    {capitalizeWords(article.kategori_artikel)}
-                  </span>
-                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="mr-1 h-4 w-4"
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    {formatDate(article.tanggal_publikasi_artikel)}
+                <div className="flex flex-grow flex-col">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="rounded bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                      {capitalizeWords(article.kategori_artikel)}
+                    </span>
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="mr-1 h-4 w-4"
+                      >
+                        <rect
+                          x="3"
+                          y="4"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      {formatDate(article.tanggal_publikasi_artikel)}
+                    </div>
                   </div>
+                  <h5 className="line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    {capitalizeWords(article.judul_artikel)}
+                  </h5>
+                  <p className="mt-2 line-clamp-3 font-normal text-gray-700 dark:text-gray-400">
+                    {capitalizeWords(article.isi_artikel.substring(0, 150))}...
+                  </p>
                 </div>
-                <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {capitalizeWords(article.judul_artikel)}
-                </h5>
-                <p className="font-normal text-gray-700 dark:text-gray-400">
-                  {capitalizeWords(article.isi_artikel.substring(0, 150))}...
-                </p>
-                <div className="mt-4">
+                <div className="mt-auto pt-4">
                   <Button
                     variant="outline"
                     className="w-full justify-between"
@@ -361,54 +335,7 @@ export default function ArtikelDesa() {
       </main>
 
       {/* Footer Section */}
-      <Footer container className="mt-16">
-        <div className="w-full">
-          <div className="grid w-full justify-between sm:flex sm:justify-between md:flex md:grid-cols-1">
-            <div>
-              <FooterBrand
-                href="/"
-                src="https://flowbite.com/docs/images/logo.svg"
-                alt="Flowbite Logo"
-                name="Desa Batujajar Timur"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-8 sm:mt-4 sm:grid-cols-3 sm:gap-6">
-              <div>
-                <FooterTitle title="Tentang" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Profil Desa</FooterLink>
-                  <FooterLink href="#">Visi & Misi</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Layanan" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Pengajuan Surat</FooterLink>
-                  <FooterLink href="#">Pengaduan</FooterLink>
-                </FooterLinkGroup>
-              </div>
-              <div>
-                <FooterTitle title="Legal" />
-                <FooterLinkGroup col>
-                  <FooterLink href="#">Kebijakan Privasi</FooterLink>
-                  <FooterLink href="#">Syarat & Ketentuan</FooterLink>
-                </FooterLinkGroup>
-              </div>
-            </div>
-          </div>
-          <FooterDivider />
-          <div className="w-full sm:flex sm:items-center sm:justify-between">
-            <FooterCopyright href="#" by="Desa Batujajar Timur" year={2023} />
-            <div className="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
-              <FooterIcon href="#" icon={BsFacebook} />
-              <FooterIcon href="#" icon={BsInstagram} />
-              <FooterIcon href="#" icon={BsTwitter} />
-              <FooterIcon href="#" icon={BsGithub} />
-              <FooterIcon href="#" icon={BsDribbble} />
-            </div>
-          </div>
-        </div>
-      </Footer>
+      <FooterDesa />
     </div>
   );
 }
