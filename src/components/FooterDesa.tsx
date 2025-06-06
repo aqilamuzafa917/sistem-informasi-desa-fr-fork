@@ -63,7 +63,6 @@ export default function FooterDesa() {
           LOCALSTORAGE_IDENTITAS_KEY,
           JSON.stringify(response.data),
         );
-        console.log("Fetched Identitas:", response.data);
       } catch (error) {
         console.error("Error fetching identitas:", error);
       } finally {
@@ -89,35 +88,41 @@ export default function FooterDesa() {
     return null;
   }
 
-  const displayedDesaName =
-    identitas?.nama_desa || desaConfig?.nama_desa || "Desa";
+  const displayedDesaName = desaConfig?.nama_desa || "Desa";
   const logoUrl =
     desaConfig?.logo_desa ||
     "https://cdn.digitaldesa.com/uploads/profil/32.17.13.2003/common/300_bandungbarat.png";
 
+  // Get address from desaConfig first, then fallback to identitas
+  const displayedAddress =
+    desaConfig?.alamat_desa ||
+    identitas?.alamat_lengkap ||
+    identitas?.alamat_singkat ||
+    "Alamat belum tersedia";
+
   return (
-    <footer className="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 text-white">
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="grid gap-8 lg:grid-cols-2">
+    <footer className="bg-gradient-to-r from-[var(--color-deep-blue)] via-[var(--color-cyan-blue)] to-[var(--color-deep-blue)] text-[var(--color-pure-white)]">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
+        <div className="grid gap-8 md:grid-cols-2">
           {/* Column 1: Logo & Village Info */}
-          <div className="lg:col-span-1">
+          <div className="md:col-span-1">
             <div className="mb-6">
-              <h3 className="mb-4 text-xl font-bold text-white">
+              <h3 className="mb-4 text-center text-lg font-bold text-[var(--color-pure-white)] sm:text-xl md:text-left">
                 Pemerintah Desa {displayedDesaName}
               </h3>
 
               {/* Logo */}
-              <div className="mb-6 flex items-center">
-                <div className="mr-4 h-24 w-24 flex-shrink-0">
+              <div className="mb-6 flex flex-col items-center md:flex-row md:items-start">
+                <div className="mb-4 h-20 w-20 flex-shrink-0 md:mr-4 md:mb-0 md:h-24 md:w-24">
                   <img
                     src={logoUrl}
                     alt={`Logo ${displayedDesaName}`}
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <div>
-                  <div className="text-sm leading-relaxed text-indigo-100">
-                    {desaConfig?.alamat_desa}
+                <div className="text-center md:text-left">
+                  <div className="text-sm leading-relaxed text-[var(--color-pure-white)]">
+                    {displayedAddress}
                   </div>
                 </div>
               </div>
@@ -125,8 +130,8 @@ export default function FooterDesa() {
           </div>
 
           {/* Column 2: Contact Info */}
-          <div className="lg:col-span-1">
-            <h4 className="mb-6 text-lg font-semibold text-white">
+          <div className="md:col-span-1">
+            <h4 className="mb-6 text-center text-lg font-semibold text-[var(--color-pure-white)] md:text-left">
               Hubungi Kami
             </h4>
 
@@ -134,16 +139,16 @@ export default function FooterDesa() {
               {/* Phone */}
               {identitas?.telepon && (
                 <div className="flex items-start">
-                  <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
-                    <Phone className="h-5 w-5 text-white" />
+                  <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--color-pure-white)]/10">
+                    <Phone className="h-5 w-5 text-[var(--color-pure-white)]" />
                   </div>
                   <div>
-                    <div className="mb-1 text-sm font-medium text-indigo-100">
+                    <div className="mb-1 text-sm font-medium text-[var(--color-pale-blue)]">
                       Nomor Telepon Penting
                     </div>
                     <a
                       href={`tel:${identitas.telepon}`}
-                      className="text-white transition-colors duration-200 hover:text-indigo-200"
+                      className="text-[var(--color-pure-white)] transition-colors duration-200 hover:text-[var(--color-pale-blue)]"
                     >
                       {identitas.telepon}
                     </a>
@@ -154,16 +159,16 @@ export default function FooterDesa() {
               {/* Email */}
               {identitas?.email && (
                 <div className="flex items-start">
-                  <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
-                    <Mail className="h-5 w-5 text-white" />
+                  <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--color-pure-white)]/10">
+                    <Mail className="h-5 w-5 text-[var(--color-pure-white)]" />
                   </div>
                   <div>
-                    <div className="mb-1 text-sm font-medium text-indigo-100">
+                    <div className="mb-1 text-sm font-medium text-[var(--color-pale-blue)]">
                       Email
                     </div>
                     <a
                       href={`mailto:${identitas.email}`}
-                      className="break-all text-white transition-colors duration-200 hover:text-indigo-200"
+                      className="break-all text-[var(--color-pure-white)] transition-colors duration-200 hover:text-[var(--color-pale-blue)]"
                     >
                       {identitas.email}
                     </a>
@@ -174,23 +179,23 @@ export default function FooterDesa() {
               {/* Social Media Icons */}
               {identitas?.social_media && identitas.social_media.length > 0 && (
                 <div className="pt-4">
-                  <div className="mb-3 text-sm font-medium text-indigo-100">
+                  <div className="mb-3 text-center text-sm font-medium text-[var(--color-pale-blue)] md:text-left">
                     Media Sosial
                   </div>
-                  <div className="flex space-x-3">
+                  <div className="flex justify-center space-x-3 md:justify-start">
                     {identitas.social_media.map((social) => (
                       <a
                         key={social.platform}
                         href={social.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 transition-all duration-200 hover:bg-white/20"
+                        className="group flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-pure-white)]/10 transition-all duration-200 hover:bg-[var(--color-pure-white)]/20"
                       >
                         {React.createElement(
                           getSocialMediaIcon(social.platform),
                           {
                             className:
-                              "h-5 w-5 text-white group-hover:scale-110 transition-transform duration-200",
+                              "h-5 w-5 text-[var(--color-pure-white)] group-hover:scale-110 transition-transform duration-200",
                           },
                         )}
                       </a>
@@ -203,10 +208,10 @@ export default function FooterDesa() {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-12 border-t border-white/10 pt-8">
-          <div className="text-center text-sm text-indigo-200">
+        <div className="mt-8 border-t border-[var(--color-pure-white)]/10 pt-6 md:mt-12 md:pt-8">
+          <div className="text-center text-sm text-[var(--color-pale-blue)]">
             © {new Date().getFullYear()} Pemerintah Desa {displayedDesaName}.
-            <span className="block md:ml-1 md:inline">
+            <span className="mt-1 block md:mt-0 md:ml-1 md:inline">
               Seluruh hak cipta dilindungi undang-undang.
             </span>
           </div>

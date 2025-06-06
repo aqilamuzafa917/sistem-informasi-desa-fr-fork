@@ -188,11 +188,11 @@ export default function ArtikelDesa() {
 
         {/* Articles Grid */}
         {loading ? (
-          <div className="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-7xl gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(9)].map((_, index) => (
               <Card
                 key={index}
-                className="flex h-[500px] max-w-sm animate-pulse flex-col"
+                className="flex h-[500px] w-full animate-pulse flex-col"
                 theme={{
                   img: {
                     base: "h-48 w-full bg-gray-200 dark:bg-gray-700",
@@ -243,11 +243,11 @@ export default function ArtikelDesa() {
             </h3>
           </div>
         ) : filteredArticles.length > 0 ? (
-          <div className="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-7xl gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {filteredArticles.map((article) => (
               <Card
                 key={article.id_artikel}
-                className="flex h-[500px] max-w-sm flex-col"
+                className="flex h-[500px] w-full flex-col"
                 imgAlt={article.judul_artikel}
                 imgSrc={
                   article.media_artikel?.[0]?.url ||

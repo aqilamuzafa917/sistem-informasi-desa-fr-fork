@@ -1,12 +1,13 @@
 import { useState } from "react";
 import axios from "axios";
-import { FileText } from "lucide-react";
+import { FileText, ArrowLeft } from "lucide-react";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
 import { SuratPayload } from "@/types/surat";
 import PengajuanFormSteps from "@/components/pengajuan-surat/PengajuanFormSteps";
 import InfoCardsSection from "@/components/pengajuan-surat/InfoCardsSection";
+import { Button } from "@/components/ui/button";
 
 export default function PengajuanSuratPage() {
   const [jenisSurat, setJenisSurat] = useState("");
@@ -15,6 +16,14 @@ export default function PengajuanSuratPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleBack = () => {
+    setJenisSurat("");
+    setFormData({});
+    setUploadedFiles([]);
+    setCurrentStep(1);
+    setUploadError(null);
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -160,6 +169,20 @@ export default function PengajuanSuratPage() {
             Proses pengajuan akan diselesaikan dalam 1-3 hari kerja.
           </p>
         </div>
+
+        {/* Back Button - Only show when jenis surat is selected */}
+        {jenisSurat && (
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kembali ke Pilihan Surat
+            </Button>
+          </div>
+        )}
 
         {/* Main Form Steps */}
         <PengajuanFormSteps

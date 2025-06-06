@@ -1,0 +1,26 @@
+{
+  "short_name": "Desa Digital",
+  "name": "Sistem Informasi Desa",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563EB",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "description": "Sistem Informasi Desa Digital - Akses informasi desa dengan mudah",
+  "categories": ["utilities", "productivity"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ]
+}
