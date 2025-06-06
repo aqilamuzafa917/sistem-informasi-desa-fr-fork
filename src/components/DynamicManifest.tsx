@@ -7,31 +7,13 @@ export default function DynamicManifest() {
   useEffect(() => {
     const manifestLink = document.querySelector('link[rel="manifest"]');
     if (manifestLink) {
-      const manifestUrl = new URL(
-        manifestLink.getAttribute("href") || "/manifest.json",
-        window.location.origin,
-      );
+      // Use a static manifest URL instead of creating a blob
+      const manifestUrl = "/manifest.json";
+      manifestLink.setAttribute("href", manifestUrl);
 
-      // Fetch the manifest
-      fetch(manifestUrl)
-        .then((response) => response.json())
-        .then((manifest) => {
-          // Update the manifest with the desa name
-          manifest.name = `Sistem Informasi ${desaConfig?.nama_desa || "Desa"}`;
-          manifest.short_name = desaConfig?.nama_desa || "Desa Digital";
-
-          // Create a new manifest blob
-          const manifestBlob = new Blob([JSON.stringify(manifest)], {
-            type: "application/json",
-          });
-          const manifestUrl = URL.createObjectURL(manifestBlob);
-
-          // Update the manifest link
-          manifestLink.setAttribute("href", manifestUrl);
-        })
-        .catch((error) => {
-          console.error("Error updating manifest:", error);
-        });
+      // Update the manifest name in the document head
+      const appName = `Sistem Informasi ${desaConfig?.nama_desa || "Desa"}`;
+      document.title = appName;
     }
   }, [desaConfig?.nama_desa]);
 

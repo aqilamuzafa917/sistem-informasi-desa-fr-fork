@@ -63,7 +63,6 @@ export default function FooterDesa() {
           LOCALSTORAGE_IDENTITAS_KEY,
           JSON.stringify(response.data),
         );
-        console.log("Fetched Identitas:", response.data);
       } catch (error) {
         console.error("Error fetching identitas:", error);
       } finally {

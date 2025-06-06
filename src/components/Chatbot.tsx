@@ -191,6 +191,8 @@ export function Chatbot() {
     const processBoldItalic = (segment: string): React.ReactNode[] => {
       const segmentElements: React.ReactNode[] = [];
       let lastIndex = 0;
+      let elementIndex = 0;
+      const uniqueId = Math.random().toString(36).substring(2, 15);
 
       const combinedRegex = new RegExp(
         `${boldRegex.source}|${italicRegex.source}`,
@@ -205,20 +207,29 @@ export function Chatbot() {
 
         if (matchIndex > lastIndex) {
           segmentElements.push(
-            <span key={`text-${lastIndex}-${matchIndex}`}>
+            <span
+              key={`text-${uniqueId}-${elementIndex}-${lastIndex}-${matchIndex}`}
+            >
               {segment.substring(lastIndex, matchIndex)}
             </span>,
           );
+          elementIndex++;
         }
 
         if (match[1]) {
           segmentElements.push(
-            <strong key={`bold-${matchIndex}`}>{match[1]}</strong>,
+            <strong key={`bold-${uniqueId}-${elementIndex}-${matchIndex}`}>
+              {match[1]}
+            </strong>,
           );
+          elementIndex++;
         } else if (match[3]) {
           segmentElements.push(
-            <em key={`italic-${matchIndex}`}>{match[3]}</em>,
+            <em key={`italic-${uniqueId}-${elementIndex}-${matchIndex}`}>
+              {match[3]}
+            </em>,
           );
+          elementIndex++;
         }
 
         lastIndex = matchIndex + fullMatch.length;
@@ -226,7 +237,7 @@ export function Chatbot() {
 
       if (lastIndex < segment.length) {
         segmentElements.push(
-          <span key={`text-end-${lastIndex}`}>
+          <span key={`text-${uniqueId}-${elementIndex}-${lastIndex}-end`}>
             {segment.substring(lastIndex)}
           </span>,
         );
@@ -271,16 +282,37 @@ export function Chatbot() {
             </a>,
           );
         } else if (standaloneUrl) {
-          // Handle standalone URLs
+          // For standalone URLs, extract the feature name from the URL
+          const url = new URL(standaloneUrl);
+          const path = url.pathname;
+          let featureName = path.split("/").pop() || standaloneUrl;
+
+          // Map paths to feature names
+          const featureMap: { [key: string]: string } = {
+            "": "Halaman Utama",
+            profildesa: "Profil Desa",
+            pengajuansurat: "Pengajuan Surat",
+            cekstatussurat: "Cek Status Surat",
+            artikeldesa: "Artikel Desa",
+            "infografis/penduduk": "Data Penduduk",
+            "infografis/apbdesa": "APB Desa",
+            "infografis/idm": "IDM",
+            petafasilitasdesa: "Peta Fasilitas Desa",
+          };
+
+          // Get the feature name from the map or use the path
+          featureName = featureMap[path.slice(1)] || featureName;
+
+          // Handle markdown links
           segmentElements.push(
             <a
               key={`url-${lastIndex}-${matchIndex}`}
               href={standaloneUrl}
               className={`text-[${theme.link}] underline hover:text-blue-800`}
-              target="_blank" // Open standalone URLs in a new tab
+              target="_blank"
               rel="noopener noreferrer"
             >
-              {standaloneUrl}
+              {featureName}
             </a>,
           );
         }
@@ -547,6 +579,8 @@ export function Chatbot() {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage();
+                  } else if (e.key === " ") {
+                    e.stopPropagation();
                   }
                 }}
                 placeholder="Ketik pesan atau tanyakan sesuatu"
