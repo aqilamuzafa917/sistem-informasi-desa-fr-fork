@@ -375,29 +375,116 @@ export default function CekStatusSuratPage() {
         {/* Results Table */}
         {!isLoading && statusData && statusData.length > 0 && (
           <Card className="border-0 bg-white shadow-lg dark:bg-gray-800">
-            <div className="p-6">
-              <h3 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="p-4 sm:p-6">
+              <h3 className="mb-4 text-lg font-semibold text-gray-900 sm:mb-6 sm:text-xl dark:text-white">
                 Riwayat Pengajuan Surat
               </h3>
-              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+
+              {/* Mobile Card View */}
+              <div className="space-y-4 sm:hidden">
+                {statusData.map((surat, index) => (
+                  <div
+                    key={surat.id_surat}
+                    className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <HiDocumentText className="h-5 w-5 text-gray-400" />
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {formatJenisSurat(surat.jenis_surat)}
+                        </span>
+                      </div>
+                      {renderStatusBadge(surat.status_surat)}
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Nomor Surat
+                        </span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {surat.nomor_surat || (
+                            <span className="text-gray-400 dark:text-gray-500">
+                              Belum tersedia
+                            </span>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Tanggal
+                        </span>
+                        <span className="text-gray-900 dark:text-white">
+                          {new Date(surat.tanggal_pengajuan).toLocaleDateString(
+                            "id-ID",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              weekday: "short",
+                            },
+                          )}
+                        </span>
+                      </div>
+
+                      {surat.catatan && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Catatan
+                          </span>
+                          <span className="max-w-[200px] text-right text-gray-900 dark:text-white">
+                            {surat.catatan}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {surat.status_surat === "Disetujui" && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            handleDownloadPdf(surat.nik_pemohon, surat.id_surat)
+                          }
+                          disabled={isLoading}
+                          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
+                        >
+                          {isLoading ? (
+                            <Spinner size="xs" />
+                          ) : (
+                            <>
+                              <HiDownload className="h-3.5 w-3.5" />
+                              <span>Download</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden overflow-x-auto rounded-lg border border-gray-200 sm:block dark:border-gray-700">
                 <Table hoverable className="min-w-full">
                   <TableHead className="bg-gray-50 dark:bg-gray-700">
-                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
                       Nomor Surat
                     </TableHeadCell>
-                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
                       Jenis Surat
                     </TableHeadCell>
-                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                      Tanggal Pengajuan
+                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
+                      Tanggal
                     </TableHeadCell>
-                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
                       Status
                     </TableHeadCell>
-                    <TableHeadCell className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
                       Catatan
                     </TableHeadCell>
-                    <TableHeadCell className="px-6 py-4 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                    <TableHeadCell className="px-4 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
                       Aksi
                     </TableHeadCell>
                   </TableHead>
@@ -411,20 +498,20 @@ export default function CekStatusSuratPage() {
                             : "dark:bg-gray-750 bg-gray-50/50"
                         }`}
                       >
-                        <TableCell className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                        <TableCell className="px-4 py-3 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white">
                           {surat.nomor_surat || (
                             <span className="text-gray-400 dark:text-gray-500">
                               Belum tersedia
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                        <TableCell className="px-4 py-3 text-sm whitespace-nowrap text-gray-900 dark:text-white">
                           <div className="flex items-center gap-2">
                             <HiDocumentText className="h-4 w-4 text-gray-400" />
                             {formatJenisSurat(surat.jenis_surat)}
                           </div>
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        <TableCell className="px-4 py-3 text-sm whitespace-nowrap text-gray-500 dark:text-gray-400">
                           {new Date(surat.tanggal_pengajuan).toLocaleDateString(
                             "id-ID",
                             {
@@ -435,13 +522,13 @@ export default function CekStatusSuratPage() {
                             },
                           )}
                         </TableCell>
-                        <TableCell className="px-6 py-4">
+                        <TableCell className="px-4 py-3 whitespace-nowrap">
                           {renderStatusBadge(surat.status_surat)}
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        <TableCell className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                           {surat.catatan ? (
                             <div
-                              className="max-w-xs truncate"
+                              className="max-w-[200px] truncate"
                               title={surat.catatan}
                             >
                               {surat.catatan}
@@ -452,7 +539,7 @@ export default function CekStatusSuratPage() {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-center">
+                        <TableCell className="px-4 py-3 text-center whitespace-nowrap">
                           {surat.status_surat === "Disetujui" ? (
                             <Button
                               size="sm"
@@ -463,13 +550,13 @@ export default function CekStatusSuratPage() {
                                 )
                               }
                               disabled={isLoading}
-                              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
+                              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
                             >
                               {isLoading ? (
                                 <Spinner size="xs" />
                               ) : (
                                 <>
-                                  <HiDownload className="h-4 w-4" />
+                                  <HiDownload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                   <span>Download</span>
                                 </>
                               )}

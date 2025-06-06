@@ -18,13 +18,13 @@ const STORAGE_KEY = "chatbot_messages";
 
 // Consistent theme colors
 const theme = {
-  primary: "#2563EB", // Dark blue
-  secondary: "#3B82F6", // Medium blue
-  accent: "#60A5FA", // Light blue
-  highlight: "#93C5FD", // Lighter blue
-  link: "#1D4ED8", // Darker blue
-  warning: "#22C55E", // Bright green
-  info: "#86EFAC", // Light green
+  primary: "var(--color-cyan-blue)", // Cyan blue
+  secondary: "var(--color-deep-blue)", // Deep blue
+  accent: "var(--color-light-cyan)", // Light cyan
+  highlight: "var(--color-pale-blue)", // Pale blue
+  link: "var(--color-deep-blue)", // Deep blue
+  warning: "var(--color-fresh-green)", // Fresh green
+  info: "var(--color-pale-blue)", // Pale blue
 };
 
 export function Chatbot() {
@@ -391,16 +391,16 @@ export function Chatbot() {
       {/* Complaint Button */}
       <button
         onClick={() => setIsPengaduanOpen(true)}
-        className="fixed right-20 bottom-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-red-600 shadow-lg transition-all duration-300 ease-in-out hover:scale-105 hover:from-red-600 hover:to-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none active:scale-95"
+        className="fixed right-20 bottom-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-red-600 shadow-lg transition-all duration-300 ease-in-out hover:scale-105 hover:from-red-600 hover:to-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:right-20 sm:h-14 sm:w-14"
         aria-label="Buka Form Pengaduan"
       >
-        <AlertCircle className="h-6 w-6 text-white" />
+        <AlertCircle className="h-5 w-5 text-white sm:h-6 sm:w-6" />
       </button>
 
       {/* Chatbot Toggle Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed right-4 bottom-4 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-300 ease-in-out hover:scale-105 focus:ring-2 focus:outline-none active:scale-95 ${
+        className={`fixed right-4 bottom-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all duration-300 ease-in-out hover:scale-105 focus:ring-2 focus:outline-none active:scale-95 sm:h-14 sm:w-14 ${
           isOpen
             ? "pointer-events-none translate-y-4 scale-90 opacity-0"
             : "translate-y-0 scale-100 opacity-100"
@@ -410,13 +410,13 @@ export function Chatbot() {
         }}
         aria-label="Buka Chatbot"
       >
-        <MessageCircle className="h-6 w-6 text-white" />
+        <MessageCircle className="h-5 w-5 text-white sm:h-6 sm:w-6" />
       </button>
 
       {/* Chatbot Popup */}
       {showPopup && (
         <div
-          className={`fixed right-4 bottom-20 z-50 flex h-[500px] w-96 max-w-[calc(100vw-2rem)] flex-col rounded-xl bg-white shadow-2xl transition-all duration-300 ease-in-out ${
+          className={`fixed right-4 bottom-20 z-50 flex h-[calc(100vh-8rem)] w-[calc(100vw-2rem)] max-w-[24rem] flex-col rounded-xl bg-white shadow-2xl transition-all duration-300 ease-in-out sm:h-[500px] sm:w-96 ${
             isOpen
               ? "translate-y-0 scale-100 opacity-100"
               : "pointer-events-none translate-y-4 scale-95 opacity-0"
@@ -424,58 +424,64 @@ export function Chatbot() {
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between rounded-t-xl p-4 text-white shadow-sm"
+            className="flex items-center justify-between rounded-t-xl p-2.5 text-white shadow-sm sm:p-4"
             style={{
               background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
             }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3">
               <div className="relative">
-                <Bot className="h-8 w-8" style={{ color: theme.warning }} />
+                <Bot
+                  className="h-5 w-5 sm:h-8 sm:w-8"
+                  style={{ color: theme.warning }}
+                />
                 <div
-                  className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full ring-2 ring-white"
+                  className="absolute right-0 bottom-0 h-1.5 w-1.5 rounded-full ring-2 ring-white sm:h-2.5 sm:w-2.5"
                   style={{ backgroundColor: theme.info }}
                 />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-sm font-semibold text-white sm:text-lg">
                   AI Chatbot Desa {desaConfig?.nama_desa}
                 </h3>
-                <p className="text-xs" style={{ color: theme.warning }}>
+                <p
+                  className="text-[9px] sm:text-xs"
+                  style={{ color: theme.warning }}
+                >
                   Online
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-white transition-colors hover:bg-white/20 sm:h-8 sm:w-8"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
             </button>
           </div>
 
           {/* Messages Area */}
-          <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 flex-1 space-y-4 overflow-y-auto bg-gray-50 px-4 pt-4 pb-2">
+          <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 flex-1 space-y-2 overflow-y-auto bg-gray-50 px-2 pt-2 pb-1.5 sm:space-y-4 sm:px-4 sm:pt-4">
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex items-end gap-2 ${
+                className={`flex items-end gap-1 sm:gap-2 ${
                   message.isUser ? "justify-end" : "justify-start"
                 }`}
               >
                 {!message.isUser && (
                   <Bot
-                    className="h-6 w-6 flex-shrink-0"
+                    className="h-4 w-4 flex-shrink-0 sm:h-6 sm:w-6"
                     style={{ color: theme.primary }}
                   />
                 )}
                 <div
-                  className={`flex flex-col gap-1 ${
+                  className={`flex flex-col gap-0.5 sm:gap-1 ${
                     message.isUser ? "items-end" : "items-start"
                   }`}
                 >
                   <div
-                    className={`max-w-[280px] rounded-2xl px-4 py-2 text-sm shadow-sm transition-all duration-200 ${
+                    className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm shadow-sm transition-all duration-200 sm:max-w-[280px] sm:px-4 sm:py-2.5 sm:text-base ${
                       message.isUser
                         ? "rounded-br-sm text-white"
                         : "rounded-bl-sm bg-white text-gray-800"
@@ -494,11 +500,11 @@ export function Chatbot() {
                     </div>
                   </div>
                   <span
-                    className={`flex items-center gap-1 text-xs text-gray-500 ${
+                    className={`flex items-center gap-0.5 text-[9px] text-gray-500 sm:gap-1 sm:text-xs ${
                       message.isUser ? "flex-row-reverse" : "flex-row"
                     }`}
                   >
-                    <Clock className="h-3 w-3" />
+                    <Clock className="h-2 w-2 sm:h-3 sm:w-3" />
                     {new Date(message.timestamp).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -508,20 +514,20 @@ export function Chatbot() {
               </div>
             ))}
             {isLoading && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Bot
-                  className="h-6 w-6 animate-pulse"
+                  className="h-4 w-4 animate-pulse sm:h-6 sm:w-6"
                   style={{ color: theme.accent }}
                 />
-                <div className="max-w-[80%] rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm shadow-sm">
+                <div className="max-w-[85%] rounded-2xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-sm sm:px-4 sm:py-2 sm:text-sm">
                   <div className="flex gap-1">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></div>
+                    <div className="h-1 w-1 animate-bounce rounded-full bg-gray-400 sm:h-2 sm:w-2"></div>
                     <div
-                      className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                      className="h-1 w-1 animate-bounce rounded-full bg-gray-400 sm:h-2 sm:w-2"
                       style={{ animationDelay: "0.2s" }}
                     ></div>
                     <div
-                      className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                      className="h-1 w-1 animate-bounce rounded-full bg-gray-400 sm:h-2 sm:w-2"
                       style={{ animationDelay: "0.4s" }}
                     ></div>
                   </div>
@@ -532,7 +538,7 @@ export function Chatbot() {
           </div>
 
           {/* Input Area */}
-          <div className="rounded-b-xl bg-white p-4">
+          <div className="rounded-b-xl bg-white p-2 sm:p-4">
             <div className="relative flex items-center">
               <textarea
                 value={inputMessage}
@@ -544,19 +550,19 @@ export function Chatbot() {
                   }
                 }}
                 placeholder="Ketik pesan atau tanyakan sesuatu"
-                className="w-full resize-none rounded-full border border-gray-200 bg-gray-50 py-2 pr-12 pl-4 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                className="w-full resize-none rounded-full border border-gray-200 bg-gray-50 py-1.5 pr-9 pl-2.5 text-xs focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none sm:py-2 sm:pr-12 sm:pl-4 sm:text-sm"
                 rows={1}
-                style={{ minHeight: "40px", maxHeight: "120px" }}
+                style={{ minHeight: "32px", maxHeight: "100px" }}
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={isLoading || !inputMessage.trim()}
-                className="absolute top-1/2 right-1.5 flex h-8 w-8 -translate-y-1/2 transform items-center justify-center rounded-full text-white transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+                className="absolute top-1/2 right-1 flex h-6 w-6 -translate-y-1/2 transform items-center justify-center rounded-full text-white transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 sm:right-1.5 sm:h-8 sm:w-8"
                 style={{
                   background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
                 }}
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
             </div>
           </div>

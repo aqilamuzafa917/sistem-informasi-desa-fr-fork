@@ -164,7 +164,7 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
       }}
     >
       <div
-        className={`relative mx-4 w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+        className={`relative mx-4 w-full max-w-2xl rounded-xl bg-[var(--color-pure-white)] p-6 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
           isOpen
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-4 scale-95 opacity-0"
@@ -174,13 +174,15 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="absolute top-4 right-4 transition-all duration-200 hover:scale-110 hover:bg-gray-100"
+          className="absolute top-4 right-4 transition-all duration-200 hover:scale-110 hover:bg-[var(--color-off-white)]"
         >
           <X className="h-4 w-4" />
         </Button>
 
-        <h2 className="mb-4 text-2xl font-bold">Pengaduan Warga</h2>
-        <p className="mb-6 text-sm text-gray-600">
+        <h2 className="mb-4 text-2xl font-bold text-[var(--color-dark-slate)]">
+          Pengaduan Warga
+        </h2>
+        <p className="mb-6 text-sm text-[var(--color-slate-gray)]">
           Silakan lengkapi formulir di bawah ini untuk melaporkan kejadian atau
           masalah yang sedang Anda alami.
         </p>
@@ -195,7 +197,9 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="nama">Nama Lengkap</Label>
+              <Label htmlFor="nama" className="text-[var(--color-dark-slate)]">
+                Nama Lengkap
+              </Label>
               <Input
                 id="nama"
                 name="nama"
@@ -203,10 +207,16 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
                 value={formData.nama}
                 onChange={handleInputChange}
                 required
+                className="border-[var(--color-slate-gray)]/20 focus:border-[var(--color-cyan-blue)] focus:ring-[var(--color-cyan-blue)]"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nomor_telepon">Nomor Telepon</Label>
+              <Label
+                htmlFor="nomor_telepon"
+                className="text-[var(--color-dark-slate)]"
+              >
+                Nomor Telepon
+              </Label>
               <Input
                 type="tel"
                 id="nomor_telepon"
@@ -215,16 +225,22 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
                 value={formData.nomor_telepon}
                 onChange={handleInputChange}
                 required
+                className="border-[var(--color-slate-gray)]/20 focus:border-[var(--color-cyan-blue)] focus:ring-[var(--color-cyan-blue)]"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="kategori">Kategori Pengaduan</Label>
+            <Label
+              htmlFor="kategori"
+              className="text-[var(--color-dark-slate)]"
+            >
+              Kategori Pengaduan
+            </Label>
             <select
               id="kategori"
               name="kategori"
-              className="w-full rounded-md border p-2"
+              className="w-full rounded-md border border-[var(--color-slate-gray)]/20 p-2 focus:border-[var(--color-cyan-blue)] focus:ring-1 focus:ring-[var(--color-cyan-blue)] focus:outline-none"
               value={formData.kategori}
               onChange={handleInputChange}
               required
@@ -238,11 +254,16 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="detail_pengaduan">Detail Pengaduan</Label>
+            <Label
+              htmlFor="detail_pengaduan"
+              className="text-[var(--color-dark-slate)]"
+            >
+              Detail Pengaduan
+            </Label>
             <textarea
               id="detail_pengaduan"
               name="detail_pengaduan"
-              className="min-h-[100px] w-full rounded-md border p-2"
+              className="min-h-[100px] w-full rounded-md border border-[var(--color-slate-gray)]/20 p-2 focus:border-[var(--color-cyan-blue)] focus:ring-1 focus:ring-[var(--color-cyan-blue)] focus:outline-none"
               placeholder="Jelaskan secara detail pengaduan atau masalah yang Anda alami..."
               value={formData.detail_pengaduan}
               onChange={handleInputChange}
@@ -251,54 +272,46 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="media">Lampiran (Opsional)</Label>
+            <Label htmlFor="media" className="text-[var(--color-dark-slate)]">
+              Upload Foto (Opsional)
+            </Label>
             <Input
               type="file"
               id="media"
-              name="media"
-              onChange={handleFileChange}
-              accept=".jpg,.jpeg,.png,.pdf"
+              accept="image/*"
               multiple
-              className="cursor-pointer"
+              onChange={handleFileChange}
+              className="border-[var(--color-slate-gray)]/20 focus:border-[var(--color-cyan-blue)] focus:ring-[var(--color-cyan-blue)]"
             />
-            <p className="text-xs text-gray-500">
-              Upload foto atau dokumen pendukung (JPG, PNG, PDF, maks. 5MB)
-            </p>
+            {previewImages.length > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {previewImages.map((url, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="h-24 w-full rounded-lg object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {previewImages.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {previewImages.map((preview, index) => (
-                <div key={index} className="group relative">
-                  <img
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    className="h-20 w-20 rounded-lg object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting ? "Mengirim..." : "Kirim Pengaduan"}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-[var(--color-cyan-blue)] text-[var(--color-pure-white)] hover:bg-[var(--color-deep-blue)] disabled:opacity-50"
+          >
+            {isSubmitting ? "Mengirim..." : "Kirim Pengaduan"}
+          </Button>
         </form>
       </div>
     </div>

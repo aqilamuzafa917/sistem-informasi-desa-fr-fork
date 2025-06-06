@@ -185,29 +185,31 @@ export default function ArtikelDetailPage() {
 
   if (loading) {
     return (
-      <div className="bg-white font-sans leading-normal tracking-normal dark:bg-gray-900">
+      <div className="min-h-screen bg-white dark:bg-gray-900">
         <NavbarDesa />
-        <div className="container mx-auto -mt-20 max-w-7xl px-4 pt-16 text-center md:pt-32">
-          <div className="mx-auto h-8 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-          <div className="flex flex-wrap items-center justify-center gap-2 p-4">
-            <div className="h-6 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="h-6 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+        <div className="container mx-auto px-4 pt-6 sm:pt-8">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-4 h-8 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="mb-6 flex flex-wrap gap-2">
+              <div className="h-6 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-6 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            </div>
           </div>
         </div>
-        <div className="container mx-auto max-w-7xl px-4 md:px-6">
-          <div className="h-[70vh] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+        <div className="container mx-auto mb-6 px-4 sm:mb-8">
+          <div className="mx-auto max-w-4xl">
+            <div className="aspect-[16/9] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+          </div>
         </div>
-        <div className="container mx-auto mt-3 max-w-7xl">
-          <div className="mx-0 sm:mx-6">
-            <div className="w-full rounded-lg bg-white p-8 md:p-24 dark:bg-gray-800">
-              <div className="space-y-4">
-                <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                <div className="h-4 w-4/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              </div>
+        <div className="container mx-auto mb-8 px-4 sm:mb-12">
+          <div className="mx-auto max-w-4xl rounded-lg bg-white p-4 shadow-lg sm:p-6 md:p-8 dark:bg-gray-800">
+            <div className="space-y-4">
+              <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-4 w-4/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
             </div>
           </div>
         </div>
@@ -230,116 +232,97 @@ export default function ArtikelDetailPage() {
   }
 
   return (
-    <div className="bg-white font-sans leading-normal tracking-normal dark:bg-gray-900">
-      {/* Slide in nav */}
-      <div
-        id="header"
-        className="animated fixed top-0 z-10 hidden w-full bg-white dark:bg-gray-800"
-        style={{ opacity: ".95" }}
-      >
-        {/* Progress bar */}
-        <div
-          id="progress"
-          className="h-1 bg-white shadow dark:bg-gray-800"
-          style={{
-            background:
-              "linear-gradient(to right, #4dc0b5 var(--scroll), transparent 0)",
-          }}
-        ></div>
-      </div>
-
-      {/* Navbar Section */}
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <NavbarDesa />
 
       {/* Article Header */}
-      <div className="container mx-auto -mt-20 max-w-7xl px-4 pt-16 text-center md:pt-32">
-        <h1 className="text-3xl font-bold break-normal text-gray-900 md:text-4xl dark:text-white">
-          {article.title}
-        </h1>
-        <div className="flex flex-wrap items-center justify-center gap-2 p-4 text-xs">
-          <p className="inline-block rounded bg-green-100 px-3 py-1 font-semibold text-green-800 dark:bg-green-900 dark:text-green-300">
-            {article.date_created}
-          </p>
-          <span className="inline-block rounded bg-blue-100 px-3 py-1 font-semibold text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-            {article.jenis_artikel === "resmi" ? "Resmi" : "Warga"}
-          </span>
-          <span className="inline-block rounded bg-gray-100 px-3 py-1 font-semibold text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-            {article.kategori_artikel
-              .split(" ")
-              .map(
-                (word) =>
-                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-              )
-              .join(" ")}
-          </span>
+      <div className="container mx-auto px-4 pt-6 sm:pt-8">
+        <div className="mx-auto max-w-4xl">
+          <h1 className="mb-4 text-2xl font-bold text-gray-900 sm:text-center sm:text-3xl md:text-4xl dark:text-white">
+            {article.title}
+          </h1>
+          <div className="mb-6 flex flex-wrap gap-2 sm:justify-center">
+            <p className="rounded bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
+              {article.date_created}
+            </p>
+            <span className="rounded bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+              {article.jenis_artikel === "resmi" ? "Resmi" : "Warga"}
+            </span>
+            <span className="rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              {article.kategori_artikel
+                .split(" ")
+                .map(
+                  (word) =>
+                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+                )
+                .join(" ")}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Carousel Gambar */}
       {article.media_artikel.length > 0 && (
-        <div className="container mx-auto max-w-7xl px-4 md:px-6">
-          <div className="relative h-[70vh] w-full overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
-            <img
-              src={article.media_artikel[carouselIndex]?.url}
-              alt={
-                article.media_artikel[carouselIndex]?.name || "Gambar Artikel"
-              }
-              className="h-full w-full object-cover"
-            />
-            {article.media_artikel.length > 1 && (
-              <>
-                <button
-                  onClick={handlePrev}
-                  className="absolute top-1/2 left-4 z-10 -translate-y-1/2 rounded-full bg-white/80 p-3 shadow-lg hover:bg-white"
-                  aria-label="Sebelumnya"
-                >
-                  &#8592;
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="absolute top-1/2 right-4 z-10 -translate-y-1/2 rounded-full bg-white/80 p-3 shadow-lg hover:bg-white"
-                  aria-label="Selanjutnya"
-                >
-                  &#8594;
-                </button>
-                <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-                  {article.media_artikel.map((_, idx) => (
-                    <span
-                      key={idx}
-                      className={`inline-block h-3 w-3 rounded-full ${carouselIndex === idx ? "bg-green-600" : "bg-gray-300"}`}
-                    ></span>
-                  ))}
-                </div>
-              </>
-            )}
+        <div className="container mx-auto mb-6 px-4 sm:mb-8">
+          <div className="mx-auto max-w-4xl">
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
+              <img
+                src={article.media_artikel[carouselIndex]?.url}
+                alt={
+                  article.media_artikel[carouselIndex]?.name || "Gambar Artikel"
+                }
+                className="h-full w-full object-cover"
+              />
+              {article.media_artikel.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrev}
+                    className="absolute top-1/2 left-2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-lg hover:bg-white sm:left-4 sm:p-3"
+                    aria-label="Sebelumnya"
+                  >
+                    &#8592;
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    className="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-lg hover:bg-white sm:right-4 sm:p-3"
+                    aria-label="Selanjutnya"
+                  >
+                    &#8594;
+                  </button>
+                  <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+                    {article.media_artikel.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`h-2 w-2 rounded-full sm:h-3 sm:w-3 ${
+                          carouselIndex === idx ? "bg-green-600" : "bg-gray-300"
+                        }`}
+                      ></span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* Article Content */}
-      <div className="container mx-auto mt-3 max-w-7xl">
-        <div className="mx-0 sm:mx-6">
-          <div
-            className="w-full rounded-lg bg-white p-8 text-xl leading-normal text-gray-800 shadow-lg md:p-24 md:text-2xl dark:bg-gray-800 dark:text-gray-200"
-            style={{ fontFamily: "Georgia, serif" }}
-          >
-            {/* Post Content */}
-            <p
-              className="-mt-23 py-6 text-justify"
-              style={{ whiteSpace: "pre-line" }}
-            >
-              {article.content}
-            </p>
+      <div className="container mx-auto mb-8 px-4 sm:mb-12">
+        <div className="mx-auto max-w-4xl rounded-lg bg-white p-4 shadow-lg sm:p-6 md:p-8 dark:bg-gray-800">
+          <div className="prose prose-sm dark:prose-invert sm:prose-base md:prose-lg max-w-none">
+            <p className="whitespace-pre-line">{article.content}</p>
+
             {/* Lokasi jika ada */}
             {article.location_name && (
-              <div className="mt-0 text-base text-gray-700 dark:text-gray-300">
+              <div className="mt-4 text-sm text-gray-700 sm:text-base dark:text-gray-300">
                 <strong>Lokasi:</strong> {article.location_name}
               </div>
             )}
+
             {/* Leaflet Map jika ada koordinat */}
             {article.latitude && article.longitude && (
-              <div className="mt-6 mb-0">
-                <div className="h-80 w-full overflow-hidden rounded-lg">
+              <div className="mt-4">
+                <div className="aspect-[16/9] w-full overflow-hidden rounded-lg">
                   <MapContainer
                     center={[article.latitude, article.longitude]}
                     zoom={15}
@@ -357,144 +340,44 @@ export default function ArtikelDetailPage() {
           </div>
 
           {/* Author */}
-          <div className="-mt-10 flex w-full items-center p-8 font-sans md:p-24">
+          <div className="mt-6 flex items-center border-t border-gray-200 pt-6 dark:border-gray-700">
             <img
-              className="mr-4 h-10 w-10 rounded-full"
+              className="h-10 w-10 rounded-full"
               src={`https://ui-avatars.com/api/?name=${encodeURIComponent(article.author)}&background=random`}
               alt="Avatar of Author"
             />
-            <div className="flex-1">
-              <p className="text-base leading-none font-bold text-gray-900 md:text-xl dark:text-white">
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-900 sm:text-base dark:text-white">
                 {article.author}
               </p>
             </div>
-            <div className="justify-end"></div>
           </div>
         </div>
       </div>
 
       {/* Scroll Top Button */}
       <button
-        className="btn-toggle-round scroll-top js-scroll-top"
-        type="button"
-        title="Scroll to top"
+        className="fixed right-6 bottom-6 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:bg-gray-100 sm:h-12 sm:w-12 dark:bg-gray-800 dark:hover:bg-gray-700"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Scroll to top"
       >
         <svg
-          className="progress-circle"
-          width="100%"
-          height="100%"
-          viewBox="-1 -1 102 102"
-        >
-          <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
-        </svg>
-        <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="icon icon-tabler icon-tabler-arrow-up"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
+          className="h-5 w-5 text-gray-600 sm:h-6 sm:w-6 dark:text-gray-300"
           fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="18" y1="11" x2="12" y2="5" />
-          <line x1="6" y1="11" x2="12" y2="5" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 10l7-7m0 0l7 7m-7-7v18"
+          />
         </svg>
       </button>
 
-      {/* Footer */}
       <FooterDesa />
-
-      {/* CSS untuk animasi dan scroll */}
-      <style>{`
-        .smooth { transition: box-shadow 0.3s ease-in-out; }
-        ::selection { background-color: aliceblue }
-        :root {
-          ::-webkit-scrollbar { height: 10px; width: 10px; }
-          ::-webkit-scrollbar-track { background: #efefef; border-radius: 6px }
-          ::-webkit-scrollbar-thumb { background: #d5d5d5; border-radius: 6px }
-          ::-webkit-scrollbar-thumb:hover { background: #c4c4c4 }
-        }
-        .scroll-top {
-          position: fixed;
-          z-index: 50;
-          padding: 0;
-          right: 30px;
-          bottom: 100px;
-          opacity: 0;
-          visibility: hidden;
-          transform: translateY(15px);
-          height: 46px;
-          width: 46px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          transition: all .4s ease;
-          border: none;
-          box-shadow: inset 0 0 0 2px #ccc;
-          color: #ccc;
-          background-color: #fff;
-        }
-        .scroll-top.is-active {
-          opacity: 1;
-          visibility: visible;
-          transform: translateY(0);
-        }
-        .scroll-top .icon-tabler-arrow-up {
-          position: absolute;
-          stroke-width: 2px;
-          stroke: #333;
-        }
-        .scroll-top svg path {
-          fill: none;
-        }
-        .scroll-top svg.progress-circle path {
-          stroke: #333;
-          stroke-width: 4;
-          transition: all .4s ease;
-        }
-        .scroll-top:hover {
-          color: var(--ghost-accent-color);
-        }
-        .scroll-top:hover .progress-circle path,
-        .scroll-top:hover .icon-tabler-arrow-up {
-          stroke: var(--ghost-accent-color);
-        }
-        .animated {
-          animation-duration: 1s;
-          animation-fill-mode: both;
-        }
-        .fadeOutUp {
-          animation-name: fadeOutUp;
-        }
-        .slideInDown {
-          animation-name: slideInDown;
-        }
-        @keyframes fadeOutUp {
-          from {
-            opacity: 1;
-          }
-          to {
-            opacity: 0;
-            transform: translate3d(0, -100%, 0);
-          }
-        }
-        @keyframes slideInDown {
-          from {
-            transform: translate3d(0, -100%, 0);
-            visibility: visible;
-          }
-          to {
-            transform: translate3d(0, 0, 0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -99,10 +99,10 @@ export default function NavbarDesa() {
     }
   };
 
-  const handleContactClick = () => {
-    // Add your contact logic here
-    console.log("Contact clicked");
-  };
+  // const handleContactClick = () => {
+  //   // Add your contact logic here
+  //   console.log("Contact clicked");
+  // };
 
   const navItems = [
     {
@@ -240,14 +240,14 @@ export default function NavbarDesa() {
       rounded={false}
       className={`sticky top-0 z-50 mb-5 border-b-2 transition-all duration-300 ease-in-out ${
         isScrolled
-          ? "border-gray-200 bg-white/95 shadow-lg backdrop-blur-md dark:border-gray-700 dark:bg-gray-900/95"
-          : "border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900"
+          ? "border-[var(--color-slate-gray)] bg-[var(--color-pure-white)]/95 shadow-lg backdrop-blur-md dark:border-[var(--color-dark-slate)] dark:bg-[var(--color-dark-slate)]/95"
+          : "border-[var(--color-off-white)] bg-[var(--color-pure-white)] dark:border-[var(--color-dark-slate)] dark:bg-[var(--color-dark-slate)]"
       } `}
     >
       <NavbarBrand href="/" className="group">
         <div className="flex items-center space-x-3">
           {/* Optional: Add village logo */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-blue-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--color-fresh-green)] to-[var(--color-cyan-blue)]">
             <svg
               className="h-5 w-5 text-white"
               fill="none"
@@ -318,13 +318,13 @@ export default function NavbarDesa() {
               {item.label}
             </span>
             {item.active && (
-              <div className="ml-2 w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+              <div className="ml-2 h-2 w-2 animate-pulse rounded-full bg-blue-600"></div>
             )}
           </NavbarLink>
         ))}
 
         {/* Mobile Contact Button */}
-        <div className="mt-4 border-t border-gray-200 pt-4 md:hidden dark:border-gray-700">
+        {/* <div className="mt-4 border-t border-gray-200 pt-4 md:hidden dark:border-gray-700">
           <button
             onClick={handleContactClick}
             className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 text-sm font-medium text-white transition-all duration-300 ease-in-out hover:scale-105 hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-300 active:scale-95"
@@ -343,8 +343,8 @@ export default function NavbarDesa() {
               />
             </svg>
             Hubungi Kami
-          </button>
-        </div>
+          </button> */}
+        {/* </div> */}
       </NavbarCollapse>
     </Navbar>
   );

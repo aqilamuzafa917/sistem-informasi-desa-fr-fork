@@ -60,7 +60,7 @@ export function DesaProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${API_CONFIG.baseURL}/api/publik/profil-desa/1/identitas`,
+        `${API_CONFIG.baseURL}/api/publik/desa-config`,
         {
           headers: API_CONFIG.headers,
         },

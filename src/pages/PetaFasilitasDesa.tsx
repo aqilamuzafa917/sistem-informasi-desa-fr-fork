@@ -169,50 +169,50 @@ export default function PetaFasilitasDesa() {
 
       <div className="container mx-auto px-4">
         {/* Judul Halaman */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+        <div className="mb-6 text-center sm:mb-8">
+          <h1 className="text-2xl font-bold text-blue-600 sm:text-4xl dark:text-blue-400">
             PETA FASILITAS DESA {desaConfig?.nama_desa?.toUpperCase()}
           </h1>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-base text-gray-600 sm:text-lg dark:text-gray-400">
             Informasi lokasi fasilitas desa dalam bentuk peta interaktif
           </p>
         </div>
 
         {/* Filter Kategori */}
-        <div className="mb-8 flex flex-wrap justify-center gap-4">
+        <div className="mb-6 flex flex-wrap justify-center gap-2 sm:mb-8 sm:gap-4">
           <button
             onClick={() => toggleCategory("sekolah")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.sekolah ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.sekolah ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-green-600"></div>
+            <div className="h-2 w-2 rounded-full bg-green-600 sm:h-3 sm:w-3"></div>
             Sekolah
           </button>
           <button
             onClick={() => toggleCategory("ibadah")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.ibadah ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.ibadah ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+            <div className="h-2 w-2 rounded-full bg-blue-600 sm:h-3 sm:w-3"></div>
             Tempat Ibadah
           </button>
           <button
             onClick={() => toggleCategory("kesehatan")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.kesehatan ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.kesehatan ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-red-600"></div>
+            <div className="h-2 w-2 rounded-full bg-red-600 sm:h-3 sm:w-3"></div>
             Kesehatan
           </button>
           <button
             onClick={() => toggleCategory("lainnya")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.lainnya ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.lainnya ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-orange-600"></div>
+            <div className="h-2 w-2 rounded-full bg-orange-600 sm:h-3 sm:w-3"></div>
             Fasilitas Lainnya
           </button>
         </div>
 
         {/* Peta */}
-        <div className="z-0 mt-8 mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="z-0 h-[600px] w-full">
+        <div className="z-0 mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:mb-8 dark:border-gray-700 dark:bg-gray-800">
+          <div className="z-0 h-[400px] w-full sm:h-[500px] md:h-[600px]">
             <MapContainer
               center={[-6.9175, 107.5019]}
               zoom={14}
@@ -230,13 +230,17 @@ export default function PetaFasilitasDesa() {
                   icon={getMarkerIcon(fasilitas.kategori)}
                 >
                   <Popup>
-                    <div>
-                      <h3 className="font-bold">{fasilitas.nama}</h3>
-                      <p className="text-sm text-gray-600">
+                    <div className="p-1">
+                      <h3 className="font-bold text-gray-900 dark:text-white">
+                        {fasilitas.nama}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {fasilitas.alamat}
                       </p>
                       {fasilitas.deskripsi && (
-                        <p className="mt-1 text-sm">{fasilitas.deskripsi}</p>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                          {fasilitas.deskripsi}
+                        </p>
                       )}
                     </div>
                   </Popup>
@@ -247,26 +251,26 @@ export default function PetaFasilitasDesa() {
         </div>
 
         {/* Daftar Fasilitas */}
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Sekolah */}
           <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.sekolah ? "opacity-50" : ""}`}
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.sekolah ? "opacity-50" : ""}`}
           >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
+            <h3 className="mb-3 text-xl font-bold text-gray-800 sm:mb-4 sm:text-2xl dark:text-white">
               Sekolah
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {fasilitasDesa
                 .filter((f) => f.kategori === "sekolah")
                 .map((fasilitas) => (
                   <div
                     key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-2.5 sm:p-3 dark:border-gray-700 dark:bg-gray-900"
                   >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
+                    <h4 className="text-sm font-semibold text-gray-700 sm:text-base dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 sm:text-sm dark:text-gray-400">
                       {fasilitas.alamat}
                     </p>
                   </div>
@@ -276,23 +280,23 @@ export default function PetaFasilitasDesa() {
 
           {/* Tempat Ibadah */}
           <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.ibadah ? "opacity-50" : ""}`}
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.ibadah ? "opacity-50" : ""}`}
           >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
+            <h3 className="mb-3 text-xl font-bold text-gray-800 sm:mb-4 sm:text-2xl dark:text-white">
               Tempat Ibadah
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {fasilitasDesa
                 .filter((f) => f.kategori === "ibadah")
                 .map((fasilitas) => (
                   <div
                     key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-2.5 sm:p-3 dark:border-gray-700 dark:bg-gray-900"
                   >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
+                    <h4 className="text-sm font-semibold text-gray-700 sm:text-base dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 sm:text-sm dark:text-gray-400">
                       {fasilitas.alamat}
                     </p>
                   </div>
@@ -302,23 +306,23 @@ export default function PetaFasilitasDesa() {
 
           {/* Kesehatan */}
           <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.kesehatan ? "opacity-50" : ""}`}
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.kesehatan ? "opacity-50" : ""}`}
           >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
+            <h3 className="mb-3 text-xl font-bold text-gray-800 sm:mb-4 sm:text-2xl dark:text-white">
               Kesehatan
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {fasilitasDesa
                 .filter((f) => f.kategori === "kesehatan")
                 .map((fasilitas) => (
                   <div
                     key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-2.5 sm:p-3 dark:border-gray-700 dark:bg-gray-900"
                   >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
+                    <h4 className="text-sm font-semibold text-gray-700 sm:text-base dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 sm:text-sm dark:text-gray-400">
                       {fasilitas.alamat}
                     </p>
                   </div>
@@ -328,23 +332,23 @@ export default function PetaFasilitasDesa() {
 
           {/* Fasilitas Lainnya */}
           <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.lainnya ? "opacity-50" : ""}`}
+            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.lainnya ? "opacity-50" : ""}`}
           >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
+            <h3 className="mb-3 text-xl font-bold text-gray-800 sm:mb-4 sm:text-2xl dark:text-white">
               Fasilitas Lainnya
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {fasilitasDesa
                 .filter((f) => f.kategori === "lainnya")
                 .map((fasilitas) => (
                   <div
                     key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+                    className="rounded-lg border border-gray-200 bg-gray-100 p-2.5 sm:p-3 dark:border-gray-700 dark:bg-gray-900"
                   >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
+                    <h4 className="text-sm font-semibold text-gray-700 sm:text-base dark:text-gray-300">
                       {fasilitas.nama}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 sm:text-sm dark:text-gray-400">
                       {fasilitas.alamat}
                     </p>
                   </div>

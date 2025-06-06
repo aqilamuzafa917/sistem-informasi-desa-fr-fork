@@ -80,6 +80,21 @@
 :root {
   --radius: 0.625rem;
 
+  /* Custom color palette */
+  --color-cyan-blue: #00b4d8;
+  --color-light-cyan: #90e0ef;
+  --color-fresh-green: #48cc6c;
+  --color-vibrant-yellow: #fed700;
+  --color-deep-blue: #0077b6;
+  --color-forest-green: #2d6a4f;
+  --color-warm-yellow: #f9c74f;
+  --color-pale-blue: #caf0f8;
+  --color-pure-white: #ffffff;
+  --color-off-white: #f8fafc;
+  --color-slate-gray: #64748b;
+  --color-dark-slate: #1e293b;
+
+  /* Existing variables */
   --background: oklch(1 0 0);
 
   --foreground: oklch(0.145 0 0);

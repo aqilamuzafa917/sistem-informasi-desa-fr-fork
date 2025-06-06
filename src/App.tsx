@@ -42,6 +42,9 @@ import VerifikasiArtikelPage from "./pages/ArtikelPage/VerifikasiArtikelPage";
 import ConfigPages from "./pages/ConfigPage/ConfigPages";
 import VerifikasiPengaduanPage from "./pages/PengaduanPage/VerifikasiPengaduanPages";
 import { Chatbot } from "./components/Chatbot";
+import DynamicTitle from "./components/DynamicTitle";
+import DynamicFavicon from "./components/DynamicFavicon";
+import DynamicManifest from "./components/DynamicManifest";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -49,6 +52,9 @@ import { Chatbot } from "./components/Chatbot";
 export default function App() {
   return (
     <>
+      <DynamicTitle />
+      <DynamicFavicon />
+      <DynamicManifest />
       {/* <div className="absolute top-4 right-4 z-50">
         <DarkThemeToggle />
       </div> */}
