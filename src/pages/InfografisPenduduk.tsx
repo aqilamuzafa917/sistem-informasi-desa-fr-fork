@@ -1,24 +1,33 @@
-import { PieChart, Pie, Cell, Label, Tooltip, LabelList } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Label,
+  Tooltip,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  RadialBarChart,
+  RadialBar,
+} from "recharts";
 import * as React from "react";
-import { TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import {
+  TrendingUp,
+  Users,
+  UserCheck,
+  GraduationCap,
+  Briefcase,
+  Heart,
+  Church,
+  MapPin,
+  Calendar,
+  Activity,
+} from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "@/config/api";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import InfografisNav from "@/components/InfografisNav";
@@ -30,7 +39,10 @@ interface PendudukStats {
   total_perempuan: number;
   total_kk: number;
   data_usia: {
-    [key: string]: number;
+    [key: string]: {
+      laki_laki: number;
+      perempuan: number;
+    };
   };
   data_pendidikan: {
     [key: string]: number;
@@ -46,20 +58,210 @@ interface PendudukStats {
   };
 }
 
+// NEW: Updated color palette based on the new brand colors
 const COLORS = {
-  primary: "#49904D", // Forest green
-  secondary: "#55A84D", // Light forest green
-  accent1: "#69B458", // Lime green
-  accent2: "#6CA7E0", // Sky blue
-  accent3: "#578EC8", // Steel blue
-  yellow: "#F4EB3C", // Bright yellow
-  lightYellow: "#DEDF41", // Light yellow
+  primary: "#00b4d8", // Teal
+  secondary: "#48cc6c", // Green
+  accent: "#0096c7", // Deeper Blue/Teal
+  surface: "#ffffff",
+  background: "#f0f9ff", // Light Sky Blue
+  text: "#083344", // Dark Cyan
+  textSecondary: "#475569", // Slate Gray
+};
+
+const CHART_COLORS = [
+  "#00b4d8",
+  "#48cc6c",
+  "#0096c7",
+  "#90e0ef",
+  "#fca311",
+  "#70e000",
+  "#0077b6",
+  "#ade8f4",
+];
+
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+  gradient?: boolean;
+}
+
+interface CardHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface CardContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface CardTitleProps {
+  children: React.ReactNode;
+  icon?: React.ElementType;
+  className?: string;
+}
+
+interface CardDescriptionProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface StatCardProps {
+  title: string;
+  value: React.ReactNode;
+  unit: string;
+  icon?: React.ElementType;
+  trend?: string;
+  gradient?: boolean;
+}
+
+interface GridCardProps {
+  title: string;
+  data: Array<{ name: string; jumlah: number }>;
+  columns?: 2 | 3 | 4;
+  icon: React.ElementType;
+}
+
+interface AnimatedCounterProps {
+  value: number;
+  duration?: number;
+}
+
+const Card = ({ children, className = "", gradient = false }: CardProps) => (
+  <div
+    className={`rounded-3xl border border-gray-100/50 bg-white shadow-xl backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${gradient ? "bg-gradient-to-br from-cyan-50/50 to-green-50/50" : ""} ${className} `}
+  >
+    {children}
+  </div>
+);
+
+const CardHeader = ({ children, className = "" }: CardHeaderProps) => (
+  <div className={`p-8 pb-4 ${className}`}>{children}</div>
+);
+
+const CardContent = ({ children, className = "" }: CardContentProps) => (
+  <div className={`px-8 pb-8 ${className}`}>{children}</div>
+);
+
+const CardTitle = ({
+  children,
+  icon: Icon,
+  className = "",
+}: CardTitleProps) => (
+  <div
+    className={`mb-3 flex items-center gap-4 text-2xl font-bold text-gray-800 ${className}`}
+  >
+    {Icon && (
+      <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-green-500 p-2 shadow-lg">
+        <Icon className="h-6 w-6 text-white" />
+      </div>
+    )}
+    <span className="bg-gradient-to-r from-cyan-600 to-green-600 bg-clip-text text-transparent">
+      {children}
+    </span>
+  </div>
+);
+
+const CardDescription = ({
+  children,
+  className = "",
+}: CardDescriptionProps) => (
+  <p className={`ml-14 text-base leading-relaxed text-gray-600 ${className}`}>
+    {children}
+  </p>
+);
+
+const StatCard = ({
+  title,
+  value,
+  unit,
+  icon: Icon,
+  trend,
+  gradient = false,
+}: StatCardProps) => (
+  <div
+    className={`group relative cursor-pointer overflow-hidden rounded-2xl border border-gray-200/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl ${gradient ? "bg-gradient-to-br from-white to-gray-50/50" : "bg-white"} `}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-green-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+    <div className="relative p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h4 className="text-lg font-semibold text-slate-700">{title}</h4>
+        {Icon && (
+          <div className="rounded-xl bg-gradient-to-br from-cyan-100 to-green-100 p-2 transition-transform duration-200 group-hover:scale-110">
+            <Icon className="h-5 w-5 text-cyan-600" />
+          </div>
+        )}
+      </div>
+      <div className="text-right">
+        <div className="flex items-baseline justify-end gap-2">
+          <span className="bg-gradient-to-r from-cyan-600 to-green-600 bg-clip-text text-3xl font-bold text-transparent">
+            {typeof value === "number" ? value.toLocaleString() : value}
+          </span>
+          <span className="text-base font-medium text-gray-500">{unit}</span>
+        </div>
+        {trend && (
+          <div className="mt-2 flex items-center justify-end gap-1">
+            <TrendingUp className="h-4 w-4 text-green-500" />
+            <span className="text-sm font-medium text-green-600">{trend}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const GridCard = ({ title, data, columns = 3, icon: Icon }: GridCardProps) => (
+  <Card className="transition-all duration-500 hover:shadow-2xl">
+    <CardHeader>
+      <CardTitle icon={Icon}>{title}</CardTitle>
+      <CardDescription>
+        Data statistik terkini dengan visualisasi interaktif untuk analisis
+        mendalam
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div
+        className={`grid gap-6 ${columns === 2 ? "md:grid-cols-2" : columns === 3 ? "md:grid-cols-3" : "md:grid-cols-4"}`}
+      >
+        {data.map((item, index) => (
+          <StatCard
+            key={index}
+            title={item.name}
+            value={item.jumlah}
+            unit="jiwa"
+            icon={Activity}
+            gradient={true}
+          />
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const AnimatedCounter = ({ value, duration = 2000 }: AnimatedCounterProps) => {
+  const [count, setCount] = React.useState(0);
+
+  React.useEffect(() => {
+    let startTime: number | undefined;
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCount(Math.floor(progress * value));
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+
+  return count;
 };
 
 export default function InfografisPenduduk() {
-  const { loading } = useDesa();
   const [stats, setStats] = React.useState<PendudukStats | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const { desaConfig } = useDesa();
 
   React.useEffect(() => {
     const fetchStats = async () => {
@@ -79,245 +281,301 @@ export default function InfografisPenduduk() {
     fetchStats();
   }, []);
 
-  // Data untuk pie chart penduduk desa
   const chartDataPenduduk = React.useMemo(() => {
     if (!stats) return [];
     return [
       {
         gender: "Laki-laki",
         jumlah: stats.total_laki_laki,
-        fill: "#2563EB", // Deep blue for male
+        fill: COLORS.primary,
+        percentage: (
+          (stats.total_laki_laki / stats.total_penduduk) *
+          100
+        ).toFixed(1),
       },
       {
         gender: "Perempuan",
         jumlah: stats.total_perempuan,
-        fill: "#EC4899", // Pink for female
+        fill: COLORS.secondary,
+        percentage: (
+          (stats.total_perempuan / stats.total_penduduk) *
+          100
+        ).toFixed(1),
       },
     ];
   }, [stats]);
 
-  // Data umur penduduk
   const chartDataUmur = React.useMemo(() => {
     if (!stats) return [];
-    return Object.entries(stats.data_usia).map(([kelompokUmur, jumlah]) => ({
-      kelompokUmur: kelompokUmur.replace("_", "-"),
-      laki: Math.floor(jumlah / 2), // Assuming equal distribution
-      perempuan: Math.ceil(jumlah / 2),
+    return Object.entries(stats.data_usia).map(([kelompokUmur, data]) => ({
+      kelompokUmur,
+      laki: data.laki_laki,
+      perempuan: data.perempuan,
+      total: data.laki_laki + data.perempuan,
     }));
   }, [stats]);
 
-  // Data pendidikan penduduk
   const chartDataPendidikan = React.useMemo(() => {
     if (!stats) return [];
-    return Object.entries(stats.data_pendidikan).map(([tingkat, jumlah]) => ({
+    const total = Object.values(stats.data_pendidikan).reduce(
+      (sum, val) => sum + val,
+      0,
+    );
+    return Object.entries(stats.data_pendidikan).map(
+      ([tingkat, jumlah], index) => ({
       tingkat,
       jumlah,
-    }));
+        fill: CHART_COLORS[index % CHART_COLORS.length],
+        percentage: ((jumlah / total) * 100).toFixed(1),
+      }),
+    );
   }, [stats]);
 
-  // Data pekerjaan penduduk
-  const dataPekerjaan = React.useMemo(() => {
-    if (!stats) return [];
-    return Object.entries(stats.data_pekerjaan).map(([name, jumlah]) => ({
+  const dataPekerjaan = React.useMemo(
+    () =>
+      Object.entries(stats?.data_pekerjaan || {}).map(([name, jumlah]) => ({
       name,
       jumlah,
-    }));
-  }, [stats]);
-
-  // Data status penduduk
-  const dataStatus = React.useMemo(() => {
-    if (!stats) return [];
-    return [
+      })),
+    [stats],
+  );
+  const dataStatus = React.useMemo(
+    () =>
+      stats
+        ? [
       {
         name: "Belum Menikah",
         jumlah: stats.data_status_perkawinan.belum_menikah,
       },
       { name: "Menikah", jumlah: stats.data_status_perkawinan.menikah },
-      { name: "Cerai Hidup", jumlah: stats.data_status_perkawinan.cerai_hidup },
-      { name: "Cerai Mati", jumlah: stats.data_status_perkawinan.cerai_mati },
-    ];
-  }, [stats]);
-
-  // Data agama penduduk
-  const dataAgama = React.useMemo(() => {
-    if (!stats) return [];
-    return Object.entries(stats.data_agama).map(([name, jumlah]) => ({
+            {
+              name: "Cerai Hidup",
+              jumlah: stats.data_status_perkawinan.cerai_hidup,
+            },
+            {
+              name: "Cerai Mati",
+              jumlah: stats.data_status_perkawinan.cerai_mati,
+            },
+          ]
+        : [],
+    [stats],
+  );
+  const dataAgama = React.useMemo(
+    () =>
+      Object.entries(stats?.data_agama || {}).map(([name, jumlah]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
       jumlah,
-    }));
-  }, [stats]);
-
-  const chartConfigUmur = {
-    laki: {
-      label: "Laki-laki",
-      color: COLORS.primary,
-    },
-    perempuan: {
-      label: "Perempuan",
-      color: COLORS.secondary,
-    },
-  } satisfies ChartConfig;
-
-  const chartConfigPendidikan = {
-    pendidikan: {
-      label: "Pendidikan",
-      color: COLORS.accent2,
-    },
-  } satisfies ChartConfig;
-
-  if (loading || !stats) {
-    return (
-      <main className="min-h-screen bg-white dark:bg-gray-900">
-        <NavbarDesa />
-        <div className="container mx-auto px-4">
-          <InfografisNav activeTab="penduduk" />
-
-          {/* Judul Demografi Placeholder */}
-          <div className="mb-8">
-            <div className="h-8 w-64 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="mt-2 h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-          </div>
-
-          {/* Bagian 1: Total Penduduk dan Jenis Kelamin Placeholder */}
-          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex flex-col items-stretch md:flex-row">
-              <div className="flex-shrink-0 p-8 md:w-1/2">
-                <div className="mx-auto aspect-square max-h-[350px] animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
-              </div>
-              <div className="flex-1 p-8">
-                <div className="mb-6 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                <div className="space-y-6">
-                  <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                    <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                    <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                    <div className="mb-2 h-6 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                    <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bagian 2: Data Umur Warga Placeholder */}
-          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="p-6">
-              <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              <div className="h-[300px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            </div>
-          </div>
-
-          {/* Bagian 3: Data Pendidikan Warga Placeholder */}
-          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="p-6">
-              <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              <div className="h-[300px] animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            </div>
-          </div>
-
-          {/* Bagian 4: Data Pekerjaan Warga Placeholder */}
-          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
-                >
-                  <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                  <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bagian 5: Data Status Warga Placeholder */}
-          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
-                >
-                  <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                  <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bagian 6: Data Agama Warga Placeholder */}
-          <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-4 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
-                >
-                  <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                  <div className="ml-auto h-8 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+      })),
+    [stats],
+  );
 
   if (error) {
     return (
-      <main className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <NavbarDesa />
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto space-y-8 px-4 py-8">
           <InfografisNav activeTab="penduduk" />
           <div className="flex h-64 items-center justify-center">
             <p className="text-red-600 dark:text-red-400">{error}</p>
           </div>
         </div>
-      </main>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <NavbarDesa />
+        <div className="container mx-auto space-y-8 px-4 py-8">
+          <InfografisNav activeTab="penduduk" />
+          <div className="animate-pulse space-y-8">
+            {/* Hero Section Placeholder */}
+            <div className="relative mb-16 overflow-hidden rounded-3xl bg-gradient-to-r from-gray-200 to-gray-300 p-8">
+              <div className="absolute top-0 right-0 h-64 w-64 opacity-10">
+                <div className="h-48 w-48 rounded-full bg-gray-300"></div>
+              </div>
+              <div className="relative z-10">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-gray-300"></div>
+                      <div className="h-8 w-48 rounded-lg bg-gray-300"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full bg-gray-300"></div>
+                      <div className="h-4 w-64 rounded-lg bg-gray-300"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full bg-gray-300"></div>
+                      <div className="h-4 w-32 rounded-lg bg-gray-300"></div>
+                    </div>
+                  </div>
+                  <div className="lg:text-right">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full bg-gray-300"></div>
+                      <div className="h-4 w-24 rounded-lg bg-gray-300"></div>
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+            {/* Main Stats Card Placeholder */}
+            <div className="rounded-2xl bg-white p-8 shadow-lg">
+              <div className="flex flex-col gap-8 xl:flex-row">
+                {/* Left Side - Pie Chart */}
+                <div className="xl:w-1/2">
+                  <div className="aspect-square max-w-lg rounded-2xl bg-gray-100"></div>
+                  <div className="mt-8 space-y-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="rounded-2xl bg-gray-100 p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="h-6 w-6 rounded-full bg-gray-200"></div>
+                            <div className="h-6 w-24 rounded-lg bg-gray-200"></div>
+            </div>
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-20 rounded-lg bg-gray-200"></div>
+                            <div className="h-4 w-12 rounded-lg bg-gray-200"></div>
+            </div>
+          </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+                {/* Right Side - Stats */}
+                <div className="xl:w-1/2">
+                  <div className="mb-8 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-gray-200"></div>
+                    <div>
+                      <div className="mb-2 h-6 w-48 rounded-lg bg-gray-200"></div>
+                      <div className="h-4 w-64 rounded-lg bg-gray-200"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="rounded-2xl bg-gray-100 p-6">
+                        <div className="mb-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-gray-200"></div>
+                            <div>
+                              <div className="mb-1 h-5 w-32 rounded-lg bg-gray-200"></div>
+                              <div className="h-4 w-24 rounded-lg bg-gray-200"></div>
+                            </div>
+                          </div>
+                          <div className="h-8 w-8 rounded-lg bg-gray-200"></div>
+                        </div>
+                        <div className="flex items-baseline justify-end gap-2">
+                          <div className="h-8 w-32 rounded-lg bg-gray-200"></div>
+                          <div className="h-5 w-12 rounded-lg bg-gray-200"></div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                        <div key={i} className="rounded-2xl bg-gray-100 p-4">
+                          <div className="mb-2 h-8 w-24 rounded-lg bg-gray-200"></div>
+                          <div className="h-6 w-16 rounded-lg bg-gray-200"></div>
+                </div>
+              ))}
+                    </div>
+                  </div>
+                </div>
+            </div>
+          </div>
+
+            {/* Charts Placeholder */}
+            <div className="space-y-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl bg-white p-8 shadow-lg">
+                  <div className="mb-6 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-gray-200"></div>
+                    <div>
+                      <div className="mb-2 h-6 w-48 rounded-lg bg-gray-200"></div>
+                      <div className="h-4 w-64 rounded-lg bg-gray-200"></div>
+                    </div>
+                  </div>
+                  <div className="h-80 rounded-2xl bg-gray-100"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          </div>
+        </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Navbar Section */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <NavbarDesa />
-
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto space-y-8 px-4 py-8">
         <InfografisNav activeTab="penduduk" />
 
-        {/* Judul Demografi */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold" style={{ color: COLORS.primary }}>
-            DEMOGRAFI PENDUDUK
-          </h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Memberikan informasi lengkap mengenai karakteristik demografi
-            penduduk suatu wilayah. Mulai dari jumlah penduduk, usia, jenis
-            kelamin, tingkat pendidikan, pekerjaan, agama, dan aspek penting
-            lainnya yang menggambarkan komposisi populasi secara rinci.
-          </p>
+        {/* Hero Section */}
+        <div className="mb-16">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 p-8 text-white shadow-2xl">
+            <div className="absolute top-0 right-0 h-64 w-64 opacity-10">
+              <Users size={200} className="rotate-12 transform" />
+            </div>
+            <div className="relative z-10">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
+                      <Users size={24} />
+                    </div>
+                    <h1 className="text-4xl font-bold">
+                      Data Demografi Desa {desaConfig?.nama_desa}
+                    </h1>
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-100">
+                    <MapPin size={16} />
+                    <span className="text-lg">
+                      Desa {desaConfig?.nama_desa}, Kec.{" "}
+                      {desaConfig?.nama_kecamatan}, Kab.{" "}
+                      {desaConfig?.nama_kabupaten}, {desaConfig?.nama_provinsi}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-100">
+                    <Calendar size={16} />
+                    <span>Data Tahun {new Date().getFullYear()}</span>
+                  </div>
+                </div>
+                <div className="lg:text-right">
+                  <div className="flex items-center gap-2 text-blue-100">
+                    <Activity size={16} />
+                    <span>Data Real-time</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Bagian 1: Total Penduduk dan Jenis Kelamin */}
-        <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex flex-col items-stretch md:flex-row">
-            {/* Bagian Kiri - Pie Chart */}
-            <div className="from-white-50 to-white-100 flex flex-shrink-0 flex-col items-center justify-center bg-gradient-to-br p-8 md:w-1/2 dark:from-gray-800 dark:to-gray-700">
-              <div className="mx-auto aspect-square max-h-[350px]">
-                <PieChart width={350} height={350}>
+        <Card className="mb-12 overflow-hidden" gradient={true}>
+          <div className="flex flex-col xl:flex-row">
+            <div className="relative flex flex-col items-center justify-center bg-gradient-to-br from-cyan-50/50 to-green-50/50 p-12 xl:w-1/2">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/5 to-green-500/5"></div>
+              <div className="relative w-full max-w-lg">
+                <ResponsiveContainer width="100%" height={400}>
+                  <PieChart>
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-opacity-80 rounded-md bg-black p-2 text-sm text-white">
-                            <div className="font-bold">{data.gender}</div>
-                            <div>{data.jumlah.toLocaleString()} Jiwa</div>
+                            <div className="rounded-2xl border border-gray-200/50 bg-white/95 p-4 shadow-2xl backdrop-blur-sm">
+                              <div className="text-lg font-bold text-slate-800">
+                                {data.gender}
+                              </div>
+                              <div className="text-xl font-bold text-cyan-600">
+                                {data.jumlah.toLocaleString()} Jiwa
+                              </div>
+                              <div className="font-medium text-slate-600">
+                                {data.percentage}% dari total
+                              </div>
                           </div>
                         );
                       }
@@ -330,12 +588,12 @@ export default function InfografisPenduduk() {
                     nameKey="gender"
                     cx="50%"
                     cy="50%"
-                    innerRadius={120}
-                    outerRadius={170}
-                    fill="#8884d8"
+                      innerRadius={90}
+                      outerRadius={160}
                     stroke="#fff"
-                    strokeWidth={2}
-                    isAnimationActive={true}
+                      strokeWidth={6}
+                      animationBegin={0}
+                      animationDuration={1500}
                   >
                     {chartDataPenduduk.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -353,16 +611,16 @@ export default function InfografisPenduduk() {
                               <tspan
                                 x={viewBox.cx}
                                 y={viewBox.cy}
-                                className="text-3xl font-bold"
-                                style={{ fill: COLORS.primary }}
+                                  className="fill-slate-800 text-4xl font-black"
                               >
-                                {stats.total_penduduk.toLocaleString()}
+                                  <AnimatedCounter
+                                    value={stats.total_penduduk}
+                                  />
                               </tspan>
                               <tspan
                                 x={viewBox.cx}
-                                y={(viewBox.cy || 0) + 28}
-                                className="text-base"
-                                style={{ fill: COLORS.secondary }}
+                                  y={(viewBox.cy || 0) + 25}
+                                  className="fill-slate-600 text-base font-semibold"
                               >
                                 Total Penduduk
                               </tspan>
@@ -374,256 +632,340 @@ export default function InfografisPenduduk() {
                     />
                   </Pie>
                 </PieChart>
+                </ResponsiveContainer>
               </div>
-              <div className="mt-4 w-full max-w-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-4 w-4 rounded-full"
-                      style={{ backgroundColor: COLORS.primary }}
+              <div className="mt-8 w-full max-w-md space-y-4">
+                {chartDataPenduduk.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-2xl border border-white/20 bg-white/70 p-4 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="h-6 w-6 rounded-full shadow-md"
+                        style={{ backgroundColor: item.fill }}
                     ></div>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      Laki-laki
+                      <span className="text-lg font-bold text-slate-700">
+                        {item.gender}
                     </span>
                   </div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {stats.total_laki_laki.toLocaleString()} jiwa
+                    <div className="text-right">
+                      <span className="text-xl font-black text-slate-800">
+                        {item.jumlah.toLocaleString()}
                   </span>
+                      <div className="text-sm font-semibold text-slate-600">
+                        {item.percentage}%
+                      </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-4 w-4 rounded-full"
-                      style={{ backgroundColor: COLORS.secondary }}
-                    ></div>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      Perempuan
-                    </span>
                   </div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {stats.total_perempuan.toLocaleString()} jiwa
-                  </span>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Bagian Kanan - Informasi Tambahan */}
-            <div className="flex-1 p-8">
-              <h2
-                className="mb-2 text-3xl font-bold"
-                style={{ color: COLORS.primary }}
-              >
+            <div className="relative p-12 xl:w-1/2">
+              <div className="mb-8 flex items-center gap-4">
+                <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-green-500 p-3 shadow-xl">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="bg-gradient-to-r from-cyan-600 to-green-600 bg-clip-text text-4xl font-black text-transparent">
                 Data Penduduk
               </h2>
-              <p className="mb-6 text-gray-600 dark:text-gray-400">
-                Informasi statistik penduduk dan kepala keluarga desa
-              </p>
-
-              <div className="space-y-6">
-                {/* Total Penduduk */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-xl font-bold text-black">
-                    Total Penduduk
-                  </h3>
-                  <p
-                    className="text-right text-3xl font-bold"
-                    style={{ color: COLORS.primary }}
-                  >
-                    {stats.total_penduduk.toLocaleString()}{" "}
-                    <span className="text-xl font-bold text-gray-700 dark:text-gray-400">
-                      jiwa
-                    </span>
+                  <p className="mt-2 text-lg font-medium text-slate-600">
+                    Statistik demografis terkini
                   </p>
                 </div>
-
-                {/* Jumlah Kepala Keluarga */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                  <h3 className="mb-1 text-xl font-bold text-black">
-                    Jumlah Kepala Keluarga
-                  </h3>
-                  <p
-                    className="text-right text-3xl font-bold"
-                    style={{ color: COLORS.primary }}
-                  >
-                    {stats.total_kk.toLocaleString()}{" "}
-                    <span className="text-xl font-bold text-gray-700 dark:text-gray-400">
-                      KK
-                    </span>
-                  </p>
+              </div>
+              <div className="space-y-8">
+                <StatCard
+                  title="Total Penduduk"
+                  value={<AnimatedCounter value={stats.total_penduduk} />}
+                  unit="jiwa"
+                  icon={Users}
+                  trend="+2.3%"
+                  gradient={true}
+                />
+                <StatCard
+                  title="Jumlah Kepala Keluarga"
+                  value={<AnimatedCounter value={stats.total_kk} />}
+                  unit="KK"
+                  icon={UserCheck}
+                  trend="+1.8%"
+                  gradient={true}
+                />
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="rounded-2xl border border-cyan-200/50 bg-gradient-to-br from-cyan-500/10 to-sky-500/10 p-6">
+                    <div className="text-center">
+                      <div className="mb-2 text-3xl font-black text-cyan-600">
+                        {(stats.total_penduduk / stats.total_kk).toFixed(1)}
+                      </div>
+                      <div className="text-sm font-semibold text-slate-600">
+                        Rata-rata per KK
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-green-200/50 bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-6">
+                    <div className="text-center">
+                      <div className="mb-2 text-3xl font-black text-green-600">
+                        {stats.total_laki_laki > stats.total_perempuan
+                          ? (
+                              (stats.total_laki_laki / stats.total_perempuan) *
+                              100
+                            ).toFixed(0)
+                          : (
+                              (stats.total_perempuan / stats.total_laki_laki) *
+                              100
+                            ).toFixed(0)}
+                      </div>
+                      <div className="text-sm font-semibold text-slate-600">
+                        Rasio Gender
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Bagian 2: Data Umur Warga */}
-        <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <Card>
+        <Card className="mb-12">
             <CardHeader>
-              <CardTitle>Data Umur Warga</CardTitle>
-              <CardDescription>Distribusi umur penduduk desa</CardDescription>
+            <CardTitle icon={UserCheck}>Distribusi Usia Penduduk</CardTitle>
+            <CardDescription>
+              Analisis mendalam distribusi usia dengan breakdown gender untuk
+              setiap kelompok umur
+            </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfigUmur}>
-                <BarChart accessibilityLayer data={chartDataUmur}>
-                  <CartesianGrid vertical={false} />
+            <ResponsiveContainer width="100%" height={450}>
+              <AreaChart
+                data={chartDataUmur}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <defs>
+                  <linearGradient id="gradientLaki" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={COLORS.primary}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={COLORS.primary}
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                  <linearGradient
+                    id="gradientPerempuan"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={COLORS.secondary}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={COLORS.secondary}
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#e2e8f0"
+                  strokeOpacity={0.5}
+                />
                   <XAxis
                     dataKey="kelompokUmur"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dashed" />}
-                  />
-                  <Bar dataKey="laki" fill="var(--color-laki)" radius={4} />
-                  <Bar
+                  tick={{ fontSize: 14, fill: "#64748b", fontWeight: 600 }}
+                  stroke="#94a3b8"
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: "#64748b" }}
+                  stroke="#94a3b8"
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="rounded-2xl border border-gray-200/50 bg-white/95 p-6 shadow-2xl backdrop-blur-sm">
+                          <p className="mb-3 text-lg font-bold text-slate-800">
+                            Kelompok Usia {label} tahun
+                          </p>
+                          <div className="space-y-2">
+                            <p
+                              className="font-semibold"
+                              style={{ color: COLORS.primary }}
+                            >
+                              👨 Laki-laki: {payload[0].value} jiwa
+                            </p>
+                            <p
+                              className="font-semibold"
+                              style={{ color: COLORS.secondary }}
+                            >
+                              👩 Perempuan: {payload[1].value} jiwa
+                            </p>
+                            <div className="mt-3 border-t pt-2">
+                              <p className="font-bold text-slate-800">
+                                📊 Total: {payload[0].payload.total} jiwa
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="laki"
+                  stackId="1"
+                  stroke={COLORS.primary}
+                  strokeWidth={3}
+                  fill="url(#gradientLaki)"
+                  animationDuration={1500}
+                />
+                <Area
+                  type="monotone"
                     dataKey="perempuan"
-                    fill="var(--color-perempuan)"
-                    radius={4}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm">
-              <div className="flex gap-2 leading-none font-medium">
-                Kelompok umur produktif mendominasi{" "}
-                <TrendingUp className="h-4 w-4" />
+                  stackId="1"
+                  stroke={COLORS.secondary}
+                  strokeWidth={3}
+                  fill="url(#gradientPerempuan)"
+                  animationDuration={1500}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+            <div className="mt-6 flex items-center justify-center gap-8">
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-6 w-6 rounded-full shadow-md"
+                  style={{ backgroundColor: COLORS.primary }}
+                ></div>
+                <span className="text-lg font-semibold text-slate-700">
+                  👨 Laki-laki
+                </span>
               </div>
-              <div className="text-muted-foreground leading-none">
-                Menampilkan distribusi penduduk berdasarkan kelompok umur dan
-                jenis kelamin
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-6 w-6 rounded-full shadow-md"
+                  style={{ backgroundColor: COLORS.secondary }}
+                ></div>
+                <span className="text-lg font-semibold text-slate-700">
+                  👩 Perempuan
+                </span>
               </div>
-            </CardFooter>
+            </div>
+          </CardContent>
           </Card>
-        </div>
 
-        {/* Bagian 3: Data Pendidikan Warga */}
-        <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <Card>
+        <Card className="mb-12">
             <CardHeader>
-              <CardTitle>Data Pendidikan Warga</CardTitle>
+            <CardTitle icon={GraduationCap}>
+              Tingkat Pendidikan Penduduk
+            </CardTitle>
               <CardDescription>
-                Tingkat pendidikan penduduk desa
+              Visualisasi radial interaktif menunjukkan distribusi tingkat
+              pendidikan dengan persentase detail
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfigPendidikan}>
-                <BarChart
-                  accessibilityLayer
+            <div className="flex flex-col items-center gap-12 lg:flex-row">
+              <div className="lg:w-1/2">
+                <ResponsiveContainer width="100%" height={400}>
+                  <RadialBarChart
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="20%"
+                    outerRadius="80%"
                   data={chartDataPendidikan}
-                  margin={{
-                    top: 20,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="tingkat"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar
-                    dataKey="jumlah"
-                    fill="var(--color-pendidikan)"
-                    radius={8}
                   >
-                    <LabelList
-                      position="top"
-                      offset={12}
-                      className="fill-foreground"
-                      fontSize={12}
+                    <RadialBar
+                      dataKey="jumlah"
+                      cornerRadius={10}
+                      animationDuration={1500}
                     />
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm">
-              <div className="flex gap-2 leading-none font-medium">
-                Tamatan SD/Sederajat mendominasi{" "}
-                <TrendingUp className="h-4 w-4" />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="rounded-2xl border border-gray-200/50 bg-white/95 p-4 shadow-2xl backdrop-blur-sm">
+                              <div className="text-lg font-bold text-slate-800">
+                                {data.tingkat}
+                              </div>
+                              <div className="text-xl font-bold text-cyan-600">
+                                {data.jumlah.toLocaleString()} jiwa
+                              </div>
+                              <div className="font-medium text-slate-600">
+                                {data.percentage}% dari total
+                              </div>
               </div>
-              <div className="text-muted-foreground leading-none">
-                Menampilkan distribusi penduduk berdasarkan tingkat pendidikan
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </RadialBarChart>
+                </ResponsiveContainer>
               </div>
-            </CardFooter>
-          </Card>
-        </div>
-
-        {/* Bagian 4: Data Pekerjaan Warga */}
-        <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-            Data Pekerjaan Warga
-          </h3>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {dataPekerjaan.map((item, index) => (
+              <div className="space-y-4 lg:w-1/2">
+                {chartDataPendidikan.map((item, index) => (
               <div
                 key={index}
-                className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
-              >
-                <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                  {item.name}
-                </h4>
-                <p className="mt-2 text-right text-2xl font-bold text-gray-900 dark:text-white">
+                    className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white p-4 transition-all duration-300 hover:shadow-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="h-6 w-6 rounded-full shadow-md"
+                        style={{ backgroundColor: item.fill }}
+                      ></div>
+                      <div>
+                        <span className="font-bold text-slate-800">
+                          {item.tingkat}
+                        </span>
+                        <div className="text-sm text-slate-600">
+                          {item.percentage}% dari total
+              </div>
+          </div>
+        </div>
+                    <span className="text-xl font-black text-slate-800">
                   {item.jumlah.toLocaleString()}
-                </p>
+                    </span>
               </div>
             ))}
           </div>
         </div>
+          </CardContent>
+        </Card>
 
-        {/* Bagian 5: Data Status Warga */}
-        <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-            Data Status Warga
-          </h3>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {dataStatus.map((item, index) => (
-              <div
-                key={index}
-                className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
-              >
-                <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                  {item.name}
-                </h4>
-                <p className="mt-2 text-right text-2xl font-bold text-gray-900 dark:text-white">
-                  {item.jumlah.toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bagian 6: Data Agama Warga */}
-        <div className="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-            Data Agama Warga
-          </h3>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {dataAgama.map((item, index) => (
-              <div
-                key={index}
-                className="rounded-lg border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
-              >
-                <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                  {item.name}
-                </h4>
-                <p className="mt-2 text-right text-2xl font-bold text-gray-900 dark:text-white">
-                  {item.jumlah.toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-12">
+          <GridCard
+            title="Data Pekerjaan Penduduk"
+            data={dataPekerjaan}
+            columns={3}
+            icon={Briefcase}
+          />
+          <GridCard
+            title="Status Perkawinan Penduduk"
+            data={dataStatus}
+            columns={2}
+            icon={Heart}
+          />
+          <GridCard
+            title="Keberagaman Agama Penduduk"
+            data={dataAgama}
+            columns={3}
+            icon={Church}
+          />
         </div>
       </div>
-
-      {/* Footer Section */}
       <FooterDesa />
-    </main>
+    </div>
   );
 }

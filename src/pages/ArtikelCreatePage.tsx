@@ -1,7 +1,20 @@
 import { useState } from "react";
-import { Label, Select, Textarea } from "flowbite-react";
+import {
+  PlusCircle,
+  MapPin,
+  Calendar,
+  User,
+  FileText,
+  Camera,
+  X,
+  Send,
+  ArrowLeft,
+  Globe,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "flowbite-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -69,23 +82,30 @@ export default function ArtikelCreatePage() {
     location_name: "",
     latitude: null,
     longitude: null,
-    status_artikel: "Resmi",
+    status_artikel: "",
     isi_artikel: "",
-    jenis_artikel: "warga",
+    jenis_artikel: "",
     media_artikel: null,
   });
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const categories = [
-    "Berita",
-    "Acara",
-    "Budaya",
-    "Pemerintahan",
-    "Pendidikan",
-    "Kesehatan",
-    "Lainnya",
+    { value: "Berita", icon: "📰", color: "bg-blue-100 text-blue-800" },
+    { value: "Acara", icon: "🎉", color: "bg-purple-100 text-purple-800" },
+    { value: "Budaya", icon: "🎭", color: "bg-pink-100 text-pink-800" },
+    { value: "Pemerintahan", icon: "🏛️", color: "bg-gray-100 text-gray-800" },
+    { value: "Pendidikan", icon: "📚", color: "bg-green-100 text-green-800" },
+    { value: "Kesehatan", icon: "⚕️", color: "bg-red-100 text-red-800" },
+    { value: "Lainnya", icon: "📝", color: "bg-yellow-100 text-yellow-800" },
+  ];
+
+  const steps = [
+    { number: 1, title: "Informasi Dasar", icon: FileText },
+    { number: 2, title: "Lokasi & Waktu", icon: MapPin },
+    { number: 3, title: "Konten & Media", icon: Camera },
   ];
 
   const handleInputChange = (
@@ -111,14 +131,8 @@ export default function ArtikelCreatePage() {
           : newFiles,
       }));
 
-      // Create preview URLs for new images
       const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
       setPreviewImages((prev) => [...prev, ...newPreviewUrls]);
-
-      // Cleanup function for new preview URLs
-      return () => {
-        newPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-      };
     }
   };
 
@@ -134,7 +148,7 @@ export default function ArtikelCreatePage() {
 
     setPreviewImages((prev) => {
       const newPreviews = [...prev];
-      URL.revokeObjectURL(newPreviews[index]); // Cleanup the URL
+      URL.revokeObjectURL(newPreviews[index]);
       newPreviews.splice(index, 1);
       return newPreviews;
     });
@@ -153,19 +167,14 @@ export default function ArtikelCreatePage() {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) throw new Error("Token tidak ditemukan");
-
       const formDataToSend = new FormData();
 
-      // Handle multiple media_artikel files
       if (formData.media_artikel) {
         formData.media_artikel.forEach((file) => {
           formDataToSend.append("media_artikel[]", file);
         });
       }
 
-      // Add other form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== "media_artikel" && value !== null) {
           formDataToSend.append(key, value.toString());
@@ -173,31 +182,29 @@ export default function ArtikelCreatePage() {
       });
 
       const response = await axios.post(
-        `${API_CONFIG.baseURL}/api/artikel`,
+        `${API_CONFIG.baseURL}/api/publik/artikel`,
         formDataToSend,
         {
           headers: {
             ...API_CONFIG.headers,
-            Authorization: `Bearer ${token}`,
           },
         },
       );
 
       if (response.data) {
         toast.success("Artikel berhasil dibuat!", {
-          description: "Halaman akan dimuat ulang dalam beberapa detik",
-          duration: 2000,
+          description:
+            "Artikel Anda akan tayang setelah di moderasi admin atau disetujui admin",
+          duration: 5000,
         });
 
-        // Wait for 2 seconds to show toast before refreshing
         setTimeout(() => {
-          window.location.reload();
+          window.location.href = "/artikeldesa";
         }, 2000);
       }
     } catch (error) {
       console.error("Error submitting form:", error);
       if (axios.isAxiosError(error) && error.response?.data?.errors) {
-        // Handle validation errors
         const errorMessages = Object.entries(error.response.data.errors)
           .map(
             ([field, messages]) =>
@@ -220,209 +227,385 @@ export default function ArtikelCreatePage() {
     }
   };
 
+  const selectedLocation =
+    formData.latitude && formData.longitude
+      ? { lat: formData.latitude, lng: formData.longitude }
+      : null;
+
   return (
-    <div className="flex min-h-screen flex-col bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Toaster richColors position="top-center" />
       <NavbarDesa />
 
-      <div className="container mx-auto flex-grow px-4 py-8">
-        <div className="mx-auto max-w-3xl rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-          <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
-            Buat Artikel Baru
-          </h1>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <Label htmlFor="penulis_artikel">Nama Penulis</Label>
-                <Input
-                  id="penulis_artikel"
-                  name="penulis_artikel"
-                  value={formData.penulis_artikel}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="judul_artikel">Judul Artikel</Label>
-                <Input
-                  id="judul_artikel"
-                  name="judul_artikel"
-                  value={formData.judul_artikel}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="kategori_artikel">Kategori</Label>
-                <Select
-                  id="kategori_artikel"
-                  name="kategori_artikel"
-                  value={formData.kategori_artikel}
-                  onChange={handleInputChange}
-                  required
-                >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="tanggal_kejadian">Tanggal Kejadian</Label>
-                <Input
-                  id="tanggal_kejadian"
-                  name="tanggal_kejadian"
-                  type="date"
-                  value={formData.tanggal_kejadian}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="location_name">Nama Lokasi</Label>
-                <Input
-                  id="location_name"
-                  name="location_name"
-                  value={formData.location_name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="latitude">Latitude</Label>
-                  <Input
-                    id="latitude"
-                    name="latitude"
-                    type="number"
-                    step="any"
-                    value={formData.latitude ?? ""}
-                    onChange={handleInputChange}
-                    placeholder="Klik pada peta!"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="longitude">Longitude</Label>
-                  <Input
-                    id="longitude"
-                    name="longitude"
-                    type="number"
-                    step="any"
-                    value={formData.longitude ?? ""}
-                    onChange={handleInputChange}
-                    placeholder="Klik pada peta!"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="h-[400px] w-full">
-              <MapWithNoSSR
-                center={[
-                  formData.latitude ?? -6.913331,
-                  formData.longitude ?? 107.511669,
-                ]}
-                zoom={15}
-                style={{ height: "100%", width: "100%" }}
+      {/* Header */}
+      <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="mx-auto max-w-4xl px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => (window.location.href = "/artikeldesa")}
+                className="rounded-lg p-2 transition-colors hover:bg-gray-100"
               >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <LocationMarker onLocationSelect={handleLocationSelect} />
-              </MapWithNoSSR>
-            </div>
-
-            <div>
-              <Label htmlFor="isi_artikel" className="mb-2 block">
-                Isi Artikel
-              </Label>
-              <Textarea
-                id="isi_artikel"
-                name="isi_artikel"
-                value={formData.isi_artikel}
-                onChange={handleInputChange}
-                placeholder="Tulis isi artikel di sini..."
-                rows={10}
-                required
-                className="w-full"
-              />
-            </div>
-
-            <div className="space-y-4">
+                <ArrowLeft className="h-5 w-5" />
+              </button>
               <div>
-                <Label htmlFor="media_artikel">Gambar Artikel</Label>
-                <Input
-                  id="media_artikel"
-                  name="media_artikel"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  multiple
-                  required
-                />
-                <p className="mt-1 text-sm text-red-600">
-                  Maksimal ukuran file 2MB, Anda dapat memilih lebih dari satu
-                  gambar
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Buat Artikel Baru
+                </h1>
+                <p className="text-gray-600">
+                  Bagikan berita dan informasi dengan warga desa
                 </p>
               </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              {steps.map((step) => (
+                <div
+                  key={step.number}
+                  className={`flex items-center space-x-2 rounded-lg px-3 py-2 transition-all ${
+                    currentStep === step.number
+                      ? "bg-indigo-100 text-indigo-700"
+                      : currentStep > step.number
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  <step.icon className="h-4 w-4" />
+                  <span className="hidden text-sm font-medium sm:block">
+                    {step.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
-              {previewImages.length > 0 && (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                  {previewImages.map((preview, index) => (
-                    <div key={index} className="group relative">
-                      <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="h-32 w-full rounded-lg object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="bg-destructive text-destructive-foreground absolute top-2 right-2 rounded-full p-1 opacity-0 transition-opacity group-hover:opacity-100"
-                        aria-label="Hapus gambar"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M18 6 6 18" />
-                          <path d="m6 6 12 12" />
-                        </svg>
-                      </button>
-                    </div>
+      <div className="mx-auto max-w-4xl px-6 py-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Step 1: Basic Information */}
+          {currentStep === 1 && (
+            <div className="animate-in slide-in-from-right space-y-6 rounded-2xl bg-white p-8 shadow-xl">
+              <div className="mb-6 flex items-center space-x-3">
+                <div className="rounded-full bg-indigo-100 p-3">
+                  <FileText className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Informasi Dasar
+                  </h2>
+                  <p className="text-gray-600">
+                    Mulai dengan informasi dasar artikel Anda
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                    <User className="h-4 w-4" />
+                    <span>Nama Penulis</span>
+                  </label>
+                  <Input
+                    name="penulis_artikel"
+                    value={formData.penulis_artikel}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan nama penulis"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                    <FileText className="h-4 w-4" />
+                    <span>Judul Artikel</span>
+                  </label>
+                  <Input
+                    name="judul_artikel"
+                    value={formData.judul_artikel}
+                    onChange={handleInputChange}
+                    placeholder="Tulis judul artikel yang menarik"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                  <Tag className="h-4 w-4" />
+                  <span>Kategori Artikel</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {categories.map((category) => (
+                    <button
+                      key={category.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          kategori_artikel: category.value,
+                        }))
+                      }
+                      className={`rounded-xl border-2 p-4 transition-all hover:scale-105 ${
+                        formData.kategori_artikel === category.value
+                          ? "border-indigo-500 bg-indigo-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="mb-2 text-2xl">{category.icon}</div>
+                      <div className="text-sm font-medium">
+                        {category.value}
+                      </div>
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="flex justify-end space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => (window.location.href = "/artikeldesa")}
-                type="button"
-              >
-                Batal
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Mengirim..." : "Kirim Artikel"}
-              </Button>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <span>Selanjutnya</span>
+                  <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                </Button>
+              </div>
             </div>
-          </form>
-        </div>
+          )}
+
+          {/* Step 2: Location & Time */}
+          {currentStep === 2 && (
+            <div className="animate-in slide-in-from-right space-y-6 rounded-2xl bg-white p-8 shadow-xl">
+              <div className="mb-6 flex items-center space-x-3">
+                <div className="rounded-full bg-green-100 p-3">
+                  <MapPin className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Lokasi & Waktu
+                  </h2>
+                  <p className="text-gray-600">
+                    Tentukan kapan dan dimana peristiwa terjadi
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                    <Globe className="h-4 w-4" />
+                    <span>Nama Lokasi</span>
+                  </label>
+                  <Input
+                    name="location_name"
+                    value={String(formData.location_name)}
+                    onChange={handleInputChange}
+                    placeholder="Contoh: Balai Desa, Lapangan Desa"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                    <Calendar className="h-4 w-4" />
+                    <span>Tanggal Kejadian</span>
+                  </label>
+                  <Input
+                    name="tanggal_kejadian"
+                    type="date"
+                    value={String(formData.tanggal_kejadian)}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                  <MapPin className="h-4 w-4" />
+                  <span>Pilih Lokasi di Peta</span>
+                </label>
+                <div className="h-[400px] w-full overflow-hidden rounded-xl">
+                  <MapWithNoSSR
+                    center={[
+                      formData.latitude ?? -6.913331,
+                      formData.longitude ?? 107.511669,
+                    ]}
+                    zoom={15}
+                    style={{ height: "100%", width: "100%" }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <LocationMarker onLocationSelect={handleLocationSelect} />
+                  </MapWithNoSSR>
+                </div>
+
+                {selectedLocation && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+                    <div className="flex items-center space-x-2 text-green-800">
+                      <MapPin className="h-4 w-4" />
+                      <span className="font-medium">Lokasi Terpilih:</span>
+                    </div>
+                    <div className="mt-2 text-sm text-green-700">
+                      Latitude: {selectedLocation.lat.toFixed(6)}
+                      <br />
+                      Longitude: {selectedLocation.lng.toFixed(6)}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <span>Kembali</span>
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setCurrentStep(3)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <span>Selanjutnya</span>
+                  <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Content & Media */}
+          {currentStep === 3 && (
+            <div className="animate-in slide-in-from-right space-y-6 rounded-2xl bg-white p-8 shadow-xl">
+              <div className="mb-6 flex items-center space-x-3">
+                <div className="rounded-full bg-purple-100 p-3">
+                  <Camera className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Konten & Media
+                  </h2>
+                  <p className="text-gray-600">
+                    Tulis artikel dan tambahkan gambar pendukung
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                  <FileText className="h-4 w-4" />
+                  <span>Isi Artikel</span>
+                </label>
+                <Textarea
+                  name="isi_artikel"
+                  value={formData.isi_artikel}
+                  onChange={handleInputChange}
+                  rows={12}
+                  placeholder="Tulis artikel Anda di sini... Ceritakan dengan detail dan menarik agar pembaca tertarik untuk membaca hingga selesai."
+                  required
+                />
+                <div className="text-right text-sm text-gray-500">
+                  {formData.isi_artikel.length} karakter
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                  <Camera className="h-4 w-4" />
+                  <span>Gambar Artikel</span>
+                </label>
+
+                <div className="rounded-xl border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-purple-400">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    multiple
+                    className="hidden"
+                    id="media_artikel"
+                  />
+                  <label
+                    htmlFor="media_artikel"
+                    className="flex cursor-pointer flex-col items-center space-y-4"
+                  >
+                    <div className="rounded-full bg-purple-100 p-4">
+                      <PlusCircle className="h-8 w-8 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-medium text-gray-900">
+                        Pilih Gambar
+                      </p>
+                      <p className="text-gray-600">
+                        atau seret dan lepas gambar di sini
+                      </p>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Maksimal 2MB per file, bisa pilih lebih dari satu
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {previewImages.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                    {previewImages.map((preview, index) => (
+                      <div key={index} className="group relative">
+                        <div className="aspect-square overflow-hidden rounded-xl bg-gray-100">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentStep(2)}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <span>Kembali</span>
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`${
+                    isSubmitting
+                      ? "cursor-not-allowed bg-gray-400"
+                      : "bg-purple-600 hover:scale-105 hover:bg-purple-700"
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      <span>Mengirim...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      <span>Publikasikan Artikel</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </form>
       </div>
 
       <FooterDesa />
