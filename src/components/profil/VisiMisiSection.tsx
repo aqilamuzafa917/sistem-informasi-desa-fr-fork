@@ -6,32 +6,17 @@ interface VisiMisiProps {
 }
 
 export default function VisiMisiSection({ visi, misi }: VisiMisiProps) {
-  // Test data - remove this when using real props
-  const testData = {
-    visi:
-      visi ||
-      "Bandung Barat yang AMANAH (Agamis, Maju, Adaptif, Nyaman, Aspiratif dan Harmonis)",
-    misi:
-      misi ||
-      "Misi pembangunan Kabupaten Bandung Barat 2025 – 2030 disusun berdasarkan janji Bupati terpilih. Prinsip-prinsip sebagaimana janji Bupati terpilih yang digunakan sebagai dasar penyusunan misi ini adalah Kabupaten Bandung Barat yang mengarahkan pembangunan dalam jangka waktu 5 (lima) tahun ke depan sebagai berikut :\nMeningkatkan kualitas SDM Unggul yang berakhlak dan berkarakter.\nMeningkatkan Produktifitas dan Pertumbuhan Ekonomi Inklusif berbasis potensi sektor unggulan daerah.\nMewujudkan Tata Kelola Pemerintahan Yang Profesional, Inovatif, Transparan dan Akuntabel.\nMempercepat Pembangunan Infrastruktur dan aksebilitas Wilayah.\nMeningkatkan Lingkungan hidup yang Tangguh dan Berkelanjutan.\nMewujudkan Kondisi yang Harmonis di Masyarakat berdasarkan kearifan Budaya Lokal.",
-  };
-
   // Parse misi text to separate intro paragraph from mission points
   const parseMisiText = (misiText: string) => {
     if (!misiText) return { intro: "", points: [] };
     const lines = misiText.split("\n").filter((line) => line.trim() !== "");
 
-    // Simple approach: find the first line that looks like a separate point
-    // by checking for pattern breaks in the text flow
+    // Find the transition point where text changes from paragraph to list format
     let introEndIndex = 0;
-
-    // Look for the transition point where text changes from paragraph to list format
     for (let i = 1; i < lines.length; i++) {
       const currentLine = lines[i].trim();
       const prevLine = lines[i - 1].trim();
 
-      // If current line starts with capital and previous line ends with period or colon,
-      // and current line is substantial, it's likely a new point
       if (
         currentLine.length > 15 &&
         /^[A-Z]/.test(currentLine) &&
@@ -53,7 +38,7 @@ export default function VisiMisiSection({ visi, misi }: VisiMisiProps) {
     };
   };
 
-  const { intro, points } = parseMisiText(testData.misi);
+  const { intro, points } = parseMisiText(misi);
 
   return (
     <section className="w-full bg-white py-8 dark:bg-gray-800">
@@ -70,7 +55,7 @@ export default function VisiMisiSection({ visi, misi }: VisiMisiProps) {
               </h3>
               <div className="text-center">
                 <p className="text-xl leading-relaxed font-medium text-gray-800 dark:text-gray-200">
-                  {testData.visi}
+                  {visi}
                 </p>
               </div>
             </CardContent>
