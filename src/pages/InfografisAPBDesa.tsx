@@ -1,6 +1,8 @@
 import { LabelList } from "recharts";
 import * as React from "react";
 import axios from "axios";
+import { toast } from "sonner";
+import { Toaster } from "sonner";
 import {
   Bar,
   BarChart,
@@ -22,6 +24,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Info,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 import NavbarDesa from "@/components/NavbarDesa";
@@ -60,7 +64,53 @@ export default function InfografisAPBDesa() {
   const [selectedYear, setSelectedYear] = React.useState<string>("");
   const [apbDesaData, setApbDesaData] = React.useState<APBDesaData[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [downloading, setDownloading] = React.useState(false);
   const { desaConfig } = useDesa();
+
+  // Get current year
+  const currentYear = new Date().getFullYear();
+  const isCurrentYear = selectedYear === currentYear.toString();
+
+  // Function to handle PDF download
+  const handleDownloadPDF = async () => {
+    if (!selectedYear || downloading || isCurrentYear) return;
+
+    try {
+      setDownloading(true);
+      toast.info("Mengunduh PDF APB Desa...", {
+        description: "Dokumen akan segera diunduh",
+      });
+
+      const response = await axios.get(
+        `${API_CONFIG.baseURL}/api/publik/apb-desa/pdf/${selectedYear}`,
+        {
+          headers: API_CONFIG.headers,
+          responseType: "blob",
+        },
+      );
+
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `APBDesa-${selectedYear}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("PDF berhasil diunduh", {
+        description: "Dokumen APB Desa berhasil diunduh",
+      });
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Gagal mengunduh PDF", {
+        description: "Silakan coba lagi beberapa saat",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   // Fetch APBDesa data
   React.useEffect(() => {
@@ -187,6 +237,7 @@ export default function InfografisAPBDesa() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <Toaster position="top-right" richColors />
         <NavbarDesa />
         <div className="container mx-auto space-y-8 px-4 py-8">
           <InfografisNav activeTab="apbdesa" />
@@ -199,10 +250,10 @@ export default function InfografisAPBDesa() {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-gray-300"></div>
                     <div className="h-8 w-64 rounded-xl bg-gray-300"></div>
-            </div>
+                  </div>
                   <div className="h-6 w-96 rounded-lg bg-gray-300"></div>
                   <div className="h-6 w-48 rounded-lg bg-gray-300"></div>
-            </div>
+                </div>
                 <div className="h-10 w-32 rounded-lg bg-gray-300"></div>
               </div>
             </div>
@@ -254,8 +305,8 @@ export default function InfografisAPBDesa() {
                 <div>
                   <div className="mb-2 h-6 w-48 rounded-lg bg-gray-200"></div>
                   <div className="h-4 w-64 rounded-lg bg-gray-200"></div>
-                    </div>
-                    </div>
+                </div>
+              </div>
               <div className="flex items-center gap-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -275,8 +326,8 @@ export default function InfografisAPBDesa() {
               <div>
                 <div className="mb-2 h-6 w-48 rounded-lg bg-gray-200"></div>
                 <div className="h-20 w-full rounded-lg bg-gray-200"></div>
-                  </div>
-                </div>
+              </div>
+            </div>
           </div>
         </div>
         <FooterDesa />
@@ -286,6 +337,7 @@ export default function InfografisAPBDesa() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <Toaster position="top-right" richColors />
       <NavbarDesa />
       <div className="container mx-auto space-y-8 px-4 py-8">
         <InfografisNav activeTab="apbdesa" />
@@ -319,27 +371,44 @@ export default function InfografisAPBDesa() {
                     <Calendar size={16} />
                     <span>Tahun Anggaran {selectedYear}</span>
                   </div>
-          </div>
+                </div>
 
                 <div className="lg:text-right">
-                  <label className="mb-2 block text-sm text-blue-100">
-                    Pilih Tahun
-                  </label>
-            <select
-                    className="min-w-[140px] rounded-xl border-0 bg-white/20 px-4 py-3 text-white placeholder-blue-100 backdrop-blur-sm focus:ring-2 focus:ring-white/50 focus:outline-none"
-              value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-            >
-              {apbDesaData.map((data) => (
-                      <option
-                        key={data.tahun_anggaran}
-                        value={data.tahun_anggaran}
-                        className="text-gray-800"
-                      >
-                  {data.tahun_anggaran}
-                </option>
-              ))}
-            </select>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-blue-100">Pilih Tahun</label>
+                    <select
+                      className="min-w-[140px] rounded-xl border-0 bg-white/20 px-4 py-3 text-white placeholder-blue-100 backdrop-blur-sm focus:ring-2 focus:ring-white/50 focus:outline-none"
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                    >
+                      {apbDesaData.map((data) => (
+                        <option
+                          key={data.tahun_anggaran}
+                          value={data.tahun_anggaran}
+                          className="text-gray-800"
+                        >
+                          {data.tahun_anggaran}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleDownloadPDF}
+                      disabled={downloading || isCurrentYear}
+                      className="flex items-center gap-1 rounded-xl bg-white/20 px-3 py-3 text-white backdrop-blur-sm transition-all hover:bg-white/30 focus:ring-2 focus:ring-white/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                      title={
+                        isCurrentYear
+                          ? "PDF tidak tersedia untuk tahun berjalan"
+                          : "Download PDF APB Desa"
+                      }
+                    >
+                      {downloading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download size={16} />
+                      )}
+                      <span className="text-sm">PDF</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -364,9 +433,9 @@ export default function InfografisAPBDesa() {
                     />
                   </div>
                   <div>
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
                       Total Pendapatan
-              </h3>
+                    </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Tahun {selectedYear}
                     </p>
@@ -388,12 +457,12 @@ export default function InfografisAPBDesa() {
                     {Math.abs(pendapatanGrowth).toFixed(1)}%
                   </div>
                 )}
-            </div>
+              </div>
               <p className="text-2xl font-bold text-green-600 sm:text-3xl dark:text-green-400">
-              {selectedYearData
-                ? formatRupiah(parseFloat(selectedYearData.total_pendapatan))
-                : "Loading..."}
-            </p>
+                {selectedYearData
+                  ? formatRupiah(parseFloat(selectedYearData.total_pendapatan))
+                  : "Loading..."}
+              </p>
             </div>
           </div>
 
@@ -413,9 +482,9 @@ export default function InfografisAPBDesa() {
                     />
                   </div>
                   <div>
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
                       Total Belanja
-              </h3>
+                    </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Tahun {selectedYear}
                     </p>
@@ -437,14 +506,14 @@ export default function InfografisAPBDesa() {
                     {Math.abs(belanjaGrowth).toFixed(1)}%
                   </div>
                 )}
-            </div>
+              </div>
               <p className="text-2xl font-bold text-red-600 sm:text-3xl dark:text-red-400">
-              {selectedYearData
-                ? formatRupiah(parseFloat(selectedYearData.total_belanja))
-                : "Loading..."}
-            </p>
+                {selectedYearData
+                  ? formatRupiah(parseFloat(selectedYearData.total_belanja))
+                  : "Loading..."}
+              </p>
+            </div>
           </div>
-        </div>
 
           {/* Saldo Card */}
           <div className="group relative overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
@@ -495,8 +564,8 @@ export default function InfografisAPBDesa() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-            Pendapatan Desa {selectedYear}
-          </h3>
+                    Pendapatan Desa {selectedYear}
+                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Rincian sumber pendapatan desa
                   </p>
@@ -504,23 +573,23 @@ export default function InfografisAPBDesa() {
               </div>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={dataPendapatanDesa}
+                  <BarChart
+                    data={dataPendapatanDesa}
                     margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
-                >
+                  >
                     <CartesianGrid
                       strokeDasharray="3 3"
                       className="opacity-30"
                     />
-                  <XAxis
-                    dataKey="kategori"
+                    <XAxis
+                      dataKey="kategori"
                       tick={{ fontSize: 12 }}
                       axisLine={false}
-                    tickLine={false}
+                      tickLine={false}
                     />
                     <YAxis
                       tick={{ fontSize: 12 }}
-                    axisLine={false}
+                      axisLine={false}
                       tickLine={false}
                       tickFormatter={(value: number) => formatRupiah(value)}
                       width={80}
@@ -532,14 +601,14 @@ export default function InfografisAPBDesa() {
                       className="transition-opacity hover:opacity-80"
                     >
                       <LabelList
-                      dataKey="jumlah"
-                      position="top"
+                        dataKey="jumlah"
+                        position="top"
                         offset={8}
                         className="fill-gray-600 dark:fill-gray-300"
                         fontSize={11}
-                      formatter={(value: number) => formatRupiah(value)}
-                    />
-                  </Bar>
+                        formatter={(value: number) => formatRupiah(value)}
+                      />
+                    </Bar>
                     <defs>
                       <linearGradient
                         id="greenGradient"
@@ -560,11 +629,11 @@ export default function InfografisAPBDesa() {
                         />
                       </linearGradient>
                     </defs>
-                </BarChart>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
-        </div>
+          </div>
 
           {/* Belanja Breakdown */}
           <div className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
@@ -579,8 +648,8 @@ export default function InfografisAPBDesa() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-            Belanja Desa {selectedYear}
-          </h3>
+                    Belanja Desa {selectedYear}
+                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Rincian penggunaan anggaran belanja
                   </p>
@@ -588,23 +657,23 @@ export default function InfografisAPBDesa() {
               </div>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={dataBelanjaDesa}
+                  <BarChart
+                    data={dataBelanjaDesa}
                     margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
-                >
+                  >
                     <CartesianGrid
                       strokeDasharray="3 3"
                       className="opacity-30"
                     />
-                  <XAxis
-                    dataKey="kategori"
+                    <XAxis
+                      dataKey="kategori"
                       tick={{ fontSize: 12 }}
                       axisLine={false}
-                    tickLine={false}
+                      tickLine={false}
                     />
                     <YAxis
                       tick={{ fontSize: 12 }}
-                    axisLine={false}
+                      axisLine={false}
                       tickLine={false}
                       tickFormatter={(value: number) => formatRupiah(value)}
                       width={80}
@@ -616,14 +685,14 @@ export default function InfografisAPBDesa() {
                       className="transition-opacity hover:opacity-80"
                     >
                       <LabelList
-                      dataKey="jumlah"
-                      position="top"
+                        dataKey="jumlah"
+                        position="top"
                         offset={8}
                         className="fill-gray-600 dark:fill-gray-300"
                         fontSize={11}
-                      formatter={(value: number) => formatRupiah(value)}
-                    />
-                  </Bar>
+                        formatter={(value: number) => formatRupiah(value)}
+                      />
+                    </Bar>
                     <defs>
                       <linearGradient
                         id="redGradient"
@@ -644,7 +713,7 @@ export default function InfografisAPBDesa() {
                         />
                       </linearGradient>
                     </defs>
-                </BarChart>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -666,7 +735,7 @@ export default function InfografisAPBDesa() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
                     Tren Pendapatan dan Belanja
-          </h3>
+                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Perbandingan multi-tahun ({apbDesaData[0]?.tahun_anggaran} -{" "}
                     {apbDesaData[apbDesaData.length - 1]?.tahun_anggaran})

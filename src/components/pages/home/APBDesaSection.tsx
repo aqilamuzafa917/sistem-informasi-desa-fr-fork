@@ -37,7 +37,10 @@ export function APBDesaSection() {
 
   const latestYearData = React.useMemo(() => {
     if (!apbDesaData?.data) return null;
-    return apbDesaData.data[0]; // Assuming data is sorted by year descending
+    // Sort data by tahun_anggaran in descending order and get the first item
+    return [...apbDesaData.data].sort(
+      (a, b) => b.tahun_anggaran - a.tahun_anggaran,
+    )[0];
   }, [apbDesaData]);
 
   if (error) {
