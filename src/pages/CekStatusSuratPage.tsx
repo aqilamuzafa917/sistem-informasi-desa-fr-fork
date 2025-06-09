@@ -13,6 +13,8 @@ import { Card } from "@/components/ui/card";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
+import { toast } from "sonner";
+import { Toaster } from "sonner";
 import {
   HiDownload,
   HiSearch,
@@ -42,6 +44,7 @@ interface SuratApiResponse {
 export default function CekStatusSuratPage() {
   const [nik, setNik] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState<number | null>(null);
   const [statusData, setStatusData] = useState<SuratApiResponse[] | null>(null);
   const [error, setError] = useState("");
 
@@ -182,8 +185,14 @@ export default function CekStatusSuratPage() {
   };
 
   const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
-    setIsLoading(true);
+    if (downloadingPdf === id_surat) return;
+
     try {
+      setDownloadingPdf(id_surat);
+      toast.info("Mengunduh surat...", {
+        description: "Dokumen akan segera diunduh",
+      });
+
       const pdfUrl = `${API_CONFIG.baseURL}/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
       const response = await fetch(pdfUrl, {
         headers: {
@@ -194,7 +203,6 @@ export default function CekStatusSuratPage() {
       if (!response.ok) {
         let errorMessage = `Gagal mengunduh PDF. Status: ${response.status}`;
         try {
-          // Attempt to parse error message from API if it returns JSON
           const errorData = await response.json();
           if (errorData && errorData.message) {
             errorMessage = errorData.message;
@@ -214,15 +222,27 @@ export default function CekStatusSuratPage() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+
+      toast.success("Surat berhasil diunduh", {
+        description: "Dokumen telah selesai diunduh",
+      });
       setError(""); // Clear previous errors on successful download
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
+        toast.error("Gagal mengunduh surat", {
+          description: err.message,
+        });
       } else {
-        setError("Terjadi kesalahan yang tidak diketahui saat mengunduh PDF.");
+        const errorMessage =
+          "Terjadi kesalahan yang tidak diketahui saat mengunduh PDF.";
+        setError(errorMessage);
+        toast.error("Gagal mengunduh surat", {
+          description: errorMessage,
+        });
       }
     } finally {
-      setIsLoading(false);
+      setDownloadingPdf(null);
     }
   };
 
@@ -244,6 +264,7 @@ export default function CekStatusSuratPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-900">
+      <Toaster position="top-right" richColors />
       <NavbarDesa />
 
       <div className="container mx-auto flex-grow px-4 py-8">
@@ -447,10 +468,10 @@ export default function CekStatusSuratPage() {
                           onClick={() =>
                             handleDownloadPdf(surat.nik_pemohon, surat.id_surat)
                           }
-                          disabled={isLoading}
+                          disabled={downloadingPdf === surat.id_surat}
                           className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
                         >
-                          {isLoading ? (
+                          {downloadingPdf === surat.id_surat ? (
                             <Spinner size="xs" />
                           ) : (
                             <>
@@ -540,7 +561,7 @@ export default function CekStatusSuratPage() {
                           )}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-center whitespace-nowrap">
-                          {surat.status_surat === "Disetujui" ? (
+                          {surat.status_surat === "Disetujui" && (
                             <Button
                               size="sm"
                               onClick={() =>
@@ -549,22 +570,18 @@ export default function CekStatusSuratPage() {
                                   surat.id_surat,
                                 )
                               }
-                              disabled={isLoading}
-                              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
+                              disabled={downloadingPdf === surat.id_surat}
+                              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
                             >
-                              {isLoading ? (
+                              {downloadingPdf === surat.id_surat ? (
                                 <Spinner size="xs" />
                               ) : (
                                 <>
-                                  <HiDownload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <HiDownload className="h-3.5 w-3.5" />
                                   <span>Download</span>
                                 </>
                               )}
                             </Button>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-500">
-                              -
-                            </span>
                           )}
                         </TableCell>
                       </TableRow>
