@@ -1,5 +1,5 @@
 import * as React from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polygon } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import NavbarDesa from "@/components/NavbarDesa";
@@ -7,19 +7,85 @@ import FooterDesa from "@/components/FooterDesa";
 // Memperbaiki masalah icon Leaflet di React
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { useDesa } from "@/contexts/DesaContext";
+import LoadingSkeleton from "@/components/profil/LoadingSkeleton";
+import axios from "axios";
+import { API_CONFIG } from "@/config/api";
+import { DesaData } from "@/types/desa";
 
-// Definisi tipe untuk data fasilitas
-interface Fasilitas {
-  id: number;
-  nama: string;
-  kategori: "sekolah" | "ibadah" | "kesehatan" | "lainnya";
-  alamat: string;
-  latitude: number;
-  longitude: number;
-  deskripsi?: string;
+interface POIFeature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  properties: {
+    name: string;
+    tags: {
+      "addr:housenumber"?: string;
+      "addr:street": string;
+      amenity: string;
+      building: string;
+      name: string;
+    };
+  };
+}
+
+interface POIResponse {
+  type: "FeatureCollection";
+  features: POIFeature[];
 }
 
 export default function PetaFasilitasDesa() {
+  const { desaConfig, loading } = useDesa();
+  const [poiData, setPoiData] = React.useState<POIFeature[]>([]);
+  const [isLoadingPoi, setIsLoadingPoi] = React.useState(true);
+  const [polygonData, setPolygonData] = React.useState<[number, number][]>([]);
+  const [isLoadingPolygon, setIsLoadingPolygon] = React.useState(true);
+
+  // Fetch POI data
+  React.useEffect(() => {
+    const fetchPoiData = async () => {
+      try {
+        const response = await axios.get<POIResponse>(
+          `${API_CONFIG.baseURL}/api/publik/map/poi`,
+          { headers: API_CONFIG.headers },
+        );
+        setPoiData(response.data.features);
+      } catch (error) {
+        console.error("Error fetching POI data:", error);
+      } finally {
+        setIsLoadingPoi(false);
+      }
+    };
+
+    fetchPoiData();
+  }, []);
+
+  // Fetch polygon data
+  React.useEffect(() => {
+    const fetchPolygonData = async () => {
+      try {
+        const response = await axios.get<DesaData>(
+          `${API_CONFIG.baseURL}/api/publik/profil-desa/1`,
+          { headers: API_CONFIG.headers },
+        );
+        if (response.data.polygon_desa) {
+          const coordinates = response.data.polygon_desa.map(
+            (coord) => [coord[1], coord[0]] as [number, number],
+          );
+          setPolygonData(coordinates);
+        }
+      } catch (error) {
+        console.error("Error fetching polygon data:", error);
+      } finally {
+        setIsLoadingPolygon(false);
+      }
+    };
+
+    fetchPolygonData();
+  }, []);
+
   // Fix untuk icon Leaflet di React
   React.useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,102 +113,31 @@ export default function PetaFasilitasDesa() {
     lainnya: true,
   });
 
-  // Data fasilitas desa (contoh data)
-  const fasilitasDesa: Fasilitas[] = [
-    {
-      id: 1,
-      nama: "SDN Batujajar Timur 01",
-      kategori: "sekolah",
-      alamat: "Jl. Raya Batujajar No. 123",
-      latitude: -6.9175,
-      longitude: 107.5019,
-      deskripsi: "Sekolah Dasar Negeri",
-    },
-    {
-      id: 2,
-      nama: "SMPN 1 Batujajar",
-      kategori: "sekolah",
-      alamat: "Jl. Pendidikan No. 45",
-      latitude: -6.9165,
-      longitude: 107.5039,
-      deskripsi: "Sekolah Menengah Pertama Negeri",
-    },
-    {
-      id: 3,
-      nama: "Masjid Graha Kencana Batujajar",
-      kategori: "ibadah",
-      alamat:
-        "Batujajar Tim., Kec. Batujajar, Kabupaten Bandung Barat, Jawa Barat 40561",
-      latitude: -6.9169971822642795,
-      longitude: 107.50462633385881,
-      deskripsi: "Masjid Jami",
-    },
-    {
-      id: 4,
-      nama: "Gereja Santo Paulus",
-      kategori: "ibadah",
-      alamat: "Jl. Gereja No. 8",
-      latitude: -6.9195,
-      longitude: 107.5049,
-      deskripsi: "Gereja Katolik",
-    },
-    {
-      id: 5,
-      nama: "Puskesmas Batujajar",
-      kategori: "kesehatan",
-      alamat: "Jl. Kesehatan No. 15",
-      latitude: -6.9155,
-      longitude: 107.5009,
-      deskripsi: "Pusat Kesehatan Masyarakat",
-    },
-    {
-      id: 6,
-      nama: "Klinik Sehat",
-      kategori: "kesehatan",
-      alamat: "Jl. Sehat No. 22",
-      latitude: -6.9145,
-      longitude: 107.5059,
-      deskripsi: "Klinik Pratama",
-    },
-    {
-      id: 7,
-      nama: "Kantor Desa Batujajar Timur",
-      kategori: "lainnya",
-      alamat: "Jl. Raya Batujajar No. 1",
-      latitude: -6.9175,
-      longitude: 107.5,
-      deskripsi: "Kantor Pemerintahan Desa",
-    },
-    {
-      id: 8,
-      nama: "Lapangan Sepak Bola",
-      kategori: "lainnya",
-      alamat: "Jl. Olahraga No. 5",
-      latitude: -6.9135,
-      longitude: 107.5069,
-      deskripsi: "Fasilitas Olahraga",
-    },
-  ];
+  // Toggle kategori
+  const toggleCategory = (kategori: keyof typeof activeCategories) => {
+    setActiveCategories((prev) => ({
+      ...prev,
+      [kategori]: !prev[kategori],
+    }));
+  };
 
-  // Fungsi untuk mendapatkan icon berdasarkan kategori
-  const getMarkerIcon = (kategori: string) => {
+  // Get marker icon based on amenity type
+  const getMarkerIcon = (amenity: string) => {
     let iconColor = "";
 
-    switch (kategori) {
-      case "sekolah":
+    switch (amenity) {
+      case "school":
         iconColor = "green";
         break;
-      case "ibadah":
+      case "place_of_worship":
         iconColor = "blue";
         break;
-      case "kesehatan":
+      case "hospital":
+      case "clinic":
         iconColor = "red";
         break;
-      case "lainnya":
-        iconColor = "orange";
-        break;
       default:
-        iconColor = "gray";
+        iconColor = "orange";
     }
 
     return new L.Icon({
@@ -156,207 +151,169 @@ export default function PetaFasilitasDesa() {
     });
   };
 
-  // Toggle kategori
-  const toggleCategory = (kategori: keyof typeof activeCategories) => {
-    setActiveCategories((prev) => ({
-      ...prev,
-      [kategori]: !prev[kategori],
-    }));
-  };
-
-  // Filter fasilitas berdasarkan kategori yang aktif
-  const filteredFasilitas = fasilitasDesa.filter(
-    (fasilitas) => activeCategories[fasilitas.kategori],
-  );
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Navbar Section */}
       <NavbarDesa />
 
-      <div className="container mx-auto px-4">
-        {/* Judul Halaman */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-            PETA FASILITAS DESA BATUJAJAR TIMUR
-          </h1>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-            Informasi lokasi fasilitas desa dalam bentuk peta interaktif
-          </p>
-        </div>
+      {/* Enhanced Header Section */}
+      <div className="relative">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/20"></div>
 
+        {/* Header Content */}
+        <div className="relative px-8 py-12 text-center">
+          {/* Decorative Elements */}
+          <div className="absolute top-2 left-8 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-xl dark:bg-blue-900/30"></div>
+          <div className="absolute top-4 right-12 h-12 w-12 rounded-full bg-indigo-100 opacity-40 blur-lg dark:bg-indigo-900/30"></div>
+
+          {/* Main Title */}
+          <div className="relative">
+            <div className="mb-2 inline-flex items-center justify-center">
+              <div className="mr-2 h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500"></div>
+              <span className="text-sm font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                Peta Fasilitas
+              </span>
+              <div className="ml-2 h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500"></div>
+            </div>
+
+            <h1 className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-4xl leading-tight font-bold text-transparent md:text-5xl dark:from-blue-400 dark:via-blue-300 dark:to-indigo-400">
+              DESA{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-transparent drop-shadow-sm dark:from-blue-400 dark:via-blue-300 dark:to-indigo-400">
+                {desaConfig?.nama_desa?.toUpperCase()}
+              </span>
+            </h1>
+
+            <div className="mx-auto mt-3 max-w-2xl">
+              <p className="text-base leading-relaxed text-gray-600 dark:text-gray-300">
+                Informasi lokasi fasilitas desa dalam bentuk peta interaktif
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4">
         {/* Filter Kategori */}
-        <div className="mb-8 flex flex-wrap justify-center gap-4">
+        <div className="mb-6 flex flex-wrap justify-center gap-2 sm:mb-8 sm:gap-4">
           <button
             onClick={() => toggleCategory("sekolah")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.sekolah ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.sekolah ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-green-600"></div>
+            <div className="h-2 w-2 rounded-full bg-green-600 sm:h-3 sm:w-3"></div>
             Sekolah
           </button>
           <button
             onClick={() => toggleCategory("ibadah")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.ibadah ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.ibadah ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+            <div className="h-2 w-2 rounded-full bg-blue-600 sm:h-3 sm:w-3"></div>
             Tempat Ibadah
           </button>
           <button
             onClick={() => toggleCategory("kesehatan")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.kesehatan ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.kesehatan ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-red-600"></div>
+            <div className="h-2 w-2 rounded-full bg-red-600 sm:h-3 sm:w-3"></div>
             Kesehatan
           </button>
           <button
             onClick={() => toggleCategory("lainnya")}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${activeCategories.lainnya ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.lainnya ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
           >
-            <div className="h-3 w-3 rounded-full bg-orange-600"></div>
+            <div className="h-2 w-2 rounded-full bg-orange-600 sm:h-3 sm:w-3"></div>
             Fasilitas Lainnya
           </button>
         </div>
 
         {/* Peta */}
-        <div className="z-0 mt-8 mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="z-0 h-[600px] w-full">
-            <MapContainer
-              center={[-6.9175, 107.5019]}
-              zoom={14}
-              style={{ height: "100%", width: "100%" }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-
-              {filteredFasilitas.map((fasilitas) => (
-                <Marker
-                  key={fasilitas.id}
-                  position={[fasilitas.latitude, fasilitas.longitude]}
-                  icon={getMarkerIcon(fasilitas.kategori)}
-                >
-                  <Popup>
-                    <div>
-                      <h3 className="font-bold">{fasilitas.nama}</h3>
-                      <p className="text-sm text-gray-600">
-                        {fasilitas.alamat}
-                      </p>
-                      {fasilitas.deskripsi && (
-                        <p className="mt-1 text-sm">{fasilitas.deskripsi}</p>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
-        </div>
-
-        {/* Daftar Fasilitas */}
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Sekolah */}
-          <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.sekolah ? "opacity-50" : ""}`}
-          >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-              Sekolah
-            </h3>
-            <div className="space-y-3">
-              {fasilitasDesa
-                .filter((f) => f.kategori === "sekolah")
-                .map((fasilitas) => (
-                  <div
-                    key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
+        <div className="z-0 mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:mb-8 dark:border-gray-700 dark:bg-gray-800">
+          <div className="z-0 h-[400px] w-full sm:h-[500px] md:h-[600px]">
+            {isLoadingPoi || isLoadingPolygon ? (
+              <div className="h-full w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+            ) : (
+              <MapContainer
+                center={[-6.9175, 107.5019]}
+                zoom={14}
+                style={{ height: "100%", width: "100%" }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {polygonData.length > 0 && (
+                  <Polygon
+                    positions={polygonData}
+                    pathOptions={{
+                      color: "#3b82f6",
+                      fillColor: "#60a5fa",
+                      fillOpacity: 0.3,
+                      weight: 2,
+                    }}
                   >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
-                      {fasilitas.nama}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {fasilitas.alamat}
-                    </p>
-                  </div>
-                ))}
-            </div>
-          </div>
+                    <Popup>
+                      <div className="text-center">
+                        <h3 className="mb-1 text-lg font-bold text-blue-600">
+                          {desaConfig?.nama_desa}
+                        </h3>
+                        <div className="mb-2 h-0.5 w-full bg-blue-200"></div>
+                        <p className="text-sm text-gray-600">
+                          <span className="font-semibold">Alamat:</span>
+                          <br /> {desaConfig?.alamat_desa}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Polygon>
+                )}
+                {poiData.map((feature, index) => {
+                  const [longitude, latitude] = feature.geometry.coordinates;
+                  const { name, tags } = feature.properties;
+                  const amenity = tags.amenity;
 
-          {/* Tempat Ibadah */}
-          <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.ibadah ? "opacity-50" : ""}`}
-          >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-              Tempat Ibadah
-            </h3>
-            <div className="space-y-3">
-              {fasilitasDesa
-                .filter((f) => f.kategori === "ibadah")
-                .map((fasilitas) => (
-                  <div
-                    key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
-                  >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
-                      {fasilitas.nama}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {fasilitas.alamat}
-                    </p>
-                  </div>
-                ))}
-            </div>
-          </div>
+                  // Skip if category is not active
+                  if (
+                    (amenity === "school" && !activeCategories.sekolah) ||
+                    (amenity === "place_of_worship" &&
+                      !activeCategories.ibadah) ||
+                    ((amenity === "hospital" || amenity === "clinic") &&
+                      !activeCategories.kesehatan) ||
+                    (![
+                      "school",
+                      "place_of_worship",
+                      "hospital",
+                      "clinic",
+                    ].includes(amenity) &&
+                      !activeCategories.lainnya)
+                  ) {
+                    return null;
+                  }
 
-          {/* Kesehatan */}
-          <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.kesehatan ? "opacity-50" : ""}`}
-          >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-              Kesehatan
-            </h3>
-            <div className="space-y-3">
-              {fasilitasDesa
-                .filter((f) => f.kategori === "kesehatan")
-                .map((fasilitas) => (
-                  <div
-                    key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
-                  >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
-                      {fasilitas.nama}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {fasilitas.alamat}
-                    </p>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          {/* Fasilitas Lainnya */}
-          <div
-            className={`overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${!activeCategories.lainnya ? "opacity-50" : ""}`}
-          >
-            <h3 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-              Fasilitas Lainnya
-            </h3>
-            <div className="space-y-3">
-              {fasilitasDesa
-                .filter((f) => f.kategori === "lainnya")
-                .map((fasilitas) => (
-                  <div
-                    key={fasilitas.id}
-                    className="rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900"
-                  >
-                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
-                      {fasilitas.nama}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {fasilitas.alamat}
-                    </p>
-                  </div>
-                ))}
-            </div>
+                  return (
+                    <Marker
+                      key={index}
+                      position={[latitude, longitude]}
+                      icon={getMarkerIcon(amenity)}
+                    >
+                      <Popup>
+                        <div className="p-1">
+                          <h3 className="font-bold text-gray-900 dark:text-white">
+                            {name}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {tags["addr:street"]}
+                            {tags["addr:housenumber"] &&
+                              ` No. ${tags["addr:housenumber"]}`}
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+              </MapContainer>
+            )}
           </div>
         </div>
       </div>

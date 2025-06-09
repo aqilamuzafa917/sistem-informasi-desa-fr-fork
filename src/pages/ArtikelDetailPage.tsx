@@ -42,6 +42,8 @@ export default function ArtikelDetailPage() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showFloatingHeader, setShowFloatingHeader] = useState(false);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -87,6 +89,22 @@ export default function ArtikelDetailPage() {
     fetchArticle();
   }, [id]);
 
+  // Scroll progress and floating header effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset;
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = (scrollTop / docHeight) * 100;
+
+      setScrollProgress(scrollPercent);
+      setShowFloatingHeader(scrollTop > 200);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   function formatDate(dateString: string) {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -97,78 +115,6 @@ export default function ArtikelDetailPage() {
     });
   }
 
-  // Fungsi untuk mengatur progress bar saat scroll
-  useEffect(() => {
-    const h = document.documentElement;
-    const b = document.body;
-    const progress = document.querySelector("#progress");
-    const header = document.getElementById("header");
-
-    const handleScroll = () => {
-      // Refresh scroll % width
-      const scroll =
-        ((h.scrollTop || b.scrollTop) /
-          ((h.scrollHeight || b.scrollHeight) - h.clientHeight)) *
-        100;
-      if (progress) {
-        (progress as HTMLElement).style.setProperty("--scroll", `${scroll}%`);
-      }
-
-      // Apply classes for slide in bar
-      const scrollpos = window.scrollY;
-      if (header) {
-        if (scrollpos > 100) {
-          header.classList.remove("hidden");
-          header.classList.remove("fadeOutUp");
-          header.classList.add("slideInDown");
-        } else {
-          header.classList.remove("slideInDown");
-          header.classList.add("fadeOutUp");
-          header.classList.add("hidden");
-        }
-      }
-    };
-
-    document.addEventListener("scroll", handleScroll);
-
-    // Scroll to top functionality
-    const scrollTopBtn = document.querySelector(".js-scroll-top");
-    if (scrollTopBtn) {
-      scrollTopBtn.addEventListener("click", () => {
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
-      });
-
-      const scrollTopPath = document.querySelector(".scroll-top path");
-      if (scrollTopPath) {
-        const pathLength = (
-          scrollTopPath as SVGGeometryElement
-        ).getTotalLength();
-        (scrollTopPath as SVGElement).style.transition = (
-          scrollTopPath as SVGElement
-        ).style.webkitTransition = "none";
-        (scrollTopPath as SVGElement).style.strokeDasharray =
-          `${pathLength} ${pathLength}`;
-        (scrollTopPath as SVGElement).style.strokeDashoffset =
-          pathLength.toString();
-        scrollTopPath.getBoundingClientRect(); // Trigger reflow
-        (scrollTopPath as SVGElement).style.transition = (
-          scrollTopPath as SVGElement
-        ).style.webkitTransition = "stroke-dashoffset 10ms linear";
-        (scrollTopPath as SVGElement).style.strokeDashoffset = "0";
-      }
-    }
-
-    return () => {
-      document.removeEventListener("scroll", handleScroll);
-      if (scrollTopBtn) {
-        scrollTopBtn.removeEventListener("click", () => {});
-      }
-    };
-  }, []);
-
   // Carousel navigation
   const handlePrev = () => {
     if (!article) return;
@@ -176,6 +122,7 @@ export default function ArtikelDetailPage() {
       prev === 0 ? article.media_artikel.length - 1 : prev - 1,
     );
   };
+
   const handleNext = () => {
     if (!article) return;
     setCarouselIndex((prev) =>
@@ -185,291 +132,409 @@ export default function ArtikelDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-gray-900">
-        <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-green-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <NavbarDesa />
+        <div className="container mx-auto px-4 pt-6 sm:pt-8">
+          <div className="mx-auto max-w-4xl">
+            {/* Loading skeleton */}
+            <div className="mb-6 space-y-4">
+              {/* Removed spinner container */}
+              <div className="mx-auto h-8 w-3/4 animate-pulse rounded-lg bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600"></div>
+              <div className="flex justify-center gap-2">
+                <div className="h-6 w-24 animate-pulse rounded-full bg-gradient-to-r from-blue-200 to-blue-300 dark:from-gray-700 dark:to-gray-600"></div>
+                <div className="h-6 w-20 animate-pulse rounded-full bg-gradient-to-r from-green-200 to-green-300 dark:from-gray-700 dark:to-gray-600"></div>
+                <div className="h-6 w-32 animate-pulse rounded-full bg-gradient-to-r from-purple-200 to-purple-300 dark:from-gray-700 dark:to-gray-600"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto mb-6 px-4 sm:mb-8">
+          <div className="mx-auto max-w-4xl">
+            <div className="aspect-[16/9] w-full animate-pulse rounded-xl bg-gradient-to-r from-gray-200 to-gray-300 shadow-2xl dark:from-gray-700 dark:to-gray-600"></div>
+          </div>
+        </div>
+        <div className="container mx-auto mb-8 px-4 sm:mb-12">
+          <div className="mx-auto max-w-4xl rounded-xl border border-white/20 bg-white/80 p-6 shadow-2xl backdrop-blur-sm dark:border-gray-600/20 dark:bg-gray-800/80">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-4 animate-pulse rounded-lg bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 ${
+                    i % 2 === 0 ? "w-full" : i % 3 === 0 ? "w-5/6" : "w-4/6"
+                  }`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                ></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <FooterDesa />
       </div>
     );
   }
 
   if (!article) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white dark:bg-gray-900">
-        <h1 className="mb-4 text-2xl font-bold text-gray-800 dark:text-white">
-          Artikel tidak ditemukan
-        </h1>
-        <a href="/artikeldesa" className="text-green-500 hover:underline">
-          Kembali ke daftar artikel
-        </a>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="space-y-6 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-red-400 to-pink-400 opacity-20 blur-2xl"></div>
+            <div className="relative rounded-2xl border border-white/20 bg-white/90 p-8 shadow-2xl backdrop-blur-sm dark:border-gray-600/20 dark:bg-gray-800/90">
+              <div className="mb-4 text-6xl">📄</div>
+              <h1 className="mb-4 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:to-gray-300">
+                Artikel tidak ditemukan
+              </h1>
+              <a
+                href="/artikeldesa"
+                className="inline-flex items-center rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-3 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-green-600 hover:to-emerald-600 hover:shadow-xl"
+              >
+                ← Kembali ke daftar artikel
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white font-sans leading-normal tracking-normal dark:bg-gray-900">
-      {/* Slide in nav */}
-      <div
-        id="header"
-        className="animated fixed top-0 z-10 hidden w-full bg-white dark:bg-gray-800"
-        style={{ opacity: ".95" }}
-      >
-        {/* Progress bar */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <NavbarDesa />
+
+      {/* Progress Bar */}
+      <div className="fixed top-0 left-0 z-50 h-1 w-full bg-gray-200/50 dark:bg-gray-700/50">
         <div
-          id="progress"
-          className="h-1 bg-white shadow dark:bg-gray-800"
-          style={{
-            background:
-              "linear-gradient(to right, #4dc0b5 var(--scroll), transparent 0)",
-          }}
+          className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-300 ease-out"
+          style={{ width: `${scrollProgress}%` }}
         ></div>
       </div>
 
-      {/* Navbar Section */}
-      <NavbarDesa />
-
-      {/* Article Header */}
-      <div className="container mx-auto -mt-20 max-w-7xl px-4 pt-16 text-center md:pt-32">
-        <h1 className="text-3xl font-bold break-normal text-gray-900 md:text-4xl dark:text-white">
-          {article.title}
-        </h1>
-        <div className="flex flex-wrap items-center justify-center gap-2 p-4 text-xs">
-          <p className="inline-block rounded bg-green-100 px-3 py-1 font-semibold text-green-800 dark:bg-green-900 dark:text-green-300">
-            {article.date_created}
-          </p>
-          <span className="inline-block rounded bg-blue-100 px-3 py-1 font-semibold text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-            {article.jenis_artikel === "resmi" ? "Resmi" : "Warga"}
-          </span>
-          <span className="inline-block rounded bg-gray-100 px-3 py-1 font-semibold text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-            {article.kategori_artikel
-              .split(" ")
-              .map(
-                (word) =>
-                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-              )
-              .join(" ")}
-          </span>
+      {/* Floating Header */}
+      <div
+        className={`fixed top-0 right-0 left-0 z-40 border-b border-white/20 bg-white/95 shadow-lg backdrop-blur-md transition-all duration-300 dark:border-gray-700/20 dark:bg-gray-900/95 ${
+          showFloatingHeader
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0"
+        }`}
+      >
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h2 className="truncate text-lg font-semibold text-gray-800 dark:text-white">
+              {article.title}
+            </h2>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {article.date_created}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Carousel Gambar */}
-      {article.media_artikel.length > 0 && (
-        <div className="container mx-auto max-w-7xl px-4 md:px-6">
-          <div className="relative h-[70vh] w-full overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
-            <img
-              src={article.media_artikel[carouselIndex]?.url}
-              alt={
-                article.media_artikel[carouselIndex]?.name || "Gambar Artikel"
-              }
-              className="h-full w-full object-cover"
-            />
-            {article.media_artikel.length > 1 && (
-              <>
-                <button
-                  onClick={handlePrev}
-                  className="absolute top-1/2 left-4 z-10 -translate-y-1/2 rounded-full bg-white/80 p-3 shadow-lg hover:bg-white"
-                  aria-label="Sebelumnya"
-                >
-                  &#8592;
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="absolute top-1/2 right-4 z-10 -translate-y-1/2 rounded-full bg-white/80 p-3 shadow-lg hover:bg-white"
-                  aria-label="Selanjutnya"
-                >
-                  &#8594;
-                </button>
-                <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-                  {article.media_artikel.map((_, idx) => (
-                    <span
-                      key={idx}
-                      className={`inline-block h-3 w-3 rounded-full ${carouselIndex === idx ? "bg-green-600" : "bg-gray-300"}`}
-                    ></span>
-                  ))}
+      {/* Article Header */}
+      <div className="container mx-auto px-4 pt-8 sm:pt-12">
+        <div className="mx-auto max-w-4xl">
+          <div className="relative">
+            {/* Decorative background elements */}
+            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 blur-3xl"></div>
+
+            <div className="space-y-6 text-center">
+              <h1 className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-3xl leading-tight font-bold text-transparent sm:text-4xl md:text-5xl dark:from-white dark:to-gray-300">
+                {article.title}
+              </h1>
+
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="flex items-center space-x-2 rounded-full border border-green-200/50 bg-gradient-to-r from-green-100 to-emerald-100 px-4 py-2 shadow-md dark:border-green-700/50 dark:from-green-900/50 dark:to-emerald-900/50">
+                  <svg
+                    className="h-4 w-4 text-green-600 dark:text-green-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                    {article.date_created}
+                  </span>
                 </div>
-              </>
-            )}
+
+                <div className="flex items-center space-x-2 rounded-full border border-blue-200/50 bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-2 shadow-md dark:border-blue-700/50 dark:from-blue-900/50 dark:to-indigo-900/50">
+                  <svg
+                    className="h-4 w-4 text-blue-600 dark:text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    {article.jenis_artikel === "resmi" ? "Resmi" : "Warga"}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2 rounded-full border border-purple-200/50 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 shadow-md dark:border-purple-700/50 dark:from-purple-900/50 dark:to-pink-900/50">
+                  <svg
+                    className="h-4 w-4 text-purple-600 dark:text-purple-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium text-purple-800 dark:text-purple-300">
+                    {article.kategori_artikel
+                      .split(" ")
+                      .map(
+                        (word) =>
+                          word.charAt(0).toUpperCase() +
+                          word.slice(1).toLowerCase(),
+                      )
+                      .join(" ")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Carousel */}
+      {article.media_artikel.length > 0 && (
+        <div className="container mx-auto mt-8 mb-8 px-4 sm:mb-12">
+          <div className="mx-auto max-w-4xl">
+            <div className="group relative">
+              {/* Decorative glow effect */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400/20 to-emerald-400/20 blur-2xl"></div>
+
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/20 bg-white shadow-2xl dark:border-gray-600/20 dark:bg-gray-800">
+                <img
+                  src={article.media_artikel[carouselIndex]?.url}
+                  alt={
+                    article.media_artikel[carouselIndex]?.name ||
+                    "Gambar Artikel"
+                  }
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+
+                {/* Enhanced carousel controls */}
+                {article.media_artikel.length > 1 && (
+                  <>
+                    <button
+                      onClick={handlePrev}
+                      className="absolute top-1/2 left-4 z-10 -translate-y-1/2 rounded-full border border-white/30 bg-white/90 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white dark:border-gray-600/30 dark:bg-gray-800/90 dark:hover:bg-gray-700"
+                      aria-label="Sebelumnya"
+                    >
+                      <svg
+                        className="h-5 w-5 text-gray-700 dark:text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      className="absolute top-1/2 right-4 z-10 -translate-y-1/2 rounded-full border border-white/30 bg-white/90 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white dark:border-gray-600/30 dark:bg-gray-800/90 dark:hover:bg-gray-700"
+                      aria-label="Selanjutnya"
+                    >
+                      <svg
+                        className="h-5 w-5 text-gray-700 dark:text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Enhanced indicators */}
+                    <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur-sm">
+                      {article.media_artikel.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCarouselIndex(idx)}
+                          className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                            carouselIndex === idx
+                              ? "w-6 bg-white shadow-lg"
+                              : "bg-white/60 hover:bg-white/80"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Article Content */}
-      <div className="container mx-auto mt-3 max-w-7xl">
-        <div className="mx-0 sm:mx-6">
-          <div
-            className="w-full rounded-lg bg-white p-8 text-xl leading-normal text-gray-800 shadow-lg md:p-24 md:text-2xl dark:bg-gray-800 dark:text-gray-200"
-            style={{ fontFamily: "Georgia, serif" }}
-          >
-            {/* Post Content */}
-            <p
-              className="-mt-23 py-6 text-justify"
-              style={{ whiteSpace: "pre-line" }}
-            >
-              {article.content}
-            </p>
-            {/* Lokasi jika ada */}
-            {article.location_name && (
-              <div className="mt-0 text-base text-gray-700 dark:text-gray-300">
-                <strong>Lokasi:</strong> {article.location_name}
+      {/* Enhanced Article Content */}
+      <div className="container mx-auto mb-8 px-4 sm:mb-12">
+        <div className="mx-auto max-w-4xl">
+          <div className="relative">
+            {/* Background decoration */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-white/60 to-blue-50/60 blur-3xl dark:from-gray-800/60 dark:to-gray-700/60"></div>
+
+            <div className="relative rounded-2xl border border-white/20 bg-white/80 p-6 shadow-2xl backdrop-blur-sm sm:p-8 md:p-10 dark:border-gray-600/20 dark:bg-gray-800/80">
+              <div className="prose prose-sm dark:prose-invert sm:prose-base md:prose-lg max-w-none">
+                <div className="text-justify leading-relaxed text-gray-800 dark:text-gray-200">
+                  <p className="whitespace-pre-line first-letter:float-left first-letter:mt-1 first-letter:mr-3 first-letter:text-4xl first-letter:font-bold first-letter:text-gray-900 dark:first-letter:text-white">
+                    {article.content}
+                  </p>
+                </div>
+
+                {/* Enhanced Location Section */}
+                {article.location_name && (
+                  <div className="mt-8 rounded-xl border border-amber-200/50 bg-gradient-to-r from-amber-50 to-orange-50 p-4 dark:border-amber-700/30 dark:from-amber-900/20 dark:to-orange-900/20">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="h-5 w-5 text-amber-600 dark:text-amber-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <strong className="text-amber-800 dark:text-amber-300">
+                        Lokasi:
+                      </strong>
+                      <span className="text-amber-700 dark:text-amber-200">
+                        {article.location_name}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Enhanced Map Section */}
+                {article.latitude && article.longitude && (
+                  <div className="mt-8">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400/20 to-green-400/20 blur-xl"></div>
+                      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/20 shadow-2xl dark:border-gray-600/20">
+                        <MapContainer
+                          center={[article.latitude, article.longitude]}
+                          zoom={15}
+                          style={{ height: "100%", width: "100%" }}
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <Marker
+                            position={[article.latitude, article.longitude]}
+                          />
+                        </MapContainer>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            {/* Leaflet Map jika ada koordinat */}
-            {article.latitude && article.longitude && (
-              <div className="mt-6 mb-0">
-                <div className="h-80 w-full overflow-hidden rounded-lg">
-                  <MapContainer
-                    center={[article.latitude, article.longitude]}
-                    zoom={15}
-                    style={{ height: "100%", width: "100%" }}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker position={[article.latitude, article.longitude]} />
-                  </MapContainer>
+
+              {/* Enhanced Author Section */}
+              <div className="mt-8 flex items-center border-t border-gray-200/50 pt-8 dark:border-gray-700/50">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400/30 to-emerald-400/30 blur-lg"></div>
+                  <img
+                    className="relative h-12 w-12 rounded-full border-2 border-white shadow-lg dark:border-gray-600"
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(article.author)}&background=random`}
+                    alt="Avatar of Author"
+                  />
+                </div>
+                <div className="ml-4">
+                  <div className="flex items-center space-x-2">
+                    <svg
+                      className="h-4 w-4 text-gray-500 dark:text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Ditulis oleh
+                    </p>
+                  </div>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {article.author}
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Author */}
-          <div className="-mt-10 flex w-full items-center p-8 font-sans md:p-24">
-            <img
-              className="mr-4 h-10 w-10 rounded-full"
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(article.author)}&background=random`}
-              alt="Avatar of Author"
-            />
-            <div className="flex-1">
-              <p className="text-base leading-none font-bold text-gray-900 md:text-xl dark:text-white">
-                {article.author}
-              </p>
             </div>
-            <div className="justify-end"></div>
           </div>
         </div>
       </div>
 
-      {/* Scroll Top Button */}
+      {/* Enhanced Scroll Top Button */}
       <button
-        className="btn-toggle-round scroll-top js-scroll-top"
-        type="button"
-        title="Scroll to top"
+        className="group fixed right-6 bottom-6 z-50"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Scroll to top"
       >
-        <svg
-          className="progress-circle"
-          width="100%"
-          height="100%"
-          viewBox="-1 -1 102 102"
-        >
-          <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
-        </svg>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="icon icon-tabler icon-tabler-arrow-up"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="18" y1="11" x2="12" y2="5" />
-          <line x1="6" y1="11" x2="12" y2="5" />
-        </svg>
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400/40 to-emerald-400/40 blur-lg transition-all duration-300 group-hover:blur-xl"></div>
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/30 bg-white/90 shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white dark:border-gray-600/30 dark:bg-gray-800/90 dark:hover:bg-gray-700">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-gray-600 transition-transform duration-300 group-hover:-translate-y-0.5 dark:text-gray-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 10l7-7m0 0l7 7m-7-7v18"
+              />
+            </svg>
+          </div>
+        </div>
       </button>
 
-      {/* Footer */}
       <FooterDesa />
-
-      {/* CSS untuk animasi dan scroll */}
-      <style>{`
-        .smooth { transition: box-shadow 0.3s ease-in-out; }
-        ::selection { background-color: aliceblue }
-        :root {
-          ::-webkit-scrollbar { height: 10px; width: 10px; }
-          ::-webkit-scrollbar-track { background: #efefef; border-radius: 6px }
-          ::-webkit-scrollbar-thumb { background: #d5d5d5; border-radius: 6px }
-          ::-webkit-scrollbar-thumb:hover { background: #c4c4c4 }
-        }
-        .scroll-top {
-          position: fixed;
-          z-index: 50;
-          padding: 0;
-          right: 30px;
-          bottom: 100px;
-          opacity: 0;
-          visibility: hidden;
-          transform: translateY(15px);
-          height: 46px;
-          width: 46px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          transition: all .4s ease;
-          border: none;
-          box-shadow: inset 0 0 0 2px #ccc;
-          color: #ccc;
-          background-color: #fff;
-        }
-        .scroll-top.is-active {
-          opacity: 1;
-          visibility: visible;
-          transform: translateY(0);
-        }
-        .scroll-top .icon-tabler-arrow-up {
-          position: absolute;
-          stroke-width: 2px;
-          stroke: #333;
-        }
-        .scroll-top svg path {
-          fill: none;
-        }
-        .scroll-top svg.progress-circle path {
-          stroke: #333;
-          stroke-width: 4;
-          transition: all .4s ease;
-        }
-        .scroll-top:hover {
-          color: var(--ghost-accent-color);
-        }
-        .scroll-top:hover .progress-circle path,
-        .scroll-top:hover .icon-tabler-arrow-up {
-          stroke: var(--ghost-accent-color);
-        }
-        .animated {
-          animation-duration: 1s;
-          animation-fill-mode: both;
-        }
-        .fadeOutUp {
-          animation-name: fadeOutUp;
-        }
-        .slideInDown {
-          animation-name: slideInDown;
-        }
-        @keyframes fadeOutUp {
-          from {
-            opacity: 1;
-          }
-          to {
-            opacity: 0;
-            transform: translate3d(0, -100%, 0);
-          }
-        }
-        @keyframes slideInDown {
-          from {
-            transform: translate3d(0, -100%, 0);
-            visibility: visible;
-          }
-          to {
-            transform: translate3d(0, 0, 0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,108 +1,28 @@
 import { useState } from "react";
 import axios from "axios";
-import { Card } from "@/components/ui/card";
+import { FileText, ArrowLeft } from "lucide-react";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
-// Define an interface for the API payload
-interface SuratPayload {
-  id_surat?: number | null;
-  nomor_surat?: string | null;
-  jenis_surat: string;
-  tanggal_pengajuan?: string | null;
-  tanggal_disetujui?: string | null;
-  nik_pemohon?: string | null;
-  keperluan?: string | null;
-  status_surat?: string;
-  catatan?: string | null;
-  attachment_bukti_pendukung?: string | null;
-  nik_penduduk_meninggal?: string | null;
-  alamat_terakhir_meninggal?: string | null;
-  tanggal_kematian?: string | null;
-  waktu_kematian?: string | null;
-  tempat_kematian?: string | null;
-  penyebab_kematian?: string | null;
-  hubungan_pelapor_kematian?: string | null;
-  alamat_tujuan?: string | null;
-  rt_tujuan?: string | null;
-  rw_tujuan?: string | null;
-  kelurahan_desa_tujuan?: string | null;
-  kecamatan_tujuan?: string | null;
-  kabupaten_kota_tujuan?: string | null;
-  provinsi_tujuan?: string | null;
-  alasan_pindah?: string | null;
-  klasifikasi_pindah?: string | null;
-  data_pengikut_pindah?: string | null; // Assuming string, adjust if it's an object/array
-  nama_bayi?: string | null;
-  tempat_dilahirkan?: string | null;
-  tempat_kelahiran?: string | null;
-  tanggal_lahir_bayi?: string | null;
-  waktu_lahir_bayi?: string | null;
-  jenis_kelamin_bayi?: string | null;
-  jenis_kelahiran?: string | null;
-  anak_ke?: number | string | null; // API shows number, but form might pass string
-  penolong_kelahiran?: string | null;
-  berat_bayi_kg?: number | string | null;
-  panjang_bayi_cm?: number | string | null;
-  nik_penduduk_ibu?: string | null;
-  nik_penduduk_ayah?: string | null;
-  nik_penduduk_pelapor_lahir?: string | null;
-  hubungan_pelapor_lahir?: string | null;
-  nama_usaha?: string | null;
-  jenis_usaha?: string | null;
-  alamat_usaha?: string | null;
-  status_bangunan_usaha?: string | null;
-  perkiraan_modal_usaha?: number | string | null;
-  perkiraan_pendapatan_usaha?: number | string | null;
-  jumlah_tenaga_kerja?: number | string | null;
-  sejak_tanggal_usaha?: string | null;
-  penghasilan_perbulan_kepala_keluarga?: number | string | null;
-  pekerjaan_kepala_keluarga?: string | null;
-  nik_penduduk_siswa?: string | null;
-  nama_sekolah?: string | null;
-  nisn_siswa?: string | null;
-  kelas_siswa?: string | null;
-  nomor_ktp_hilang?: string | null;
-  tanggal_perkiraan_hilang?: string | null;
-  lokasi_perkiraan_hilang?: string | null;
-  kronologi_singkat?: string | null;
-  nomor_laporan_polisi?: string | null;
-  tanggal_laporan_polisi?: string | null;
-  deleted_at?: string | null;
-  // Optional fields from API response, not typically sent in POST, but good for type completeness
-  nama_pemohon?: string | null;
-  tempat_lahir_pemohon?: string | null;
-  status_perkawinan_pemohon?: string | null;
-  tanggal_lahir_pemohon?: string | null;
-  jenis_kelamin_pemohon?: string | null;
-  alamat_pemohon?: string | null;
-  umur_pemohon?: number | null;
-  nama_meninggal?: string | null;
-  nik_meninggal?: string | null; // Added for SK_KEMATIAN mapping
-  tempat_lahir_meninggal?: string | null;
-  tanggal_lahir_meninggal?: string | null;
-  jenis_kelamin_meninggal?: string | null;
-  umur_saat_meninggal?: number | null;
-  // nik_meninggal already listed under nik_penduduk_meninggal
-  hari_kematian?: string | null;
-  nama_ibu?: string | null;
-  umur_ibu_saat_kelahiran?: number | null;
-  nama_ayah?: string | null;
-  umur_ayah_saat_kelahiran?: number | null;
-  nama_siswa?: string | null;
-  tempat_lahir_siswa?: string | null;
-  tanggal_lahir_siswa?: string | null;
-  jenis_kelamin_siswa?: string | null;
-  umur_siswa?: number | null;
-}
+import { SuratPayload } from "@/types/surat";
+import PengajuanFormSteps from "@/components/pengajuan-surat/PengajuanFormSteps";
+import InfoCardsSection from "@/components/pengajuan-surat/InfoCardsSection";
+import { Button } from "@/components/ui/button";
 
 export default function PengajuanSuratPage() {
   const [jenisSurat, setJenisSurat] = useState("");
   const [formData, setFormData] = useState<Partial<SuratPayload>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleJenisSuratChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setJenisSurat(e.target.value);
+  const handleBack = () => {
+    setJenisSurat("");
     setFormData({});
+    setUploadedFiles([]);
+    setCurrentStep(1);
+    setUploadError(null);
   };
 
   const handleInputChange = (
@@ -110,927 +30,180 @@ export default function PengajuanSuratPage() {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    let processedValue: string | number | null = value;
+
+    if (type === "number") {
+      processedValue = value === "" ? null : parseFloat(value);
+    } else if (type === "date" || name.includes("tanggal")) {
+      processedValue = value === "" ? null : value;
+    } else if (value === "") {
+      processedValue = null;
+    }
+
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: processedValue,
     });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    const totalFiles = uploadedFiles.length + newFiles.length;
+
+    // Validate file count
+    if (totalFiles > 2) {
+      setUploadError("Maksimal 2 file yang dapat diupload");
+      return;
+    }
+
+    // Validate file types and sizes
+    const validFiles = newFiles.filter((file) => {
+      const isValidType = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+      ].includes(file.type);
+      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+
+      if (!isValidType) {
+        setUploadError("Format file harus PDF, JPG, atau PNG");
+        return false;
+      }
+      if (!isValidSize) {
+        setUploadError("Ukuran file maksimal 5MB");
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length !== newFiles.length) {
+      return;
+    }
+
+    setUploadedFiles((prev) => [...prev, ...validFiles]);
+    setUploadError(null);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    // Initialize with all keys from SuratPayload set to null or default
-    const defaultApiData: SuratPayload = {
-      id_surat: null,
-      nomor_surat: null,
-      jenis_surat: jenisSurat, // This comes from the form selection
-      tanggal_pengajuan: new Date().toISOString(), // Set current date
-      tanggal_disetujui: null,
-      nik_pemohon: null,
-      keperluan: null,
-      status_surat: "Diajukan", // Default status
-      catatan: null,
-      attachment_bukti_pendukung: null,
-      nik_penduduk_meninggal: null,
-      alamat_terakhir_meninggal: null,
-      tanggal_kematian: null,
-      waktu_kematian: null,
-      tempat_kematian: null,
-      penyebab_kematian: null,
-      hubungan_pelapor_kematian: null,
-      alamat_tujuan: null,
-      rt_tujuan: null,
-      rw_tujuan: null,
-      kelurahan_desa_tujuan: null,
-      kecamatan_tujuan: null,
-      kabupaten_kota_tujuan: null,
-      provinsi_tujuan: null,
-      alasan_pindah: null,
-      klasifikasi_pindah: null,
-      data_pengikut_pindah: null,
-      nama_bayi: null,
-      tempat_dilahirkan: null,
-      tempat_kelahiran: null,
-      tanggal_lahir_bayi: null,
-      waktu_lahir_bayi: null,
-      jenis_kelamin_bayi: null,
-      jenis_kelahiran: null,
-      anak_ke: null,
-      penolong_kelahiran: null,
-      berat_bayi_kg: null,
-      panjang_bayi_cm: null,
-      nik_penduduk_ibu: null,
-      nik_penduduk_ayah: null,
-      nik_penduduk_pelapor_lahir: null,
-      hubungan_pelapor_lahir: null,
-      nama_usaha: null,
-      jenis_usaha: null,
-      alamat_usaha: null,
-      status_bangunan_usaha: null,
-      perkiraan_modal_usaha: null,
-      perkiraan_pendapatan_usaha: null,
-      jumlah_tenaga_kerja: null,
-      sejak_tanggal_usaha: null,
-      penghasilan_perbulan_kepala_keluarga: null,
-      pekerjaan_kepala_keluarga: null,
-      nik_penduduk_siswa: null,
-      nama_sekolah: null,
-      nisn_siswa: null,
-      kelas_siswa: null,
-      nomor_ktp_hilang: null,
-      tanggal_perkiraan_hilang: null,
-      lokasi_perkiraan_hilang: null,
-      kronologi_singkat: null,
-      nomor_laporan_polisi: null,
-      tanggal_laporan_polisi: null,
-      deleted_at: null,
-    };
+    const submitData = new FormData();
 
-    // Merge formData into apiData using object spreading
-    const apiData: SuratPayload = {
-      ...defaultApiData,
-      ...formData,
-    };
+    // Add jenis_surat first
+    submitData.append("jenis_surat", jenisSurat);
+    submitData.append(
+      "tanggal_pengajuan",
+      new Date().toISOString().split("T")[0],
+    );
+    submitData.append("status_surat", "Diajukan");
 
-    // Special handling for SK_KEMATIAN's nik_meninggal and nik_penduduk_meninggal
-    if (jenisSurat === "SK_KEMATIAN" && formData.nik_penduduk_meninggal) {
-      apiData.nik_meninggal = formData.nik_penduduk_meninggal;
-    }
+    // Add all form fields to FormData
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        submitData.append(key, String(value));
+      }
+    });
 
-    console.log("Data yang dikirim:", apiData);
+    // Add files to FormData
+    uploadedFiles.forEach((file, index) => {
+      submitData.append(`attachment_bukti_pendukung[${index}]`, file);
+    });
 
     try {
       const response = await axios.post(
         `${API_CONFIG.baseURL}/api/publik/surat`,
-        apiData,
+        submitData,
         {
           headers: {
             ...API_CONFIG.headers,
+            "Content-Type": "multipart/form-data",
           },
         },
       );
       console.log("Respon API:", response.data);
       alert("Pengajuan surat berhasil dikirim!");
-      // Optionally reset form or redirect user
       setJenisSurat("");
       setFormData({});
+      setUploadedFiles([]);
+      setCurrentStep(1);
     } catch (error) {
       console.error("Error mengirim data:", error);
       if (axios.isAxiosError(error) && error.response) {
-        // Handle validation errors or other specific API errors
         console.error("Detail error:", error.response.data);
-        alert(
-          `Gagal mengirim pengajuan: ${
-            error.response.data.message || "Terjadi kesalahan pada server."
-          }`,
-        );
+        const errorMessages = error.response.data.errors
+          ? Object.values(error.response.data.errors).flat().join("\n")
+          : error.response.data.message || "Terjadi kesalahan pada server.";
+        alert(`Gagal mengirim pengajuan:\n${errorMessages}`);
       } else {
         alert("Gagal mengirim pengajuan. Silakan coba lagi.");
       }
-    }
-  };
-
-  // Render form berdasarkan jenis surat yang dipilih
-  const renderForm = () => {
-    switch (jenisSurat) {
-      case "SK_PINDAH":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Alamat Tujuan
-                </label>
-                <input
-                  type="text"
-                  name="alamat_tujuan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    RT Tujuan
-                  </label>
-                  <input
-                    type="text"
-                    name="rt_tujuan"
-                    className="w-full rounded-md border p-2"
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    RW Tujuan
-                  </label>
-                  <input
-                    type="text"
-                    name="rw_tujuan"
-                    className="w-full rounded-md border p-2"
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Kelurahan/Desa Tujuan
-                </label>
-                <input
-                  type="text"
-                  name="kelurahan_desa_tujuan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Kecamatan Tujuan
-                </label>
-                <input
-                  type="text"
-                  name="kecamatan_tujuan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Kabupaten/Kota Tujuan
-                </label>
-                <input
-                  type="text"
-                  name="kabupaten_kota_tujuan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Provinsi Tujuan
-                </label>
-                <input
-                  type="text"
-                  name="provinsi_tujuan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Alasan Pindah
-                </label>
-                <select
-                  name="alasan_pindah"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Pilih Alasan</option>
-                  <option value="Pekerjaan">Pekerjaan</option>
-                  <option value="Pendidikan">Pendidikan</option>
-                  <option value="Keamanan">Keamanan</option>
-                  <option value="Kesehatan">Kesehatan</option>
-                  <option value="Perumahan">Perumahan</option>
-                  <option value="Keluarga">Keluarga</option>
-                  <option value="Lainnya">Lainnya</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Klasifikasi Pindah
-                </label>
-                <select
-                  name="klasifikasi_pindah"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Pilih Klasifikasi</option>
-                  <option value="Dalam Satu Kelurahan/Desa">
-                    Dalam Satu Kelurahan/Desa
-                  </option>
-                  <option value="Antar Kelurahan/Desa">
-                    Antar Kelurahan/Desa
-                  </option>
-                  <option value="Antar Kecamatan">Antar Kecamatan</option>
-                  <option value="Antar Kabupaten/Kota dalam satu Provinsi">
-                    Antar Kabupaten/Kota dalam satu Provinsi
-                  </option>
-                  <option value="Antar Provinsi">Antar Provinsi</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "SK_DOMISILI":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case "SK_KEMATIAN":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Penduduk Meninggal
-                </label>
-                <input
-                  type="text"
-                  name="nik_penduduk_meninggal"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Tanggal Kematian
-                </label>
-                <input
-                  type="date"
-                  name="tanggal_kematian"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Waktu Kematian
-                </label>
-                <input
-                  type="time"
-                  name="waktu_kematian"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Tempat Kematian
-                </label>
-                <input
-                  type="text"
-                  name="tempat_kematian"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Penyebab Kematian
-                </label>
-                <input
-                  type="text"
-                  name="penyebab_kematian"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Hubungan Pelapor Kematian
-                </label>
-                <input
-                  type="text"
-                  name="hubungan_pelapor_kematian"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case "SK_KELAHIRAN":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            {/* Tambahkan field lain untuk SK Kelahiran */}
-          </div>
-        );
-
-      case "SK_USAHA":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Nama Usaha
-                </label>
-                <input
-                  type="text"
-                  name="nama_usaha"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Jenis Usaha
-                </label>
-                <input
-                  type="text"
-                  name="jenis_usaha"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Alamat Usaha
-                </label>
-                <input
-                  type="text"
-                  name="alamat_usaha"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Status Bangunan Usaha
-                </label>
-                <select
-                  name="status_bangunan_usaha"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Pilih Status</option>
-                  <option value="Milik Sendiri">Milik Sendiri</option>
-                  <option value="Sewa">Sewa</option>
-                  <option value="Kontrak">Kontrak</option>
-                  <option value="Lainnya">Lainnya</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Sejak Tanggal Usaha
-                </label>
-                <input
-                  type="date"
-                  name="sejak_tanggal_usaha"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Perkiraan Modal Usaha
-                </label>
-                <input
-                  type="number"
-                  name="perkiraan_modal_usaha"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Perkiraan Pendapatan Usaha
-                </label>
-                <input
-                  type="number"
-                  name="perkiraan_pendapatan_usaha"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Jumlah Tenaga Kerja
-                </label>
-                <input
-                  type="number"
-                  name="jumlah_tenaga_kerja"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case "SK_KEHILANGAN_KTP":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Nomor KTP Hilang
-                </label>
-                <input
-                  type="text"
-                  name="nomor_ktp_hilang"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Tanggal Perkiraan Hilang
-                </label>
-                <input
-                  type="date"
-                  name="tanggal_perkiraan_hilang"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Lokasi Perkiraan Hilang
-                </label>
-                <input
-                  type="text"
-                  name="lokasi_perkiraan_hilang"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Kronologi Singkat
-                </label>
-                <textarea
-                  name="kronologi_singkat"
-                  className="w-full rounded-md border p-2"
-                  rows={3}
-                  onChange={handleInputChange}
-                  required
-                ></textarea>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Nomor Laporan Polisi
-                </label>
-                <input
-                  type="text"
-                  name="nomor_laporan_polisi"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Tanggal Laporan Polisi
-                </label>
-                <input
-                  type="date"
-                  name="tanggal_laporan_polisi"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case "SK_KEHILANGAN_KK":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Nomor KK Hilang
-                </label>
-                <input
-                  type="text"
-                  name="nomor_kk_hilang"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Tanggal Perkiraan Hilang
-                </label>
-                <input
-                  type="date"
-                  name="tanggal_perkiraan_hilang"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Lokasi Perkiraan Hilang
-                </label>
-                <input
-                  type="text"
-                  name="lokasi_perkiraan_hilang"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Kronologi Singkat
-                </label>
-                <textarea
-                  name="kronologi_singkat"
-                  className="w-full rounded-md border p-2"
-                  rows={3}
-                  onChange={handleInputChange}
-                  required
-                ></textarea>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "SK_UMUM":
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  NIK Pemohon
-                </label>
-                <input
-                  type="text"
-                  name="nik_pemohon"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Keperluan
-                </label>
-                <input
-                  type="text"
-                  name="keperluan"
-                  className="w-full rounded-md border p-2"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Deskripsi Keperluan
-              </label>
-              <textarea
-                name="deskripsi_keperluan"
-                className="w-full rounded-md border p-2"
-                rows={4}
-                onChange={handleInputChange}
-                required
-              ></textarea>
-            </div>
-          </div>
-        );
-
-      default:
-        return (
-          <div className="py-8 text-center text-gray-600">
-            Silakan pilih jenis surat untuk menampilkan formulir pengajuan
-          </div>
-        );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
       <NavbarDesa />
 
-      <div className="container mx-auto px-4 py-8">
-        <Card className="p-6">
-          <h2 className="mb-6 text-2xl font-bold">Pengajuan Surat</h2>
-          <p className="mb-6 text-gray-600">
-            Silahkan lengkapi formulir pengajuan surat sesuai dengan kebutuhan
-            Anda. Pilih jenis surat yang ingin diajukan, kemudian isi data yang
-            diperlukan dengan lengkap dan benar. Pengajuan surat akan diproses
-            dalam waktu 1-3 hari kerja.
+      <main className="container mx-auto flex-grow px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-600">
+            <FileText className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">
+            Pengajuan Surat Online
+          </h1>
+          <p className="mx-auto max-w-2xl text-gray-600">
+            Ajukan berbagai jenis surat keterangan dengan mudah dan cepat.
+            Proses pengajuan akan diselesaikan dalam 1-3 hari kerja.
           </p>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-6">
-              <label className="mb-2 block text-sm font-medium">
-                Jenis Surat
-              </label>
-              <select
-                className="w-full rounded-md border p-2"
-                value={jenisSurat}
-                onChange={handleJenisSuratChange}
-                required
-              >
-                <option value="">Pilih Jenis Surat</option>
-                <option value="SK_PINDAH">SK Pindah</option>
-                <option value="SK_DOMISILI">SK Domisili</option>
-                <option value="SK_KEMATIAN">SK Kematian</option>
-                <option value="SK_KELAHIRAN">SK Kelahiran</option>
-                <option value="SK_USAHA">SK Usaha</option>
-                <option value="SK_TIDAK_MAMPU">SK Tidak Mampu</option>
-                <option value="SKTM_KIP">SKTM KIP</option>
-                <option value="SK_KEHILANGAN_KTP">SK Kehilangan KTP</option>
-                <option value="SK_KEHILANGAN_KK">SK Kehilangan KK</option>
-                <option value="SK_UMUM">SK Umum</option>
-              </select>
-            </div>
+        </div>
 
-            {jenisSurat && (
-              <div className="mb-6 rounded-md border p-4">
-                <h3 className="mb-4 text-lg font-semibold">
-                  Formulir {jenisSurat.replace("_", " ")}
-                </h3>
-                {renderForm()}
-              </div>
-            )}
+        {/* Back Button - Only show when jenis surat is selected */}
+        {jenisSurat && (
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kembali ke Pilihan Surat
+            </Button>
+          </div>
+        )}
 
-            {jenisSurat && (
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                >
-                  Ajukan Surat
-                </button>
-              </div>
-            )}
-          </form>
-        </Card>
-      </div>
+        {/* Main Form Steps */}
+        <PengajuanFormSteps
+          jenisSurat={jenisSurat}
+          setJenisSurat={setJenisSurat}
+          formData={formData}
+          handleInputChange={handleInputChange}
+          uploadedFiles={uploadedFiles}
+          uploadError={uploadError}
+          handleFileChange={handleFileChange}
+          removeFile={removeFile}
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
+          handleSubmit={handleSubmit}
+          isLoading={isLoading}
+        />
+
+        {/* Info Cards Section */}
+        <InfoCardsSection />
+      </main>
+
       <FooterDesa />
     </div>
   );
