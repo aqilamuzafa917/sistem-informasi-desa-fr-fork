@@ -15,16 +15,15 @@ import {
 } from "recharts";
 import * as React from "react";
 import {
-  TrendingUp,
   Users,
   UserCheck,
   GraduationCap,
   Briefcase,
   Heart,
-  Church,
-  MapPin,
+  Moon,
   Calendar,
   Activity,
+  MapPin,
 } from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "@/config/api";
@@ -32,6 +31,20 @@ import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import InfografisNav from "@/components/InfografisNav";
 import { useDesa } from "@/contexts/DesaContext";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+} from "@/components/infografis/Card";
+import { StatCard } from "@/components/infografis/StatCard";
+import { GridCard } from "@/components/infografis/GridCard";
+import {
+  getJobIcon,
+  getReligionIcon,
+  getMaritalStatusIcon,
+} from "@/components/infografis/iconUtils";
 
 interface PendudukStats {
   total_penduduk: number;
@@ -80,182 +93,39 @@ const CHART_COLORS = [
   "#ade8f4",
 ];
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  gradient?: boolean;
-}
-
-interface CardHeaderProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-interface CardContentProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-interface CardTitleProps {
-  children: React.ReactNode;
-  icon?: React.ElementType;
-  className?: string;
-}
-
-interface CardDescriptionProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-interface StatCardProps {
-  title: string;
-  value: React.ReactNode;
-  unit: string;
-  icon?: React.ElementType;
-  trend?: string;
-  gradient?: boolean;
-}
-
-interface GridCardProps {
-  title: string;
-  data: Array<{ name: string; jumlah: number }>;
-  columns?: 2 | 3 | 4;
-  icon: React.ElementType;
-}
-
 interface AnimatedCounterProps {
   value: number;
   duration?: number;
 }
 
-const Card = ({ children, className = "", gradient = false }: CardProps) => (
-  <div
-    className={`rounded-3xl border border-gray-100/50 bg-white shadow-xl backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${gradient ? "bg-gradient-to-br from-cyan-50/50 to-green-50/50" : ""} ${className} `}
-  >
-    {children}
-  </div>
-);
-
-const CardHeader = ({ children, className = "" }: CardHeaderProps) => (
-  <div className={`p-8 pb-4 ${className}`}>{children}</div>
-);
-
-const CardContent = ({ children, className = "" }: CardContentProps) => (
-  <div className={`px-8 pb-8 ${className}`}>{children}</div>
-);
-
-const CardTitle = ({
-  children,
-  icon: Icon,
-  className = "",
-}: CardTitleProps) => (
-  <div
-    className={`mb-3 flex items-center gap-4 text-2xl font-bold text-gray-800 ${className}`}
-  >
-    {Icon && (
-      <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-green-500 p-2 shadow-lg">
-        <Icon className="h-6 w-6 text-white" />
-      </div>
-    )}
-    <span className="bg-gradient-to-r from-cyan-600 to-green-600 bg-clip-text text-transparent">
-      {children}
-    </span>
-  </div>
-);
-
-const CardDescription = ({
-  children,
-  className = "",
-}: CardDescriptionProps) => (
-  <p className={`ml-14 text-base leading-relaxed text-gray-600 ${className}`}>
-    {children}
-  </p>
-);
-
-const StatCard = ({
-  title,
-  value,
-  unit,
-  icon: Icon,
-  trend,
-  gradient = false,
-}: StatCardProps) => (
-  <div
-    className={`group relative cursor-pointer overflow-hidden rounded-2xl border border-gray-200/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl ${gradient ? "bg-gradient-to-br from-white to-gray-50/50" : "bg-white"} `}
-  >
-    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-green-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-    <div className="relative p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-slate-700">{title}</h4>
-        {Icon && (
-          <div className="rounded-xl bg-gradient-to-br from-cyan-100 to-green-100 p-2 transition-transform duration-200 group-hover:scale-110">
-            <Icon className="h-5 w-5 text-cyan-600" />
-          </div>
-        )}
-      </div>
-      <div className="text-right">
-        <div className="flex items-baseline justify-end gap-2">
-          <span className="bg-gradient-to-r from-cyan-600 to-green-600 bg-clip-text text-3xl font-bold text-transparent">
-            {typeof value === "number" ? value.toLocaleString() : value}
-          </span>
-          <span className="text-base font-medium text-gray-500">{unit}</span>
-        </div>
-        {trend && (
-          <div className="mt-2 flex items-center justify-end gap-1">
-            <TrendingUp className="h-4 w-4 text-green-500" />
-            <span className="text-sm font-medium text-green-600">{trend}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-);
-
-const GridCard = ({ title, data, columns = 3, icon: Icon }: GridCardProps) => (
-  <Card className="transition-all duration-500 hover:shadow-2xl">
-    <CardHeader>
-      <CardTitle icon={Icon}>{title}</CardTitle>
-      <CardDescription>
-        Data statistik terkini dengan visualisasi interaktif untuk analisis
-        mendalam
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div
-        className={`grid gap-6 ${columns === 2 ? "md:grid-cols-2" : columns === 3 ? "md:grid-cols-3" : "md:grid-cols-4"}`}
-      >
-        {data.map((item, index) => (
-          <StatCard
-            key={index}
-            title={item.name}
-            value={item.jumlah}
-            unit="jiwa"
-            icon={Activity}
-            gradient={true}
-          />
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
-
 const AnimatedCounter = ({ value, duration = 2000 }: AnimatedCounterProps) => {
   const [count, setCount] = React.useState(0);
 
   React.useEffect(() => {
-    let startTime: number | undefined;
+    let startTime: number;
+    let animationFrame: number;
+
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      setCount(Math.floor(progress * value));
-      if (progress < 1) {
-        requestAnimationFrame(animate);
+      const progress = timestamp - startTime;
+
+      if (progress < duration) {
+        const currentCount = Math.floor((progress / duration) * value);
+        setCount(currentCount);
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        setCount(value);
       }
     };
-    requestAnimationFrame(animate);
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
   }, [value, duration]);
 
-  return count;
+  return <>{count.toLocaleString()}</>;
 };
 
 export default function InfografisPenduduk() {
@@ -323,8 +193,8 @@ export default function InfografisPenduduk() {
     );
     return Object.entries(stats.data_pendidikan).map(
       ([tingkat, jumlah], index) => ({
-      tingkat,
-      jumlah,
+        tingkat,
+        jumlah,
         fill: CHART_COLORS[index % CHART_COLORS.length],
         percentage: ((jumlah / total) * 100).toFixed(1),
       }),
@@ -334,8 +204,8 @@ export default function InfografisPenduduk() {
   const dataPekerjaan = React.useMemo(
     () =>
       Object.entries(stats?.data_pekerjaan || {}).map(([name, jumlah]) => ({
-      name,
-      jumlah,
+        name,
+        jumlah,
       })),
     [stats],
   );
@@ -343,11 +213,11 @@ export default function InfografisPenduduk() {
     () =>
       stats
         ? [
-      {
-        name: "Belum Menikah",
-        jumlah: stats.data_status_perkawinan.belum_menikah,
-      },
-      { name: "Menikah", jumlah: stats.data_status_perkawinan.menikah },
+            {
+              name: "Belum Menikah",
+              jumlah: stats.data_status_perkawinan.belum_menikah,
+            },
+            { name: "Menikah", jumlah: stats.data_status_perkawinan.menikah },
             {
               name: "Cerai Hidup",
               jumlah: stats.data_status_perkawinan.cerai_hidup,
@@ -363,8 +233,8 @@ export default function InfografisPenduduk() {
   const dataAgama = React.useMemo(
     () =>
       Object.entries(stats?.data_agama || {}).map(([name, jumlah]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      jumlah,
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        jumlah,
       })),
     [stats],
   );
@@ -416,10 +286,10 @@ export default function InfografisPenduduk() {
                       <div className="h-4 w-4 rounded-full bg-gray-300"></div>
                       <div className="h-4 w-24 rounded-lg bg-gray-300"></div>
                     </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
             {/* Main Stats Card Placeholder */}
             <div className="rounded-2xl bg-white p-8 shadow-lg">
@@ -434,16 +304,16 @@ export default function InfografisPenduduk() {
                           <div className="flex items-center gap-4">
                             <div className="h-6 w-6 rounded-full bg-gray-200"></div>
                             <div className="h-6 w-24 rounded-lg bg-gray-200"></div>
-            </div>
+                          </div>
                           <div className="flex items-center gap-2">
                             <div className="h-6 w-20 rounded-lg bg-gray-200"></div>
                             <div className="h-4 w-12 rounded-lg bg-gray-200"></div>
-            </div>
-          </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
                 {/* Right Side - Stats */}
                 <div className="xl:w-1/2">
@@ -474,17 +344,17 @@ export default function InfografisPenduduk() {
                       </div>
                     ))}
                     <div className="grid grid-cols-2 gap-4">
-              {[1, 2].map((i) => (
+                      {[1, 2].map((i) => (
                         <div key={i} className="rounded-2xl bg-gray-100 p-4">
                           <div className="mb-2 h-8 w-24 rounded-lg bg-gray-200"></div>
                           <div className="h-6 w-16 rounded-lg bg-gray-200"></div>
-                </div>
-              ))}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
+              </div>
             </div>
-          </div>
 
             {/* Charts Placeholder */}
             <div className="space-y-8">
@@ -502,8 +372,8 @@ export default function InfografisPenduduk() {
               ))}
             </div>
           </div>
-          </div>
         </div>
+      </div>
     );
   }
 
@@ -561,11 +431,11 @@ export default function InfografisPenduduk() {
               <div className="relative w-full max-w-lg">
                 <ResponsiveContainer width="100%" height={400}>
                   <PieChart>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        return (
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
                             <div className="rounded-2xl border border-gray-200/50 bg-white/95 p-4 shadow-2xl backdrop-blur-sm">
                               <div className="text-lg font-bold text-slate-800">
                                 {data.gender}
@@ -576,62 +446,62 @@ export default function InfografisPenduduk() {
                               <div className="font-medium text-slate-600">
                                 {data.percentage}% dari total
                               </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Pie
-                    data={chartDataPenduduk}
-                    dataKey="jumlah"
-                    nameKey="gender"
-                    cx="50%"
-                    cy="50%"
-                      innerRadius={90}
-                      outerRadius={160}
-                    stroke="#fff"
-                      strokeWidth={6}
-                      animationBegin={0}
-                      animationDuration={1500}
-                  >
-                    {chartDataPenduduk.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                    <Label
-                      content={({ viewBox }) => {
-                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                          return (
-                            <text
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                            >
-                              <tspan
-                                x={viewBox.cx}
-                                y={viewBox.cy}
-                                  className="fill-slate-800 text-4xl font-black"
-                              >
-                                  <AnimatedCounter
-                                    value={stats.total_penduduk}
-                                  />
-                              </tspan>
-                              <tspan
-                                x={viewBox.cx}
-                                  y={(viewBox.cy || 0) + 25}
-                                  className="fill-slate-600 text-base font-semibold"
-                              >
-                                Total Penduduk
-                              </tspan>
-                            </text>
+                            </div>
                           );
                         }
                         return null;
                       }}
                     />
-                  </Pie>
-                </PieChart>
+                    <Pie
+                      data={chartDataPenduduk}
+                      dataKey="jumlah"
+                      nameKey="gender"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={90}
+                      outerRadius={160}
+                      stroke="#fff"
+                      strokeWidth={6}
+                      animationBegin={0}
+                      animationDuration={1500}
+                    >
+                      {chartDataPenduduk.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-slate-800 text-4xl font-black"
+                                >
+                                  <AnimatedCounter
+                                    value={stats.total_penduduk}
+                                  />
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 25}
+                                  className="fill-slate-600 text-base font-semibold"
+                                >
+                                  Total Penduduk
+                                </tspan>
+                              </text>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                    </Pie>
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
               <div className="mt-8 w-full max-w-md space-y-4">
@@ -644,19 +514,19 @@ export default function InfografisPenduduk() {
                       <div
                         className="h-6 w-6 rounded-full shadow-md"
                         style={{ backgroundColor: item.fill }}
-                    ></div>
+                      ></div>
                       <span className="text-lg font-bold text-slate-700">
                         {item.gender}
-                    </span>
-                  </div>
+                      </span>
+                    </div>
                     <div className="text-right">
                       <span className="text-xl font-black text-slate-800">
                         {item.jumlah.toLocaleString()}
-                  </span>
+                      </span>
                       <div className="text-sm font-semibold text-slate-600">
                         {item.percentage}%
                       </div>
-                </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -669,8 +539,8 @@ export default function InfografisPenduduk() {
                 </div>
                 <div>
                   <h2 className="bg-gradient-to-r from-cyan-600 to-green-600 bg-clip-text text-4xl font-black text-transparent">
-                Data Penduduk
-              </h2>
+                    Data Penduduk
+                  </h2>
                   <p className="mt-2 text-lg font-medium text-slate-600">
                     Statistik demografis terkini
                   </p>
@@ -729,14 +599,14 @@ export default function InfografisPenduduk() {
         </Card>
 
         <Card className="mb-12">
-            <CardHeader>
+          <CardHeader>
             <CardTitle icon={UserCheck}>Distribusi Usia Penduduk</CardTitle>
             <CardDescription>
               Analisis mendalam distribusi usia dengan breakdown gender untuk
               setiap kelompok umur
             </CardDescription>
-            </CardHeader>
-            <CardContent>
+          </CardHeader>
+          <CardContent>
             <ResponsiveContainer width="100%" height={450}>
               <AreaChart
                 data={chartDataUmur}
@@ -779,8 +649,8 @@ export default function InfografisPenduduk() {
                   stroke="#e2e8f0"
                   strokeOpacity={0.5}
                 />
-                  <XAxis
-                    dataKey="kelompokUmur"
+                <XAxis
+                  dataKey="kelompokUmur"
                   tick={{ fontSize: 14, fill: "#64748b", fontWeight: 600 }}
                   stroke="#94a3b8"
                 />
@@ -832,7 +702,7 @@ export default function InfografisPenduduk() {
                 />
                 <Area
                   type="monotone"
-                    dataKey="perempuan"
+                  dataKey="perempuan"
                   stackId="1"
                   stroke={COLORS.secondary}
                   strokeWidth={3}
@@ -862,19 +732,19 @@ export default function InfografisPenduduk() {
               </div>
             </div>
           </CardContent>
-          </Card>
+        </Card>
 
         <Card className="mb-12">
-            <CardHeader>
+          <CardHeader>
             <CardTitle icon={GraduationCap}>
               Tingkat Pendidikan Penduduk
             </CardTitle>
-              <CardDescription>
+            <CardDescription>
               Visualisasi radial interaktif menunjukkan distribusi tingkat
               pendidikan dengan persentase detail
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="flex flex-col items-center gap-12 lg:flex-row">
               <div className="lg:w-1/2">
                 <ResponsiveContainer width="100%" height={400}>
@@ -883,7 +753,7 @@ export default function InfografisPenduduk() {
                     cy="50%"
                     innerRadius="20%"
                     outerRadius="80%"
-                  data={chartDataPendidikan}
+                    data={chartDataPendidikan}
                   >
                     <RadialBar
                       dataKey="jumlah"
@@ -905,7 +775,7 @@ export default function InfografisPenduduk() {
                               <div className="font-medium text-slate-600">
                                 {data.percentage}% dari total
                               </div>
-              </div>
+                            </div>
                           );
                         }
                         return null;
@@ -916,8 +786,8 @@ export default function InfografisPenduduk() {
               </div>
               <div className="space-y-4 lg:w-1/2">
                 {chartDataPendidikan.map((item, index) => (
-              <div
-                key={index}
+                  <div
+                    key={index}
                     className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white p-4 transition-all duration-300 hover:shadow-lg"
                   >
                     <div className="flex items-center gap-4">
@@ -931,16 +801,16 @@ export default function InfografisPenduduk() {
                         </span>
                         <div className="text-sm text-slate-600">
                           {item.percentage}% dari total
-              </div>
-          </div>
-        </div>
+                        </div>
+                      </div>
+                    </div>
                     <span className="text-xl font-black text-slate-800">
-                  {item.jumlah.toLocaleString()}
+                      {item.jumlah.toLocaleString()}
                     </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -950,18 +820,21 @@ export default function InfografisPenduduk() {
             data={dataPekerjaan}
             columns={3}
             icon={Briefcase}
+            customItemIcon={getJobIcon}
           />
           <GridCard
             title="Status Perkawinan Penduduk"
             data={dataStatus}
             columns={2}
             icon={Heart}
+            customItemIcon={getMaritalStatusIcon}
           />
           <GridCard
             title="Keberagaman Agama Penduduk"
             data={dataAgama}
             columns={3}
-            icon={Church}
+            icon={Moon}
+            customItemIcon={getReligionIcon}
           />
         </div>
       </div>

@@ -241,7 +241,7 @@ export default function NavbarDesa() {
       className={`sticky top-0 z-50 mb-5 border-b-2 transition-all duration-300 ease-in-out ${
         isScrolled
           ? "border-[var(--color-slate-gray)] bg-[var(--color-pure-white)]/95 shadow-lg backdrop-blur-md dark:border-[var(--color-dark-slate)] dark:bg-[var(--color-dark-slate)]/95"
-          : "border-[var(--color-off-white)] bg-[var(--color-pure-white)] dark:border-[var(--color-dark-slate)] dark:bg-[var(--color-dark-slate)]"
+          : "border-transparent bg-transparent"
       } `}
     >
       <NavbarBrand href="/" className="group">

@@ -53,6 +53,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="pointer-events-none fixed inset-0 bg-gradient-to-br from-[#00b4d8] to-[#48cc6c] opacity-10" />
       <NavbarDesa />
       <EnhancedCarousel articles={articles} loading={isLoading} />
 
