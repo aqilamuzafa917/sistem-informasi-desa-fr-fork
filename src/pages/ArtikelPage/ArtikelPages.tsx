@@ -1,59 +1,71 @@
-// import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback } from "react";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
-import {
-  Button as ButtonFlowbite,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  Spinner,
-  Pagination,
-} from "flowbite-react";
-import {
-  Eye,
-  Check,
-  ChevronsUpDown,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
+import {
+  Eye,
+  Plus,
+  Search,
+  Calendar,
+  User,
+  Tag,
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
+  // Edit,
+  Trash2,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 
 const jenisArtikelOptions = [
-  { value: "warga", label: "Warga" },
-  { value: "resmi", label: "Resmi" },
+  {
+    value: "warga",
+    label: "Warga",
+    icon: User,
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "resmi",
+    label: "Resmi",
+    icon: FileText,
+    color: "bg-purple-100 text-purple-800",
+  },
+];
+
+const statusOptions = [
+  {
+    value: "Semua",
+    label: "Semua",
+    count: 0,
+    color: "bg-gray-100 text-gray-800",
+    icon: FileText,
+  },
+  {
+    value: "Diterbitkan",
+    label: "Diterbitkan",
+    count: 0,
+    color: "bg-green-100 text-green-800",
+    icon: CheckCircle,
+  },
+  {
+    value: "Diajukan",
+    label: "Diajukan",
+    count: 0,
+    color: "bg-yellow-100 text-yellow-800",
+    icon: Clock,
+  },
+  {
+    value: "Ditolak",
+    label: "Ditolak",
+    count: 0,
+    color: "bg-red-100 text-red-800",
+    icon: XCircle,
+  },
 ];
 
 interface Artikel {
@@ -79,21 +91,34 @@ interface Artikel {
   // updated_at: string; // Not displayed in table
 }
 
-// Adjusted interface to match the actual API response structure
-interface PaginatedArtikelData {
-  current_page: number;
-  data: Artikel[];
-  last_page?: number; // To determine total pages
-  total?: number; // Alternative to determine total pages
-  per_page?: number; // To confirm items per page from API
-}
-
-interface ArtikelResponse {
-  status: string; // e.g., "success"
-  data: PaginatedArtikelData;
-}
-
 type StatusArtikelFilter = "Semua" | "Diterbitkan" | "Diajukan" | "Ditolak";
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  color: string;
+  trend?: boolean;
+}
+
+interface FilterButtonProps {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  count?: number;
+}
+
+interface StatusInfo {
+  label: string;
+  color: string;
+  icon: React.ElementType;
+}
+
+interface JenisInfo {
+  label: string;
+  color: string;
+  icon: React.ElementType;
+}
 
 export default function ArtikelPages() {
   const navigate = useNavigate();
@@ -102,32 +127,24 @@ export default function ArtikelPages() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] =
     useState<StatusArtikelFilter>("Semua");
-  const [sortField, setSortField] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [jenisArtikelFilter, setJenisArtikelFilter] = useState("");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalArtikelCount, setTotalArtikelCount] = useState(0); // State for total articles
+  const [totalArtikelCount, setTotalArtikelCount] = useState(0);
   const itemsPerPage = 10;
 
   // State for stats API
   const [artikelDiajukanCount, setArtikelDiajukanCount] = useState(0);
   const [artikelDiterbitkanCount, setArtikelDiterbitkanCount] = useState(0);
-  // We could add a loading/error state for stats if needed
-  // const [statsLoading, setStatsLoading] = useState(true);
-  // const [statsError, setStatsError] = useState<string | null>(null);
-
-  const [openJenisArtikelFilter, setOpenJenisArtikelFilter] =
-    React.useState(false);
-  const [jenisArtikelFilter, setJenisArtikelFilter] = React.useState("");
 
   const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
     return date.toLocaleDateString("id-ID", {
       day: "2-digit",
-      month: "2-digit",
+      month: "short",
       year: "numeric",
     });
   }, []);
@@ -141,11 +158,34 @@ export default function ArtikelPages() {
         if (!token) {
           setError("Token tidak ditemukan. Silakan login kembali.");
           setLoading(false);
-          // navigate("/"); // Optional: redirect to login if no token
           return;
         }
+
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          per_page: itemsPerPage.toString(),
+        });
+
+        if (statusFilter !== "Semua") {
+          // Map client-side "Diterbitkan" to API's "diterbitkan" or "disetujui" if API needs it.
+          // Assuming API understands "diterbitkan", "diajukan", "ditolak" directly.
+          if (statusFilter === "Diterbitkan") {
+            params.append("status", "diterbitkan"); // Or 'disetujui' if API uses it, check backend API spec
+          } else {
+            params.append("status", statusFilter.toLowerCase());
+          }
+        }
+
+        if (jenisArtikelFilter) {
+          params.append("jenis_artikel", jenisArtikelFilter);
+        }
+
+        if (searchQuery) {
+          params.append("search", searchQuery); // Assuming API has a generic search parameter
+        }
+
         const response = await axios.get(
-          `${API_CONFIG.baseURL}/api/artikel?page=${currentPage}&per_page=${itemsPerPage}`,
+          `${API_CONFIG.baseURL}/api/artikel?${params.toString()}`,
           {
             headers: {
               ...API_CONFIG.headers,
@@ -165,45 +205,25 @@ export default function ArtikelPages() {
             // If total is not provided by API or invalid, default to 0.
             setTotalArtikelCount(0);
           }
-
-          // Calculate total pages based on available information
-          if (responseData.last_page) {
-            setTotalPages(responseData.last_page);
-          } else if (
-            typeof responseData.total === "number" &&
-            responseData.per_page
-          ) {
-            setTotalPages(
-              Math.ceil(responseData.total / responseData.per_page),
-            );
-          } else if (typeof responseData.total === "number") {
-            setTotalPages(Math.ceil(responseData.total / itemsPerPage));
-          } else {
-            // Fallback for totalPages if total count is unknown and no last_page.
-            setTotalPages(articles && articles.length > 0 ? 1 : 0);
-          }
         } else {
           setArtikelList([]);
-          setTotalPages(0);
           setTotalArtikelCount(0); // Reset total count
         }
       } catch (err) {
         console.error("Error fetching artikel data:", err);
         if (axios.isAxiosError(err) && err.response?.status === 401) {
           setError("Sesi Anda telah berakhir. Silakan login kembali.");
-          // navigate("/"); // Optional: redirect to login on 401
         } else {
           setError("Gagal mengambil data artikel.");
         }
         setArtikelList([]); // Clear data on error
-        setTotalPages(0); // Reset pages on error
         setTotalArtikelCount(0); // Reset total count on error
       } finally {
         setLoading(false);
       }
     };
     fetchArtikelData();
-  }, [navigate, currentPage]);
+  }, [navigate, currentPage, statusFilter, jenisArtikelFilter, searchQuery]);
 
   // useEffect for fetching stats
   useEffect(() => {
@@ -247,372 +267,463 @@ export default function ArtikelPages() {
     fetchArtikelStats();
   }, [navigate]); // Dependency: navigate, if auth redirection is needed based on stats call in future
 
-  const filteredArtikelList = React.useMemo(() => {
-    return artikelList.filter((artikel) => {
-      let statusMatch = false;
-      const artikelStatusLower = artikel.status_artikel?.toLowerCase() || ""; // Safer: handle potential null/undefined
-      const statusFilterLower = statusFilter.toLowerCase();
-
-      if (statusFilter === "Semua") {
-        statusMatch = true;
-      } else if (statusFilter === "Diterbitkan") {
-        // Match "diterbitkan" or "disetujui" for the "Diterbitkan" filter
-        statusMatch =
-          artikelStatusLower === "diterbitkan" ||
-          artikelStatusLower === "disetujui";
-      } else {
-        // For "Diajukan", "Ditolak", match the specific status
-        statusMatch = artikelStatusLower === statusFilterLower;
-      }
-
-      const jenisMatch =
-        jenisArtikelFilter === "" ||
-        artikel.jenis_artikel === jenisArtikelFilter;
-      return statusMatch && jenisMatch;
-    });
-  }, [artikelList, statusFilter, jenisArtikelFilter]);
-
   const handleStatusFilterClick = (status: StatusArtikelFilter) => {
     setStatusFilter(status);
     setCurrentPage(1); // Reset to first page on filter change
   };
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
+  // Reset page when search query or jenisArtikelFilter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, jenisArtikelFilter]);
+
+  const totalPages = Math.ceil(totalArtikelCount / itemsPerPage);
+
+  // artikelList is now directly the paginated and filtered data from API
+  const paginatedArtikelList = artikelList; // Use artikelList directly
+
+  const getStatusInfo = (status: string): StatusInfo => {
+    const lowerStatus = status?.toLowerCase();
+    if (lowerStatus === "diterbitkan" || lowerStatus === "disetujui") {
+      return {
+        label: "Diterbitkan",
+        color: "bg-green-100 text-green-700 border-green-200",
+        icon: CheckCircle,
+      };
     }
+    if (lowerStatus === "ditolak") {
+      return {
+        label: "Ditolak",
+        color: "bg-red-100 text-red-700 border-red-200",
+        icon: XCircle,
+      };
+    }
+    return {
+      label: "Diajukan",
+      color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      icon: Clock,
+    };
   };
 
-  const sortedArtikelList = React.useMemo(() => {
-    const listToSort = [...filteredArtikelList];
-    if (!sortField) return listToSort;
-
-    listToSort.sort((a, b) => {
-      let valA, valB;
-
-      if (
-        sortField === "created_at" ||
-        sortField === "tanggal_publikasi_artikel"
-      ) {
-        valA = a[sortField] ? new Date(a[sortField]!).getTime() : 0;
-        valB = b[sortField] ? new Date(b[sortField]!).getTime() : 0;
-        if (!a[sortField])
-          valA = sortDirection === "asc" ? Infinity : -Infinity; // Handle nulls for sorting
-        if (!b[sortField])
-          valB = sortDirection === "asc" ? Infinity : -Infinity;
-      } else if (sortField === "id_artikel") {
-        valA = a.id_artikel;
-        valB = b.id_artikel;
-      } else {
-        // Fallback for string comparisons (e.g., judul, kategori)
-        valA = (a[sortField as keyof Artikel] as string)?.toLowerCase() || "";
-        valB = (b[sortField as keyof Artikel] as string)?.toLowerCase() || "";
+  const getJenisInfo = (jenis: string): JenisInfo => {
+    const option = jenisArtikelOptions.find((opt) => opt.value === jenis);
+    return (
+      option || {
+        label: jenis,
+        color: "bg-gray-100 text-gray-800",
+        icon: FileText,
       }
-
-      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-    return listToSort;
-  }, [filteredArtikelList, sortField, sortDirection]);
-
-  const getStatusLabel = (statusKey: string) => {
-    const lowerStatus = statusKey?.toLowerCase();
-    if (lowerStatus === "diterbitkan" || lowerStatus === "disetujui")
-      return "Diterbitkan"; // Assuming 'disetujui' is a possible alias
-    if (lowerStatus === "diajukan") return "Diajukan";
-    if (lowerStatus === "ditolak") return "Ditolak";
-    return statusKey; // Fallback to original status if not mapped
+    );
   };
 
-  const getStatusColor = (statusKey: string) => {
-    const lowerStatus = statusKey?.toLowerCase();
-    if (lowerStatus === "diterbitkan" || lowerStatus === "disetujui")
-      return "bg-green-100 text-green-800";
-    if (lowerStatus === "ditolak") return "bg-red-100 text-red-800";
-    // Default for "diajukan" or other statuses
-    return "bg-yellow-100 text-yellow-800";
-  };
+  const StatCard: React.FC<StatCardProps> = ({
+    title,
+    value,
+    icon: Icon,
+    color,
+  }) => (
+    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="mb-1 text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+        </div>
+        <div className={`rounded-full p-3 ${color}`}>
+          <Icon className="h-6 w-6" />
+        </div>
+      </div>
+    </div>
+  );
 
-  const onPageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  const FilterButton: React.FC<FilterButtonProps> = ({
+    active,
+    onClick,
+    children,
+    count,
+  }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+        active
+          ? "scale-105 bg-blue-600 text-white shadow-lg"
+          : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+      }`}
+    >
+      {children}
+      {count !== undefined && (
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs ${
+            active ? "bg-blue-500" : "bg-gray-100 text-gray-600"
+          }`}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbPage>Artikel Desa</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="mb-0 flex justify-end">
-            <Button
-              onClick={() => navigate("/artikel/buat")}
-              className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-            >
-              Buat Artikel
-            </Button>
-          </div>
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Total Artikel</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {totalArtikelCount}
-              </p>
-            </div>
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Artikel Diajukan</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {artikelDiajukanCount}
-              </p>
-            </div>
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Artikel Diterbitkan</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {artikelDiterbitkanCount}
-              </p>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+          {/* Header */}
+          <div className="border-b border-gray-200 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Artikel Desa
+                </h1>
+                <p className="mt-1 text-sm text-gray-600">
+                  Kelola artikel dan berita desa
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate("/artikel/buat")}
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
+              >
+                <Plus className="h-5 w-5" />
+                Buat Artikel
+              </Button>
             </div>
           </div>
-          <div className="mt-2 flex flex-col gap-2">
-            <div className="flex justify-center">
-              <div className="flex overflow-hidden rounded-full bg-gray-200">
-                {(
-                  [
-                    "Semua",
-                    "Diterbitkan",
-                    "Diajukan",
-                    "Ditolak",
-                  ] as StatusArtikelFilter[]
-                ).map((status) => (
-                  <div
-                    key={status}
-                    className={`cursor-pointer px-4 py-2 font-medium ${statusFilter === status ? "bg-gray-300" : "hover:bg-gray-300"}`}
-                    onClick={() => handleStatusFilterClick(status)}
+
+          <div className="p-6">
+            {/* Stats Cards */}
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+              <StatCard
+                title="Total Artikel"
+                value={totalArtikelCount}
+                icon={FileText}
+                color="bg-blue-100 text-blue-600"
+                trend={true}
+              />
+              <StatCard
+                title="Artikel Diajukan"
+                value={artikelDiajukanCount}
+                icon={Clock}
+                color="bg-yellow-100 text-yellow-600"
+              />
+              <StatCard
+                title="Artikel Diterbitkan"
+                value={artikelDiterbitkanCount}
+                icon={CheckCircle}
+                color="bg-green-100 text-green-600"
+              />
+            </div>
+
+            {/* Filters and Search */}
+            <div className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+              {/* Status Filter */}
+              <div className="mb-4 flex flex-wrap gap-3">
+                {statusOptions.map((status) => {
+                  const count =
+                    status.value === "Semua"
+                      ? totalArtikelCount
+                      : status.value === "Diterbitkan"
+                        ? artikelDiterbitkanCount
+                        : status.value === "Diajukan"
+                          ? artikelDiajukanCount
+                          : totalArtikelCount -
+                            artikelDiterbitkanCount -
+                            artikelDiajukanCount;
+                  return (
+                    <FilterButton
+                      key={status.value}
+                      active={statusFilter === status.value}
+                      onClick={() =>
+                        handleStatusFilterClick(
+                          status.value as StatusArtikelFilter,
+                        )
+                      }
+                      count={count}
+                    >
+                      <status.icon className="h-4 w-4" />
+                      {status.label}
+                    </FilterButton>
+                  );
+                })}
+              </div>
+
+              {/* Search and Jenis Filter */}
+              <div className="flex flex-col gap-4 lg:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari artikel berdasarkan judul, kategori, atau penulis..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 py-3 pr-4 pl-10 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <select
+                    value={jenisArtikelFilter}
+                    onChange={(e) => setJenisArtikelFilter(e.target.value)}
+                    className="min-w-[150px] rounded-lg border border-gray-200 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   >
-                    {status}
-                  </div>
-                ))}
+                    <option value="">Semua Jenis</option>
+                    {jenisArtikelOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {jenisArtikelFilter && (
+                    <button
+                      onClick={() => setJenisArtikelFilter("")}
+                      className="rounded-lg border border-gray-200 px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Popover
-                open={openJenisArtikelFilter}
-                onOpenChange={setOpenJenisArtikelFilter}
-              >
-                <PopoverTrigger asChild>
+
+            {/* Articles Table */}
+            <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+              {loading ? (
+                <div className="flex h-64 items-center justify-center">
+                  <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="ml-2 text-gray-600">Memuat data...</span>
+                </div>
+              ) : error ? (
+                <div className="py-12 text-center">
+                  <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Error
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">{error}</p>
+                </div>
+              ) : paginatedArtikelList.length === 0 ? (
+                <div className="py-12 text-center">
+                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Tidak ada artikel
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {jenisArtikelFilter || statusFilter !== "Semua"
+                      ? "Tidak ada artikel yang sesuai dengan filter yang dipilih."
+                      : "Belum ada artikel yang dibuat. Mulai dengan membuat artikel pertama."}
+                  </p>
                   <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openJenisArtikelFilter}
-                    className="w-[200px] justify-between"
+                    onClick={() => navigate("/artikel/buat")}
+                    className="mx-auto mt-4 flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
                   >
-                    {jenisArtikelFilter
-                      ? jenisArtikelOptions.find(
-                          (option) => option.value === jenisArtikelFilter,
-                        )?.label
-                      : "Pilih Jenis Artikel"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    <Plus className="h-5 w-5" />
+                    Buat Artikel Pertama
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Cari Jenis Artikel" />
-                    <CommandList>
-                      <CommandEmpty>Jenis tidak ditemukan.</CommandEmpty>
-                      <CommandGroup>
-                        {jenisArtikelOptions.map((option) => (
-                          <CommandItem
-                            key={option.value}
-                            value={option.value}
-                            onSelect={(currentValue) => {
-                              setJenisArtikelFilter(
-                                currentValue === jenisArtikelFilter
-                                  ? ""
-                                  : currentValue,
-                              );
-                              setOpenJenisArtikelFilter(false);
-                            }}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          ID
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Jenis
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Judul
+                        </th>
+                        <th className="hidden px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase lg:table-cell">
+                          Kategori
+                        </th>
+                        <th className="hidden px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase xl:table-cell">
+                          Penulis
+                        </th>
+                        <th className="hidden px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase xl:table-cell">
+                          Dibuat
+                        </th>
+                        <th className="hidden px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase 2xl:table-cell">
+                          Publikasi
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Status
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {paginatedArtikelList.map((artikel) => {
+                        const statusInfo = getStatusInfo(
+                          artikel.status_artikel,
+                        );
+                        const jenisInfo = getJenisInfo(artikel.jenis_artikel);
+
+                        return (
+                          <tr
+                            key={artikel.id_artikel}
+                            className="transition-colors hover:bg-gray-50"
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                jenisArtikelFilter === option.value
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                            {option.label}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {jenisArtikelFilter && (
-                <Button
-                  variant="outline"
-                  onClick={() => setJenisArtikelFilter("")}
-                >
-                  Reset Jenis Artikel
-                </Button>
+                            <td className="px-3 py-2 text-xs font-medium whitespace-nowrap text-gray-900">
+                              {artikel.id_artikel}
+                            </td>
+                            <td className="px-3 py-2 text-xs whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${jenisInfo.color}`}
+                              >
+                                <jenisInfo.icon className="h-3 w-3" />
+                                {jenisInfo.label}
+                              </span>
+                            </td>
+                            <td className="max-w-[200px] px-3 py-2 text-xs text-gray-900">
+                              <div
+                                className="truncate"
+                                title={artikel.judul_artikel}
+                              >
+                                {artikel.judul_artikel}
+                              </div>
+                            </td>
+                            <td className="hidden px-3 py-2 text-xs lg:table-cell">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-700">
+                                <Tag className="h-3 w-3" />
+                                {artikel.kategori_artikel}
+                              </span>
+                            </td>
+                            <td className="hidden px-3 py-2 text-xs xl:table-cell">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200">
+                                  <User className="h-3 w-3 text-gray-600" />
+                                </div>
+                                <span className="text-xs text-gray-900">
+                                  {artikel.penulis_artikel}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="hidden px-3 py-2 text-xs text-gray-600 xl:table-cell">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(artikel.created_at)}
+                              </div>
+                            </td>
+                            <td className="hidden px-3 py-2 text-xs text-gray-600 2xl:table-cell">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(artikel.tanggal_publikasi_artikel)}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${statusInfo.color}`}
+                              >
+                                <statusInfo.icon className="h-3 w-3" />
+                                {statusInfo.label}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-xs font-medium whitespace-nowrap">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() =>
+                                    navigate(`/artikel/${artikel.id_artikel}`)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  Detail
+                                </button>
+                                <button className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none">
+                                  <Trash2 className="h-3 w-3" />
+                                  Hapus
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-          </div>
-          <div className="min-h-[100vh] flex-1 rounded-xl bg-white p-4 shadow-sm md:min-h-min">
-            {loading ? (
-              <div className="flex h-40 items-center justify-center">
-                <Spinner size="xl" />
-              </div>
-            ) : error ? (
-              <div className="py-4 text-center text-red-500">{error}</div>
-            ) : sortedArtikelList.length === 0 ? (
-              <div className="py-4 text-center text-gray-500">
-                Tidak ada data artikel.
-              </div>
-            ) : (
-              <Table striped>
-                <TableHead>
-                  <TableRow>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("id_artikel")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Id</span>
-                        {sortField === "id_artikel" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell>Jenis</TableHeadCell>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("judul_artikel")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Judul</span>
-                        {sortField === "judul_artikel" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("kategori_artikel")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Kategori</span>
-                        {sortField === "kategori_artikel" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("created_at")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Tgl. Dibuat</span>
-                        {sortField === "created_at" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("tanggal_publikasi_artikel")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Tgl. Publikasi</span>
-                        {sortField === "tanggal_publikasi_artikel" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell>Status</TableHeadCell>
-                    <TableHeadCell>Aksi</TableHeadCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedArtikelList.map((artikel) => (
-                    <TableRow key={artikel.id_artikel}>
-                      <TableCell>{artikel.id_artikel}</TableCell>
-                      <TableCell>
-                        {
-                          jenisArtikelOptions.find(
-                            (opt) => opt.value === artikel.jenis_artikel,
-                          )?.label
-                        }
-                      </TableCell>
-                      <TableCell>{artikel.judul_artikel}</TableCell>
-                      <TableCell>{artikel.kategori_artikel}</TableCell>
-                      <TableCell>{formatDate(artikel.created_at)}</TableCell>
-                      <TableCell>
-                        {formatDate(artikel.tanggal_publikasi_artikel)}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(artikel.status_artikel)}`}
-                        >
-                          {getStatusLabel(artikel.status_artikel)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <ButtonFlowbite
-                          size="xs"
-                          color="info"
-                          className="flex items-center gap-1"
-                          onClick={() =>
-                            navigate(`/artikel/${artikel.id_artikel}`)
-                          }
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>Detail</span>
-                        </ButtonFlowbite>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-4 flex items-center justify-center text-center">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={onPageChange}
-                  showIcons
-                />
+              <div className="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-3">
+                <div className="flex flex-1 justify-between sm:hidden">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Menampilkan{" "}
+                      <span className="font-medium">
+                        {(currentPage - 1) * itemsPerPage + 1}
+                      </span>{" "}
+                      sampai{" "}
+                      <span className="font-medium">
+                        {Math.min(
+                          currentPage * itemsPerPage,
+                          totalArtikelCount,
+                        )}
+                      </span>{" "}
+                      dari{" "}
+                      <span className="font-medium">{totalArtikelCount}</span>{" "}
+                      artikel
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex -space-x-px rounded-md shadow-sm">
+                      <button
+                        onClick={() =>
+                          setCurrentPage(Math.max(1, currentPage - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center border px-4 py-2 text-sm font-medium ${
+                              page === currentPage
+                                ? "z-10 border-blue-500 bg-blue-50 text-blue-600"
+                                : "border-gray-300 bg-white text-gray-500 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() =>
+                          setCurrentPage(Math.min(totalPages, currentPage + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
               </div>
             )}
           </div>

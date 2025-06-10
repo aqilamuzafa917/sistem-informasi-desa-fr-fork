@@ -1,20 +1,32 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Card, Label, TextInput, Alert } from "flowbite-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  AlertCircle,
+  CheckCircle,
+  ArrowRight,
+  Home,
+} from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "@/config/api";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin1@desa.com");
+  const [password, setPassword] = useState("password123");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setLoading(true);
+    setSuccess(false);
 
     try {
       const response = await axios.post(
@@ -34,9 +46,13 @@ export default function LoginPage() {
         throw new Error("Login successful, but no token received.");
       }
 
-      // Simpan token & redirect
+      setSuccess(true);
+
+      // Simpan token & redirect after success animation
       localStorage.setItem("authToken", data.token);
-      navigate("/dashboard");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(
@@ -56,74 +72,176 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 dark:bg-gray-900">
-      <Card className="w-full max-w-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
-          Login
-        </h1>
-        {error && (
-          <Alert
-            color="failure"
-            onDismiss={() => setError(null)}
-            className="mb-4"
-          >
-            <span>
-              <span className="font-medium">Login Error!</span> {error}
-            </span>
-          </Alert>
-        )}
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <div>
-            <div className="mb-2 block">
-              <Label htmlFor="email" />
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#00b4d8]/10 via-white to-[#48cc6c]/10 p-4 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 h-80 w-80 animate-pulse rounded-full bg-[#48cc6c]/30 opacity-30 mix-blend-multiply blur-xl filter dark:bg-[#48cc6c]/20"></div>
+        <div className="absolute -bottom-40 -left-40 h-80 w-80 animate-pulse rounded-full bg-[#00b4d8]/30 opacity-30 mix-blend-multiply blur-xl filter delay-1000 dark:bg-[#00b4d8]/20"></div>
+        <div className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 transform animate-pulse rounded-full bg-indigo-300/20 opacity-20 mix-blend-multiply blur-xl filter delay-500 dark:bg-indigo-600/20"></div>
+      </div>
+
+      <div className="relative w-full max-w-md">
+        {/* Main Card */}
+        <div className="transform rounded-2xl border border-white/20 bg-white/90 p-8 shadow-2xl backdrop-blur-lg transition-all duration-300 hover:scale-[1.02] dark:border-gray-700/50 dark:bg-gray-800/90">
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#00b4d8] to-[#48cc6c] shadow-lg">
+              <Lock className="h-8 w-8 text-white" />
             </div>
-            <TextInput
-              id="email"
-              type="email"
-              placeholder="admin1@desa.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-            />
+            <h1 className="bg-gradient-to-r from-[#00b4d8] to-[#48cc6c] bg-clip-text text-3xl font-bold text-transparent">
+              Welcome Back
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Sign in to your account to continue
+            </p>
           </div>
-          <div>
-            <div className="mb-2 block">
-              <Label htmlFor="password" />
+
+          {/* Alert Messages */}
+          {error && (
+            <div className="animate-in slide-in-from-top-2 mb-6 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 duration-300 dark:border-red-800 dark:bg-red-900/20">
+              <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-500" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Login Error!
+                </p>
+                <p className="text-sm text-red-600 dark:text-red-300">
+                  {error}
+                </p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-400 transition-colors hover:text-red-600"
+              >
+                ×
+              </button>
             </div>
-            <TextInput
-              id="password"
-              type="password"
-              placeholder="password123"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
+          )}
+
+          {success && (
+            <div className="animate-in slide-in-from-top-2 mb-6 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 duration-300 dark:border-green-800 dark:bg-green-900/20">
+              <CheckCircle className="h-5 w-5 flex-shrink-0 text-[#48cc6c]" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-[#48cc6c] dark:text-[#48cc6c]">
+                  Success!
+                </p>
+                <p className="text-sm text-green-600 dark:text-green-300">
+                  Logging you in...
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Email Address
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Mail className="h-5 w-5 text-[#00b4d8]" />
+                </div>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading || success}
+                  className="w-full rounded-lg border border-gray-300 bg-white/50 py-3 pr-4 pl-10 text-gray-900 placeholder-gray-400 backdrop-blur-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-[#00b4d8] disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white"
+                  placeholder="Enter your email address"
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Lock className="h-5 w-5 text-[#00b4d8]" />
+                </div>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading || success}
+                  className="w-full rounded-lg border border-gray-300 bg-white/50 py-3 pr-12 pl-10 text-gray-900 placeholder-gray-400 backdrop-blur-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-[#00b4d8] disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading || success}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#00b4d8] transition-colors hover:text-[#48cc6c] disabled:opacity-50 dark:hover:text-[#48cc6c]"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="flex w-full transform items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#00b4d8] to-[#48cc6c] px-4 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:from-[#00a3c4] hover:to-[#3db85d] hover:shadow-xl active:scale-[0.98] disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                  Signing in...
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle className="h-5 w-5" />
+                  Success!
+                </>
+              ) : (
+                <>
+                  Sign In
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="mt-8 border-t border-gray-200 pt-6 dark:border-gray-700">
+            {/* Navigation Links */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[#00b4d8] transition-colors hover:bg-gray-50 hover:text-[#48cc6c] dark:text-[#00b4d8] dark:hover:bg-gray-700/50 dark:hover:text-[#48cc6c]"
+              >
+                <Home className="h-4 w-4" />
+                Back to Home
+              </button>
+            </div>
           </div>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
-          </Button>
-        </form>
-        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?{" "}
-          <a
-            href="/signup"
-            className="text-primary-600 dark:text-primary-500 hover:underline"
-          >
-            Sign up
-          </a>
-        </p>
-        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Or go{" "}
-          <a
-            href="/"
-            className="text-primary-600 dark:text-primary-500 hover:underline"
-          >
-            Back to Home
-          </a>
-        </p>
-      </Card>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Protected by enterprise-grade security
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

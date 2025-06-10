@@ -17,24 +17,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  Spinner,
-  Pagination,
-  TextInput,
-  Button as ButtonFlowbite,
-} from "flowbite-react";
+import { Pagination } from "flowbite-react";
 import {
   Search,
   // ChevronsUpDown, // ChevronsUpDown is not used
   ChevronUp,
   ChevronDown,
   Eye,
+  Users,
+  User,
+  UserCheck,
+  Filter,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
@@ -97,6 +92,8 @@ export default function DataKTPPages() {
 
   // State for stats API
   const [stats, setStats] = useState<PendudukStatsResponse | null>(null);
+
+  const [selectedGender, setSelectedGender] = useState<string>("");
 
   const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return "-";
@@ -247,25 +244,22 @@ export default function DataKTPPages() {
   const sortedPendudukList = useMemo(() => {
     // Apply client-side filtering first
     const filteredList = pendudukList.filter((penduduk) => {
-      if (!searchTerm) return true; // If no search term, show all
-      const term = searchTerm.toLowerCase();
-      return (
-        penduduk.nik.toLowerCase().includes(term) ||
-        penduduk.nama.toLowerCase().includes(term)
-      );
+      const matchesSearch =
+        !searchTerm ||
+        penduduk.nik.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        penduduk.nama.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesGender =
+        !selectedGender || penduduk.jenis_kelamin === selectedGender;
+      return matchesSearch && matchesGender;
     });
-
     // Then sort the filtered list
     const listToSort = [...filteredList];
     if (!sortField) return listToSort;
-
     listToSort.sort((a, b) => {
       let valA = a[sortField] as string | number;
       let valB = b[sortField] as string | number;
-
       if (sortField === "tanggal_lahir") {
-        // Special handling for DD-MM-YYYY dates if not already Date objects
-        const dateA = new Date(a.tanggal_lahir.split("-").reverse().join("-")); // Convert DD-MM-YYYY to YYYY-MM-DD for Date constructor
+        const dateA = new Date(a.tanggal_lahir.split("-").reverse().join("-"));
         const dateB = new Date(b.tanggal_lahir.split("-").reverse().join("-"));
         valA = dateA.getTime();
         valB = dateB.getTime();
@@ -276,16 +270,20 @@ export default function DataKTPPages() {
         valA = valA.toLowerCase();
         valB = valB.toLowerCase();
       }
-
       if (valA < valB) return sortDirection === "asc" ? -1 : 1;
       if (valA > valB) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
     return listToSort;
-  }, [pendudukList, sortField, sortDirection, searchTerm]);
+  }, [pendudukList, sortField, sortDirection, searchTerm, selectedGender]);
 
   const onPageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleGenderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedGender(event.target.value);
+    setCurrentPage(1);
   };
 
   // const handleLogout = () => {
@@ -316,146 +314,233 @@ export default function DataKTPPages() {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="mb-0 flex justify-end">
-            <Button
-              onClick={() => navigate("/dataktp/tambahktp")}
-              className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-            >
-              Tambah KTP
-            </Button>
-          </div>
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Total Penduduk</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {stats?.total_penduduk ?? "-"}
-              </p>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
+          <div className="mx-auto max-w-7xl space-y-6">
+            <div className="mb-3 flex justify-end">
+              <Button
+                onClick={() => navigate("/dataktp/tambahktp")}
+                className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+              >
+                Tambah KTP
+              </Button>
             </div>
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Total Laki-laki</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {stats?.total_laki_laki ?? "-"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Total Perempuan</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {stats?.total_perempuan ?? "-"}
-              </p>
-            </div>
-          </div>
-
-          <div className="my-4">
-            <TextInput
-              icon={Search}
-              type="search"
-              placeholder="Cari berdasarkan NIK atau Nama..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-            />
-          </div>
-
-          <div className="min-h-[100vh] flex-1 rounded-xl bg-white p-4 shadow-sm md:min-h-min">
-            {loading ? (
-              <div className="flex h-40 items-center justify-center">
-                <Spinner size="xl" />
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="flex items-center rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                <div className="mr-4 rounded-full bg-blue-100 p-3">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">
+                    Total Penduduk
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats?.total_penduduk?.toLocaleString() ?? "-"}
+                  </p>
+                </div>
               </div>
-            ) : error ? (
-              <div className="py-4 text-center text-red-500">{error}</div>
-            ) : sortedPendudukList.length === 0 ? (
-              <div className="py-4 text-center text-gray-500">
-                Tidak ada data penduduk.
+              <div className="flex items-center rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                <div className="mr-4 rounded-full bg-green-100 p-3">
+                  <User className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Laki-laki</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats?.total_laki_laki?.toLocaleString() ?? "-"}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <Table striped>
-                <TableHead>
-                  <TableRow>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("nik")}
+              <div className="flex items-center rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                <div className="mr-4 rounded-full bg-pink-100 p-3">
+                  <UserCheck className="h-6 w-6 text-pink-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Perempuan</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats?.total_perempuan?.toLocaleString() ?? "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+                  <div className="relative max-w-md flex-1">
+                    <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Cari berdasarkan NIK atau Nama..."
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      className="w-full rounded-lg border border-gray-300 py-3 pr-4 pl-10 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Filter className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+                    <select
+                      value={selectedGender}
+                      onChange={handleGenderChange}
+                      className="min-w-[160px] appearance-none rounded-lg border border-gray-300 bg-white py-3 pr-8 pl-10 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                     >
-                      <div className="flex items-center justify-between">
-                        <span>NIK</span>
-                        {sortField === "nik" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("nama")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Nama</span>
-                        {sortField === "nama" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell>Tempat Lahir</TableHeadCell>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("tanggal_lahir")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Tgl. Lahir</span>
-                        {sortField === "tanggal_lahir" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell>Jenis Kelamin</TableHeadCell>
-                    <TableHeadCell>Alamat</TableHeadCell>
-                    <TableHeadCell>Aksi</TableHeadCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedPendudukList.map((penduduk) => (
-                    <TableRow key={penduduk.nik}>
-                      <TableCell>{penduduk.nik}</TableCell>
-                      <TableCell>{penduduk.nama}</TableCell>
-                      <TableCell>{penduduk.tempat_lahir}</TableCell>
-                      <TableCell>
-                        {formatDate(penduduk.tanggal_lahir)}
-                      </TableCell>
-                      <TableCell>{penduduk.jenis_kelamin}</TableCell>
-                      <TableCell>{`${penduduk.alamat}, RT ${penduduk.rt}/${penduduk.rw}, ${penduduk.desa_kelurahan}, ${penduduk.kecamatan}, ${penduduk.kabupaten_kota}, ${penduduk.provinsi} ${penduduk.kode_pos}`}</TableCell>
-                      <TableCell>
-                        <ButtonFlowbite
-                          size="xs"
-                          color="info"
-                          className="flex items-center gap-1"
-                          onClick={() => navigate(`/dataktp/${penduduk.nik}`)}
+                      <option value="">Semua Gender</option>
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Menampilkan {sortedPendudukList.length} dari{" "}
+                  {pendudukList.length} data
+                </div>
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+              {loading ? (
+                <div className="flex h-64 items-center justify-center">
+                  <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="ml-2 text-gray-600">Memuat data...</span>
+                </div>
+              ) : error ? (
+                <div className="py-12 text-center">
+                  <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Error
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">{error}</p>
+                </div>
+              ) : sortedPendudukList.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Users className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Tidak ada data
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Tidak ditemukan penduduk yang sesuai dengan filter yang
+                    dipilih.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          className="cursor-pointer px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors select-none hover:bg-gray-100"
+                          onClick={() => handleSort("nik")}
                         >
-                          <Eye className="h-4 w-4" />
-                          <span>Detail</span>
-                        </ButtonFlowbite>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            {totalPages > 1 && (
-              <div className="mt-4 flex items-center justify-center text-center">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={onPageChange}
-                  showIcons
-                />
-              </div>
-            )}
+                          NIK{" "}
+                          {sortField === "nik" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="inline h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="inline h-4 w-4" />
+                            ))}
+                        </th>
+                        <th
+                          className="cursor-pointer px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors select-none hover:bg-gray-100"
+                          onClick={() => handleSort("nama")}
+                        >
+                          Nama{" "}
+                          {sortField === "nama" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="inline h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="inline h-4 w-4" />
+                            ))}
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Tempat Lahir
+                        </th>
+                        <th
+                          className="cursor-pointer px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors select-none hover:bg-gray-100"
+                          onClick={() => handleSort("tanggal_lahir")}
+                        >
+                          Tgl. Lahir{" "}
+                          {sortField === "tanggal_lahir" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="inline h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="inline h-4 w-4" />
+                            ))}
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Jenis Kelamin
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Alamat
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {sortedPendudukList.map((penduduk) => (
+                        <tr
+                          key={penduduk.nik}
+                          className="transition-colors hover:bg-gray-50"
+                        >
+                          <td className="max-w-[120px] px-3 py-2 text-xs font-medium whitespace-nowrap text-gray-900">
+                            <div className="truncate" title={penduduk.nik}>
+                              {penduduk.nik}
+                            </div>
+                          </td>
+                          <td className="max-w-[150px] px-3 py-2 text-xs font-medium whitespace-nowrap text-gray-900">
+                            <div className="truncate" title={penduduk.nama}>
+                              {penduduk.nama}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                            {penduduk.tempat_lahir}
+                          </td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                            {formatDate(penduduk.tanggal_lahir)}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${penduduk.jenis_kelamin === "Laki-laki" ? "bg-blue-100 text-blue-800" : "bg-pink-100 text-pink-800"}`}
+                            >
+                              {penduduk.jenis_kelamin === "Laki-laki" ? (
+                                <User className="mr-1 h-3 w-3" />
+                              ) : (
+                                <UserCheck className="mr-1 h-3 w-3" />
+                              )}
+                              {penduduk.jenis_kelamin}
+                            </span>
+                          </td>
+                          <td className="max-w-[250px] px-3 py-2 text-xs text-gray-900">
+                            <div
+                              className="truncate"
+                              title={`${penduduk.alamat}, RT ${penduduk.rt}/${penduduk.rw}, ${penduduk.desa_kelurahan}, ${penduduk.kecamatan}, ${penduduk.kabupaten_kota}, ${penduduk.provinsi} ${penduduk.kode_pos}`}
+                            >{`${penduduk.alamat}, RT ${penduduk.rt}/${penduduk.rw}, ${penduduk.desa_kelurahan}, ${penduduk.kecamatan}, ${penduduk.kabupaten_kota}, ${penduduk.provinsi} ${penduduk.kode_pos}`}</div>
+                          </td>
+                          <td className="px-3 py-2 text-xs font-medium whitespace-nowrap">
+                            <button
+                              onClick={() =>
+                                navigate(`/dataktp/${penduduk.nik}`)
+                              }
+                              className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                            >
+                              <Eye className="h-3 w-3" />
+                              Detail
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {totalPages > 1 && (
+                <div className="border-t border-gray-200 bg-white px-4 py-3">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={onPageChange}
+                    showIcons
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </SidebarInset>

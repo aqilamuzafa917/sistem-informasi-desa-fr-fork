@@ -1,25 +1,27 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
+  ChevronLeft,
+  FileText,
+  Calendar,
+  User,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  Download,
+  Edit,
+} from "lucide-react";
+import { API_CONFIG } from "../../config/api";
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { API_CONFIG } from "../../config/api";
+import { Separator } from "@/components/ui/separator";
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -242,8 +244,118 @@ const getJenisSuratLabel = (jenisSurat: string): string => {
   return jenisSuratMap[jenisSurat] || jenisSurat;
 };
 
+// Status badge component
+const StatusBadge = ({ status }: { status: string }) => {
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "Disetujui":
+        return {
+          icon: CheckCircle,
+          color: "bg-green-100 text-green-800 border-green-200",
+          dotColor: "bg-green-500",
+        };
+      case "Ditolak":
+        return {
+          icon: XCircle,
+          color: "bg-red-100 text-red-800 border-red-200",
+          dotColor: "bg-red-500",
+        };
+      case "Diajukan":
+      default:
+        return {
+          icon: Clock,
+          color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+          dotColor: "bg-yellow-500",
+        };
+    }
+  };
+
+  const config = getStatusConfig(status);
+  const Icon = config.icon;
+
+  return (
+    <div
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium ${config.color}`}
+    >
+      <div className={`h-2 w-2 rounded-full ${config.dotColor}`}></div>
+      <Icon className="h-4 w-4" />
+      {status}
+    </div>
+  );
+};
+
+// Add type for field display props
+interface FieldDisplayProps {
+  label: string;
+  value: string | number | null;
+  icon: React.ComponentType<{ className?: string }>;
+  type?: "text" | "date" | "age";
+}
+
+// Update FieldDisplay component with proper types
+const FieldDisplay = ({
+  label,
+  value,
+  icon: Icon,
+  type = "text",
+}: FieldDisplayProps) => {
+  const displayValue = () => {
+    if (!value) return "-";
+    if (type === "date") return formatDate(value as string);
+    if (type === "age") return `${Math.floor(value as number)} tahun`;
+    return value.toString();
+  };
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
+      <div className="flex items-start gap-3">
+        {Icon && (
+          <div className="flex-shrink-0">
+            <Icon className="mt-0.5 h-5 w-5 text-gray-500" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <dt className="mb-1 text-sm font-medium text-gray-600">{label}</dt>
+          <dd className="text-sm break-words text-gray-900">
+            {displayValue()}
+          </dd>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add type for field configuration
+interface FieldConfig {
+  key: keyof Surat;
+  icon: React.ComponentType<{ className?: string }>;
+  type?: "text" | "date" | "age";
+}
+
+// Update the field configurations with proper types
+const personalInfo: FieldConfig[] = [
+  { key: "nama_pemohon", icon: User },
+  { key: "nik_pemohon", icon: FileText },
+  { key: "tempat_lahir_pemohon", icon: MapPin },
+  { key: "tanggal_lahir_pemohon", icon: Calendar, type: "date" },
+  { key: "umur_pemohon", icon: User, type: "age" },
+  { key: "jenis_kelamin_pemohon", icon: User },
+  { key: "status_perkawinan_pemohon", icon: User },
+  { key: "alamat_pemohon", icon: MapPin },
+];
+
+const suratInfo: FieldConfig[] = [
+  { key: "nomor_surat", icon: FileText },
+  { key: "jenis_surat", icon: FileText },
+  { key: "tanggal_pengajuan", icon: Calendar, type: "date" },
+  { key: "tanggal_disetujui", icon: Calendar, type: "date" },
+  { key: "keperluan", icon: FileText },
+  { key: "attachment_bukti_pendukung", icon: FileText },
+];
+
 export default function VerifikasiSuratPages() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [surat, setSurat] = useState<Surat | null>(null);
   const [loading, setLoading] = useState(true);
   const [catatan, setCatatan] = useState("");
@@ -303,6 +415,9 @@ export default function VerifikasiSuratPages() {
         },
       );
       alert("Surat berhasil diverifikasi");
+      if (surat) {
+        setSurat({ ...surat, status_surat: status, catatan });
+      }
     } catch (error) {
       console.error("Gagal memverifikasi surat:", error);
       alert("Gagal memverifikasi surat");
@@ -311,167 +426,247 @@ export default function VerifikasiSuratPages() {
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <div className="flex h-screen items-center justify-center">
-            <div>Loading...</div>
+          <div className="flex min-h-screen items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
+              <p className="text-gray-600">Loading...</p>
+            </div>
           </div>
         </SidebarInset>
       </SidebarProvider>
     );
+  }
 
-  if (!surat)
+  if (!surat) {
     return (
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <div className="flex h-screen items-center justify-center">
-            <div>Data surat tidak ditemukan.</div>
+          <div className="flex min-h-screen items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <AlertCircle className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+              <p className="text-gray-600">Data surat tidak ditemukan.</p>
+            </div>
           </div>
         </SidebarInset>
       </SidebarProvider>
     );
-
-  // Filter fields: exclude 'id_surat', 'created_at', 'updated_at', include 'nomor_surat' always, and other fields if not null.
-  const nonNullFields = Object.entries(surat).filter(
-    ([key, value]) =>
-      (key === "nomor_surat" || value !== null) &&
-      key !== "id_surat" &&
-      key !== "created_at" &&
-      key !== "updated_at",
-  );
+  }
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  Surat
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Verifikasi Surat</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="border-b bg-white shadow-sm">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex h-16 items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="rounded-lg p-2 transition-colors hover:bg-gray-100" />
+                  <Separator orientation="vertical" className="h-6" />
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                  >
+                    <ChevronLeft className="h-5 w-5 text-gray-600" />
+                  </button>
+                  <div>
+                    <h1 className="text-xl font-semibold text-gray-900">
+                      Verifikasi Surat
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                      Review dan verifikasi dokumen
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={surat.status_surat || "Diajukan"} />
+                  <button className="rounded-lg p-2 transition-colors hover:bg-gray-100">
+                    <Download className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </header>
 
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="mx-auto max-w-6xl space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Verifikasi Surat {getJenisSuratLabel(surat.jenis_surat)}
-              </h1>
+          {/* Main Content */}
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            {/* Document Header */}
+            <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                    <FileText className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h2 className="mb-2 text-xl font-semibold text-gray-900">
+                    {getJenisSuratLabel(surat.jenis_surat)}
+                  </h2>
+                  <p className="mb-4 text-gray-600">{surat.keperluan}</p>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      Diajukan: {formatDate(surat.tanggal_pengajuan)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      {surat.nama_pemohon}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <Card className="p-6">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {nonNullFields.map(([key, value]) => (
-                  <div key={key} className="space-y-2">
-                    <Label htmlFor={key}>{getFieldLabel(key)}</Label>
-                    <Input
-                      id={key}
-                      value={(() => {
-                        if (typeof value === "string") {
-                          if (key === "jenis_surat") {
-                            return value.replace(/_/g, " ");
-                          }
-                          if (
-                            [
-                              "tanggal_pengajuan",
-                              "tanggal_disetujui",
-                              "created_at",
-                              "updated_at",
-                              "tanggal_kematian",
-                              "tanggal_lahir_bayi",
-                              "sejak_tanggal_usaha",
-                              "tanggal_perkiraan_hilang",
-                              "tanggal_laporan_polisi",
-                              "tanggal_lahir_pemohon",
-                              "tanggal_lahir_meninggal",
-                              "tanggal_lahir_siswa",
-                            ].includes(key)
-                          ) {
-                            return formatDate(value);
-                          }
-                        }
-                        if (
-                          typeof value === "number" &&
-                          [
-                            "umur_pemohon",
-                            "umur_saat_meninggal",
-                            "umur_ibu_saat_kelahiran",
-                            "umur_ayah_saat_kelahiran",
-                            "umur_siswa",
-                          ].includes(key)
-                        ) {
-                          return String(Math.floor(value));
-                        }
-                        return value?.toString() || "";
-                      })()}
-                      readOnly
-                      className="bg-muted"
-                      placeholder={
-                        key === "nomor_surat" && !value
-                          ? "SK BELUM DILAKUKAN VERIFIKASI"
-                          : undefined
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* Left Column - Document Information */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Informasi Surat
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {suratInfo.map(({ key, icon, type }) => (
+                    <FieldDisplay
+                      key={key}
+                      label={getFieldLabel(key)}
+                      value={
+                        key === "jenis_surat"
+                          ? getJenisSuratLabel(surat[key])
+                          : surat[key]
                       }
+                      icon={icon}
+                      type={type}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column - Personal Information */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <User className="h-5 w-5 text-blue-600" />
+                  Data Pemohon
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {personalInfo.map(({ key, icon, type }) => (
+                    <FieldDisplay
+                      key={key}
+                      label={getFieldLabel(key)}
+                      value={surat[key]}
+                      icon={icon}
+                      type={type}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Verification Panel */}
+            <div className="mt-8 space-y-6">
+              {/* Verification Form */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <Edit className="h-5 w-5 text-blue-600" />
+                  Panel Verifikasi
+                </h3>
+
+                <div className="space-y-6">
+                  {/* Status Selection */}
+                  <div>
+                    <label className="mb-3 block text-sm font-medium text-gray-700">
+                      Status Verifikasi
+                    </label>
+                    <div className="space-y-2">
+                      {["Diajukan", "Disetujui", "Ditolak"].map(
+                        (statusOption) => (
+                          <label
+                            key={statusOption}
+                            className="flex items-center"
+                          >
+                            <input
+                              type="radio"
+                              name="status"
+                              value={statusOption}
+                              checked={status === statusOption}
+                              onChange={(e) => setStatus(e.target.value)}
+                              className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="ml-3 text-sm text-gray-700">
+                              {statusOption}
+                            </span>
+                          </label>
+                        ),
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label
+                      htmlFor="catatan"
+                      className="mb-3 block text-sm font-medium text-gray-700"
+                    >
+                      Catatan Verifikasi
+                    </label>
+                    <textarea
+                      id="catatan"
+                      value={catatan}
+                      onChange={(e) => setCatatan(e.target.value)}
+                      rows={4}
+                      className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                      placeholder="Tambahkan catatan verifikasi..."
                     />
                   </div>
-                ))}
-              </div>
-            </Card>
 
-            <Card className="p-6">
-              <h2 className="mb-4 text-xl font-semibold">Verifikasi</h2>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status Surat</Label>
-                  <select
-                    id="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full rounded-md border p-2"
-                  >
-                    <option value="Diajukan">Diajukan</option>
-                    <option value="Disetujui">Disetujui</option>
-                    <option value="Ditolak">Ditolak</option>
-                  </select>
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleVerifikasi}
+                      disabled={submitting}
+                      className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {submitting ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                          Memproses...
+                        </span>
+                      ) : (
+                        "Simpan Verifikasi"
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => navigate(-1)}
+                      className="w-full rounded-lg bg-gray-100 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                    >
+                      Kembali
+                    </button>
+                  </div>
                 </div>
-
-                <div className="space-y-2">
-                  {" "}
-                  <Label htmlFor="catatan">Catatan</Label>
-                  <textarea
-                    id="catatan"
-                    value={catatan}
-                    onChange={(e) => setCatatan(e.target.value)}
-                    className="min-h-[100px] w-full rounded-md border p-2"
-                    placeholder="Tambahkan catatan jika diperlukan"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleVerifikasi}
-                  disabled={submitting}
-                  className="w-full md:w-auto"
-                >
-                  {submitting ? "Memproses..." : "Simpan Verifikasi"}
-                </Button>
               </div>
-            </Card>
+
+              {/* Quick Info */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <h4 className="mb-2 text-sm font-medium text-blue-900">
+                  Informasi Cepat
+                </h4>
+                <div className="space-y-2 text-sm text-blue-800">
+                  <p>• Pastikan semua data sudah sesuai</p>
+                  <p>• Periksa kelengkapan dokumen</p>
+                  <p>• Berikan catatan jika diperlukan</p>
+                  <p>• Status dapat diubah kapan saja</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
