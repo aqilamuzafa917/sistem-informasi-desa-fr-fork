@@ -192,7 +192,7 @@ export default function DetailKtpPages() {
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 mt-3 bg-gradient-to-br from-slate-50 to-blue-50">
           <Button
             variant="outline"
             onClick={() => navigate("/dataktp")}

@@ -4,46 +4,27 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import {
-  Button as ButtonFlowbite,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  Spinner,
-} from "flowbite-react";
+import { Spinner } from "flowbite-react";
 import {
   Eye,
   Check,
-  ChevronsUpDown,
   ChevronUp,
   ChevronDown,
+  Users,
+  AlertCircle,
+  FileText,
+  Clock,
+  XCircle,
+  Search,
 } from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
@@ -69,31 +50,108 @@ interface Pengaduan {
   media: string;
 }
 
-interface PengaduanResponse {
-  data: Pengaduan[];
-}
-
-interface StatsResponse {
-  total_pengaduan: number;
-  total_diajukan: number;
-  total_diterima: number;
-  total_ditolak: number;
-}
-
 type StatusFilter = "Semua" | "Diterima" | "Diajukan" | "Ditolak";
+
+const statusOptions = [
+  {
+    value: "Semua",
+    label: "Semua",
+    color: "bg-gray-100 text-gray-800",
+    icon: FileText,
+  },
+  {
+    value: "Diterima",
+    label: "Diterima",
+    color: "bg-green-100 text-green-800",
+    icon: Check,
+  },
+  {
+    value: "Diajukan",
+    label: "Diajukan",
+    color: "bg-yellow-100 text-yellow-800",
+    icon: Clock,
+  },
+  {
+    value: "Ditolak",
+    label: "Ditolak",
+    color: "bg-red-100 text-red-800",
+    icon: XCircle,
+  },
+];
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  color: string;
+  trend?: boolean;
+}
+
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+}) => (
+  <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="mb-1 text-sm font-medium text-gray-600">{title}</p>
+        <p className="text-3xl font-bold text-gray-900">{value}</p>
+      </div>
+      <div className={`rounded-full p-3 ${color}`}>
+        <Icon className="h-6 w-6" />
+      </div>
+    </div>
+  </div>
+);
+
+interface FilterButtonProps {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  count?: number;
+}
+
+const FilterButton: React.FC<FilterButtonProps> = ({
+  active,
+  onClick,
+  children,
+  count,
+}) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+      active
+        ? "scale-105 bg-blue-600 text-white shadow-lg"
+        : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+    }`}
+  >
+    {children}
+    {count !== undefined && (
+      <span
+        className={`rounded-full px-2 py-0.5 text-xs ${
+          active ? "bg-blue-500" : "bg-gray-100 text-gray-600"
+        }`}
+      >
+        {count}
+      </span>
+    )}
+  </button>
+);
 
 export default function PengaduanPages() {
   const navigate = useNavigate();
   const [pengaduanList, setPengaduanList] = useState<Pengaduan[]>([]);
-  const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Semua");
   const [sortField, setSortField] = useState<string | null>("created_at");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
-  const [open, setOpen] = React.useState(false);
-  const [kategoriFilter, setKategoriFilter] = React.useState("");
+  const [kategoriFilter, setKategoriFilter] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -111,14 +169,8 @@ export default function PengaduanPages() {
         const token = localStorage.getItem("authToken");
         if (!token) throw new Error("Token tidak ditemukan");
 
-        const [pengaduanResponse, statsResponse] = await Promise.all([
+        const [pengaduanResponse] = await Promise.all([
           axios.get(`${API_CONFIG.baseURL}/api/pengaduan`, {
-            headers: {
-              ...API_CONFIG.headers,
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          axios.get(`${API_CONFIG.baseURL}/api/pengaduan/stats`, {
             headers: {
               ...API_CONFIG.headers,
               Authorization: `Bearer ${token}`,
@@ -131,7 +183,6 @@ export default function PengaduanPages() {
             ? pengaduanResponse.data
             : pengaduanResponse.data.data || [],
         );
-        setStats(statsResponse.data);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Gagal mengambil data pengaduan");
@@ -142,17 +193,26 @@ export default function PengaduanPages() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, kategoriFilter, searchTerm]);
+
   const filteredPengaduanList = pengaduanList.filter((pengaduan) => {
     const statusMatch =
       statusFilter === "Semua" || pengaduan.status === statusFilter;
     const kategoriMatch =
       kategoriFilter === "" || pengaduan.kategori === kategoriFilter;
-    return statusMatch && kategoriMatch;
+    const searchMatch =
+      searchTerm === "" ||
+      (pengaduan.nama?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase(),
+      ) ||
+      (pengaduan.nomor_telepon || "").includes(searchTerm) ||
+      (pengaduan.detail_pengaduan?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase(),
+      );
+    return statusMatch && kategoriMatch && searchMatch;
   });
-
-  const handleStatusFilterClick = (status: StatusFilter) => {
-    setStatusFilter(status);
-  };
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -165,15 +225,28 @@ export default function PengaduanPages() {
 
   const sortedPengaduanList = [...filteredPengaduanList].sort((a, b) => {
     if (!sortField) return 0;
-
     if (sortField === "created_at") {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
       return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
     }
-
     return 0;
   });
+
+  const totalPengaduan = pengaduanList.length;
+  const totalDiajukan = pengaduanList.filter(
+    (p) => p.status === "Diajukan",
+  ).length;
+  const totalDiterima = pengaduanList.filter(
+    (p) => p.status === "Diterima",
+  ).length;
+
+  const totalPages = Math.ceil(filteredPengaduanList.length / itemsPerPage);
+
+  const paginatedPengaduanList = sortedPengaduanList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   return (
     <SidebarProvider>
@@ -190,180 +263,345 @@ export default function PengaduanPages() {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Total Pengaduan</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {stats?.total_pengaduan || 0}
-              </p>
-            </div>
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Pengaduan Diajukan</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {stats?.total_diajukan || 0}
-              </p>
-            </div>
-            <div className="rounded-xl bg-gray-200 p-4">
-              <p className="font-medium text-gray-700">Pengaduan Diterima</p>
-              <p className="mt-2 text-center text-4xl font-bold">
-                {stats?.total_diterima || 0}
-              </p>
-            </div>
-          </div>
-          <div className="mt-2 flex flex-col gap-2">
-            <div className="flex justify-center">
-              <div className="flex overflow-hidden rounded-full bg-gray-200">
-                {(
-                  ["Semua", "Diterima", "Diajukan", "Ditolak"] as StatusFilter[]
-                ).map((status) => (
-                  <div
-                    key={status}
-                    className={`cursor-pointer px-4 py-2 font-medium ${
-                      statusFilter === status
-                        ? "bg-gray-300"
-                        : "hover:bg-gray-300"
-                    }`}
-                    onClick={() => handleStatusFilterClick(status)}
-                  >
-                    {status}
-                  </div>
-                ))}
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
+          <div className="mx-auto max-w-7xl space-y-6">
+            {/* Header */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Manajemen Pengaduan
+                </h1>
+                <p className="text-gray-600">
+                  Kelola dan pantau status pengaduan warga
+                </p>
               </div>
+              {/* <Button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none">
+                <Plus className="h-4 w-4" />
+                Buat Pengaduan Baru
+              </Button> */}
             </div>
-            <div className="flex items-center gap-2">
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-[200px] justify-between"
+
+            {/* Stats Cards & Card Filter */}
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+              <StatCard
+                title="Total Pengaduan"
+                value={totalPengaduan}
+                icon={Users}
+                color="bg-blue-100 text-blue-600"
+                trend={true}
+              />
+              <StatCard
+                title="Pengaduan Diajukan"
+                value={totalDiajukan}
+                icon={Clock}
+                color="bg-yellow-100 text-yellow-600"
+              />
+              <StatCard
+                title="Pengaduan Diterima"
+                value={totalDiterima}
+                icon={Check}
+                color="bg-green-100 text-green-600"
+              />
+            </div>
+
+            {/* Filters and Search */}
+            <form
+              className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
+              onSubmit={(e) => e.preventDefault()}
+            >
+              {/* Status Filter (Card Style) */}
+              <div className="mb-4 flex flex-wrap gap-3">
+                {statusOptions.map((status) => {
+                  const count =
+                    status.value === "Semua"
+                      ? totalPengaduan
+                      : status.value === "Diterima"
+                        ? totalDiterima
+                        : status.value === "Diajukan"
+                          ? totalDiajukan
+                          : totalPengaduan - totalDiterima - totalDiajukan;
+                  return (
+                    <FilterButton
+                      key={status.value}
+                      active={statusFilter === status.value}
+                      onClick={() =>
+                        setStatusFilter(status.value as StatusFilter)
+                      }
+                      count={count}
+                    >
+                      <status.icon className="h-4 w-4" />
+                      {status.label}
+                    </FilterButton>
+                  );
+                })}
+              </div>
+
+              {/* Search and Jenis Filter */}
+              <div className="flex flex-col gap-4 lg:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari nama, nomor telepon, atau detail..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 py-3 pr-4 pl-10 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={kategoriFilter}
+                    onChange={(e) => setKategoriFilter(e.target.value)}
+                    className="min-w-[150px] rounded-lg border border-gray-200 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   >
-                    {kategoriFilter
-                      ? kategoriOptions.find((k) => k.value === kategoriFilter)
-                          ?.label
-                      : "Pilih Jenis Pengaduan"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Cari Jenis Pengaduan" />
-                    <CommandList>
-                      <CommandEmpty>Jenis tidak ditemukan</CommandEmpty>
-                      <CommandGroup>
-                        {kategoriOptions.map((k) => (
-                          <CommandItem
-                            key={k.value}
-                            value={k.value}
-                            onSelect={(val) => {
-                              setKategoriFilter(
-                                val === kategoriFilter ? "" : val,
-                              );
-                              setOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                kategoriFilter === k.value
-                                  ? "opacity-100"
-                                  : "opacity-0",
+                    <option value="">Semua Kategori</option>
+                    {kategoriOptions.map((kategori) => (
+                      <option key={kategori.value} value={kategori.value}>
+                        {kategori.label}
+                      </option>
+                    ))}
+                  </select>
+                  {kategoriFilter && (
+                    <button
+                      onClick={() => setKategoriFilter("")}
+                      className="rounded-lg border border-gray-200 px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+
+            {/* Data Table */}
+            <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+              {loading ? (
+                <div className="flex h-64 items-center justify-center">
+                  <Spinner size="xl" />
+                  <span className="ml-2 text-gray-600">Memuat data...</span>
+                </div>
+              ) : error ? (
+                <div className="py-12 text-center">
+                  <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Error
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">{error}</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          ID
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Nama
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Nomor Telepon
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Kategori
+                        </th>
+                        <th
+                          className="cursor-pointer px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors hover:bg-gray-100"
+                          onClick={() => handleSort("created_at")}
+                        >
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            Tanggal Pengaduan
+                            {sortField === "created_at" &&
+                              (sortDirection === "asc" ? (
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              ) : (
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              ))}
+                          </div>
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Detail Pengaduan
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Status
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {paginatedPengaduanList.map((pengaduan) => (
+                        <tr
+                          key={pengaduan.id}
+                          className="transition-colors hover:bg-gray-50"
+                        >
+                          <td className="max-w-[120px] px-3 py-2 text-xs font-medium whitespace-nowrap text-gray-900">
+                            <div className="truncate" title={pengaduan.id}>
+                              {pengaduan.id}
+                            </div>
+                          </td>
+                          <td className="max-w-[150px] px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                            <div className="truncate" title={pengaduan.nama}>
+                              {pengaduan.nama}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                            {pengaduan.nomor_telepon}
+                          </td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                            {pengaduan.kategori}
+                          </td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                            {formatDate(pengaduan.created_at)}
+                          </td>
+                          <td className="max-w-[200px] px-3 py-2 text-xs text-gray-900">
+                            <div
+                              className="truncate"
+                              title={pengaduan.detail_pengaduan}
+                            >
+                              {pengaduan.detail_pengaduan}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${
+                                pengaduan.status === "Diterima"
+                                  ? "border-green-200 bg-green-50 text-green-700"
+                                  : pengaduan.status === "Ditolak"
+                                    ? "border-red-200 bg-red-50 text-red-700"
+                                    : pengaduan.status === "Diajukan"
+                                      ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+                                      : "border-gray-200 bg-gray-50 text-gray-700"
+                              }`}
+                            >
+                              {pengaduan.status === "Diterima" ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : pengaduan.status === "Ditolak" ? (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              ) : pengaduan.status === "Diajukan" ? (
+                                <Clock className="h-4 w-4 text-yellow-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-gray-600" />
                               )}
-                            />
-                            {k.label}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {kategoriFilter && (
-                <Button variant="outline" onClick={() => setKategoriFilter("")}>
-                  Reset Jenis Pengaduan
-                </Button>
+                              {pengaduan.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-xs font-medium whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() =>
+                                  navigate(`/pengaduan/${pengaduan.id}`)
+                                }
+                                className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                              >
+                                <Eye className="h-3 w-3" />
+                                Detail
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {sortedPengaduanList.length === 0 && (
+                    <div className="py-12 text-center">
+                      <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">
+                        Tidak ada data
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Tidak ditemukan pengaduan yang sesuai dengan filter yang
+                        dipilih.
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-          </div>
-          <div className="min-h-[100vh] flex-1 rounded-xl bg-white p-4 shadow-sm md:min-h-min">
-            {loading ? (
-              <div className="flex h-40 items-center justify-center">
-                <Spinner size="xl" />
-              </div>
-            ) : error ? (
-              <div className="text-center text-red-500">{error}</div>
-            ) : (
-              <Table striped>
-                <TableHead>
-                  <TableRow>
-                    <TableHeadCell>ID</TableHeadCell>
-                    <TableHeadCell>Nama</TableHeadCell>
-                    <TableHeadCell>Nomor Telepon</TableHeadCell>
-                    <TableHeadCell>Kategori</TableHeadCell>
-                    <TableHeadCell
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort("created_at")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>Tanggal Pengaduan</span>
-                        {sortField === "created_at" &&
-                          (sortDirection === "asc" ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronUp className="h-5 w-5" />
-                          ))}
-                      </div>
-                    </TableHeadCell>
-                    <TableHeadCell>Detail Pengaduan</TableHeadCell>
-                    <TableHeadCell>Status</TableHeadCell>
-                    <TableHeadCell>Aksi</TableHeadCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedPengaduanList.map((pengaduan) => (
-                    <TableRow key={pengaduan.id}>
-                      <TableCell>{pengaduan.id}</TableCell>
-                      <TableCell>{pengaduan.nama}</TableCell>
-                      <TableCell>{pengaduan.nomor_telepon}</TableCell>
-                      <TableCell>{pengaduan.kategori}</TableCell>
-                      <TableCell>{formatDate(pengaduan.created_at)}</TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {pengaduan.detail_pengaduan}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs font-medium ${
-                            pengaduan.status === "Diterima"
-                              ? "bg-green-100 text-green-800"
-                              : pengaduan.status === "Ditolak"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {pengaduan.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <ButtonFlowbite
-                            size="xs"
-                            color="info"
-                            className="flex items-center gap-1"
-                            onClick={() =>
-                              navigate(`/pengaduan/${pengaduan.id}`)
-                            }
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-3">
+                <div className="flex flex-1 justify-between sm:hidden">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Menampilkan{" "}
+                      <span className="font-medium">
+                        {(currentPage - 1) * itemsPerPage + 1}
+                      </span>{" "}
+                      sampai{" "}
+                      <span className="font-medium">
+                        {Math.min(
+                          currentPage * itemsPerPage,
+                          filteredPengaduanList.length,
+                        )}
+                      </span>{" "}
+                      dari{" "}
+                      <span className="font-medium">
+                        {filteredPengaduanList.length}
+                      </span>{" "}
+                      pengaduan
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex -space-x-px rounded-md shadow-sm">
+                      <button
+                        onClick={() =>
+                          setCurrentPage(Math.max(1, currentPage - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center border px-4 py-2 text-sm font-medium ${
+                              page === currentPage
+                                ? "z-10 border-blue-500 bg-blue-50 text-blue-600"
+                                : "border-gray-300 bg-white text-gray-500 hover:bg-gray-50"
+                            }`}
                           >
-                            <Eye className="h-4 w-4" />
-                            <span>Detail</span>
-                          </ButtonFlowbite>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                            {page}
+                          </button>
+                        ),
+                      )}
+                      <button
+                        onClick={() =>
+                          setCurrentPage(Math.min(totalPages, currentPage + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
