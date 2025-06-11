@@ -45,6 +45,10 @@ import { Chatbot } from "./components/Chatbot";
 import DynamicTitle from "./components/DynamicTitle";
 import DynamicFavicon from "./components/DynamicFavicon";
 import DynamicManifest from "./components/DynamicManifest";
+import PendapatanCreate from "./pages/InfografisPage/PendapatanCreate";
+import PendapatanDetail from "./pages/InfografisPage/PendapatanDetail";
+import BelanjaDetail from "./pages/InfografisPage/BelanjaDetail";
+import BelanjaCreate from "./pages/InfografisPage/BelanjaCreate";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -107,7 +111,11 @@ export default function App() {
           <Route path="/artikel/buat" element={<ArtikelCreate />} />
           <Route path="/artikel/:id" element={<VerifikasiArtikelPage />} />
           <Route path="/pendapatan" element={<PendapatanPages />} />
+          <Route path="/pendapatan/detail" element={<PendapatanDetail />} />
+          <Route path="/pendapatan/tambah" element={<PendapatanCreate />} />
           <Route path="/belanja" element={<BelanjaPages />} />
+          <Route path="/belanja/detail" element={<BelanjaDetail />} />
+          <Route path="/belanja/tambah" element={<BelanjaCreate />} />
           <Route path="/peta" element={<PetaPages />} />
           <Route path="/dataktp" element={<DataKTPPages />} />
           <Route path="/dataktp/:nik" element={<DetailKtpPages />} />

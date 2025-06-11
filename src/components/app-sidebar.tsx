@@ -2,7 +2,6 @@ import * as React from "react";
 import { useLocation } from "react-router-dom";
 import {
   AppWindow,
-  ArrowUpCircleIcon,
   ChartNoAxesColumnIncreasing,
   Files,
   House,
@@ -173,7 +172,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ],
     navConfigDesa: [
       {
-        title: "Config Desa",
+        title: "Config Web",
         url: "/configdesa",
         icon: Bolt,
         isActive: currentPath === "/configdesa",
@@ -191,8 +190,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="/dashboard">
-                <ArrowUpCircleIcon className="h-5 w-5" />
-                <span className="text-base font-semibold">
+                <span className="text-sm font-semibold">
                   Admin Desa {desaConfig?.nama_desa}
                 </span>
               </a>
