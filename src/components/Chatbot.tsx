@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, AlertCircle, Bot, Clock } from "lucide-react";
+import { MessageCircle, X, Send, AlertCircle, Bot, Check } from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "../config/api";
 import { useLocation } from "react-router-dom";
@@ -12,6 +12,7 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: string;
+  isError?: boolean;
 }
 
 const STORAGE_KEY = "chatbot_messages";
@@ -172,6 +173,7 @@ export function Chatbot() {
           text: "Maaf, terjadi kesalahan. Silakan coba lagi.",
           isUser: false,
           timestamp: new Date().toISOString(),
+          isError: true,
         },
       ]);
     } finally {
@@ -516,7 +518,9 @@ export function Chatbot() {
                     className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm shadow-sm transition-all duration-200 sm:max-w-[280px] sm:px-4 sm:py-2.5 sm:text-base ${
                       message.isUser
                         ? "rounded-br-sm text-white"
-                        : "rounded-bl-sm bg-white text-gray-800"
+                        : message.isError
+                          ? "rounded-bl-sm border border-red-200 bg-red-50 text-red-600"
+                          : "rounded-bl-sm bg-white text-gray-800"
                     }`}
                     style={
                       message.isUser
@@ -536,7 +540,9 @@ export function Chatbot() {
                       message.isUser ? "flex-row-reverse" : "flex-row"
                     }`}
                   >
-                    <Clock className="h-2 w-2 sm:h-3 sm:w-3" />
+                    {message.isUser ? (
+                      <Check className="h-2 w-2 sm:h-3 sm:w-3" />
+                    ) : null}
                     {new Date(message.timestamp).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",

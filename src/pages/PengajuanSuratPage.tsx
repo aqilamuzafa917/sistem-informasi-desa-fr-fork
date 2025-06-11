@@ -92,57 +92,85 @@ export default function PengajuanSuratPage() {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const validateNIK = (nik: string) => {
+    return nik && nik.length === 16 && /^\d+$/.test(nik);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const submitData = new FormData();
+    const formDataToSend = new FormData();
 
-    // Add jenis_surat first
-    submitData.append("jenis_surat", jenisSurat);
-    submitData.append(
+    // Add basic fields
+    formDataToSend.append("jenis_surat", jenisSurat);
+    formDataToSend.append(
       "tanggal_pengajuan",
       new Date().toISOString().split("T")[0],
     );
-    submitData.append("status_surat", "Diajukan");
+    formDataToSend.append("status_surat", "Diajukan");
 
-    // Add all form fields to FormData
+    // Add all form fields except data_pengikut_pindah
     Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        submitData.append(key, String(value));
+      if (value !== null && value !== undefined && key !== "data_pengikut_pindah") {
+        formDataToSend.append(key, String(value));
       }
     });
 
+    // Handle data_pengikut_pindah with Laravel/PHP style array format
+    if (formData.data_pengikut_pindah && Array.isArray(formData.data_pengikut_pindah)) {
+      // Remove duplicate NIKs
+      const uniquePengikut = (formData.data_pengikut_pindah as Array<{ nik: string }>)
+        .filter((pengikut, index, self) => 
+          index === self.findIndex(p => p.nik === pengikut.nik)
+        );
+
+      // Validate all NIKs
+      const invalidNIK = uniquePengikut.find(pengikut => !validateNIK(pengikut.nik));
+      if (invalidNIK) {
+        alert(`NIK pengikut tidak valid: ${invalidNIK.nik}. NIK harus 16 digit angka.`);
+        setIsLoading(false);
+        return;
+      }
+
+      // Format pengikut data in Laravel/PHP style array format
+      uniquePengikut.forEach((pengikut, index) => {
+        formDataToSend.append(`data_pengikut_pindah[${index}][nik]`, pengikut.nik);
+      });
+    }
+
     // Add files to FormData
     uploadedFiles.forEach((file, index) => {
-      submitData.append(`attachment_bukti_pendukung[${index}]`, file);
+      formDataToSend.append(`attachment_bukti_pendukung[${index}]`, file);
     });
 
     try {
       const response = await axios.post(
         `${API_CONFIG.baseURL}/api/publik/surat`,
-        submitData,
+        formDataToSend,
         {
           headers: {
             ...API_CONFIG.headers,
             "Content-Type": "multipart/form-data",
           },
-        },
+        }
       );
-      console.log("Respon API:", response.data);
       alert("Pengajuan surat berhasil dikirim!");
       setJenisSurat("");
       setFormData({});
       setUploadedFiles([]);
       setCurrentStep(1);
     } catch (error) {
-      console.error("Error mengirim data:", error);
       if (axios.isAxiosError(error) && error.response) {
-        console.error("Detail error:", error.response.data);
-        const errorMessages = error.response.data.errors
-          ? Object.values(error.response.data.errors).flat().join("\n")
-          : error.response.data.message || "Terjadi kesalahan pada server.";
-        alert(`Gagal mengirim pengajuan:\n${errorMessages}`);
+        // Check for specific data_pengikut_pindah errors
+        if (error.response.data.errors?.data_pengikut_pindah) {
+          alert(`Error pada data pengikut: ${error.response.data.errors.data_pengikut_pindah.join("\n")}`);
+        } else {
+          const errorMessages = error.response.data.errors
+            ? Object.values(error.response.data.errors).flat().join("\n")
+            : error.response.data.message || "Terjadi kesalahan pada server.";
+          alert(`Gagal mengirim pengajuan:\n${errorMessages}`);
+        }
       } else {
         alert("Gagal mengirim pengajuan. Silakan coba lagi.");
       }

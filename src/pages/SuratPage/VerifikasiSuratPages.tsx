@@ -68,7 +68,7 @@ interface Surat {
   provinsi_tujuan: string | null;
   alasan_pindah: string | null;
   klasifikasi_pindah: string | null;
-  data_pengikut_pindah: string | null;
+  data_pengikut_pindah?: Array<{ nik: string }> | null;
   nama_bayi: string | null;
   tempat_dilahirkan: string | null;
   tempat_kelahiran: string | null;
@@ -353,6 +353,18 @@ const suratInfo: FieldConfig[] = [
   { key: "attachment_bukti_pendukung", icon: FileText },
 ];
 
+const renderFieldValue = (
+  key: string,
+  value: string | number | Array<{ nik: string }> | null,
+): string => {
+  if (key === "data_pengikut_pindah" && Array.isArray(value)) {
+    return value
+      .map((pengikut, index) => `NIK Pengikut ${index + 1}: ${pengikut.nik}`)
+      .join("\n");
+  }
+  return String(value || "");
+};
+
 export default function VerifikasiSuratPages() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -536,11 +548,7 @@ export default function VerifikasiSuratPages() {
                     <FieldDisplay
                       key={key}
                       label={getFieldLabel(key)}
-                      value={
-                        key === "jenis_surat"
-                          ? getJenisSuratLabel(surat[key])
-                          : surat[key]
-                      }
+                      value={renderFieldValue(key, surat[key] ?? null)}
                       icon={icon}
                       type={type}
                     />
@@ -559,7 +567,7 @@ export default function VerifikasiSuratPages() {
                     <FieldDisplay
                       key={key}
                       label={getFieldLabel(key)}
-                      value={surat[key]}
+                      value={renderFieldValue(key, surat[key] ?? null)}
                       icon={icon}
                       type={type}
                     />

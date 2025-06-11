@@ -36,7 +36,7 @@ interface FormData {
   provinsi_tujuan?: string;
   alasan_pindah?: string;
   klasifikasi_pindah?: string;
-  data_pengikut_pindah?: string; // Consider how to handle this - text, JSON?
+  data_pengikut_pindah?: Array<{ nik: string }>;
   // SK_KEMATIAN fields
   nik_penduduk_meninggal?: string;
   tanggal_kematian?: string;
@@ -154,19 +154,38 @@ export default function SuratCreate() {
     Object.entries(formData).forEach(([key, value]) => {
       if (value instanceof File) {
         dataToSubmit.append(key, value);
+      } else if (key === "data_pengikut_pindah" && Array.isArray(value)) {
+        dataToSubmit.append(key, JSON.stringify(value));
       } else if (value !== undefined && value !== null) {
         dataToSubmit.append(key, String(value));
       }
     });
     dataToSubmit.append("jenis_surat", jenisSurat);
 
-    // Temp log to see data
+    // Debug logging
+    console.log("Form Data Object:", formData);
+    console.log("Data Pengikut Pindah:", formData.data_pengikut_pindah);
+
+    // Log FormData entries
+    console.log("FormData entries:");
     for (const pair of dataToSubmit.entries()) {
-      console.log(pair[0] + ", " + pair[1]);
+      console.log(pair[0] + ":", pair[1]);
     }
-    // alert("Check console for form data.");
-    // setSubmitting(false);
-    // return;
+
+    // Log the final JSON payload
+    const jsonPayload: Record<string, any> = {};
+    for (const pair of dataToSubmit.entries()) {
+      if (pair[0] === "data_pengikut_pindah") {
+        try {
+          jsonPayload[pair[0]] = JSON.parse(pair[1] as string);
+        } catch (e) {
+          jsonPayload[pair[0]] = pair[1];
+        }
+      } else {
+        jsonPayload[pair[0]] = pair[1];
+      }
+    }
+    console.log("Final JSON Payload:", jsonPayload);
 
     try {
       const token =
@@ -183,11 +202,14 @@ export default function SuratCreate() {
       );
       console.log("Server Response:", response.data);
       alert("Pengajuan surat berhasil dikirim!");
-      // Optionally, redirect or clear form
       setJenisSurat("");
       setFormData({});
     } catch (error) {
       console.error("Gagal mengirim pengajuan surat:", error);
+      if (axios.isAxiosError(error) && error.response) {
+        console.error("Error Response Data:", error.response.data);
+        console.error("Error Response Status:", error.response.status);
+      }
       alert("Gagal mengirim pengajuan surat. Lihat konsol untuk detail.");
     } finally {
       setSubmitting(false);
