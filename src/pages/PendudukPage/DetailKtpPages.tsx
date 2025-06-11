@@ -41,6 +41,8 @@ interface PendudukDetail {
   status_perkawinan: string;
   pekerjaan: string;
   kewarganegaraan: string;
+  pendidikan: string;
+  no_kk: string;
 }
 
 export default function DetailKtpPages() {
@@ -160,11 +162,8 @@ export default function DetailKtpPages() {
         { label: "Status Perkawinan", value: penduduk.status_perkawinan },
         { label: "Pekerjaan", value: penduduk.pekerjaan },
         { label: "Kewarganegaraan", value: penduduk.kewarganegaraan },
-        { label: "Data Dibuat", value: formatDate(penduduk.created_at, true) },
-        {
-          label: "Data Diperbarui",
-          value: formatDate(penduduk.updated_at, true),
-        },
+        { label: "Pendidikan", value: penduduk.pendidikan },
+        { label: "No KK", value: penduduk.no_kk },
       ]
     : [];
 
@@ -192,11 +191,11 @@ export default function DetailKtpPages() {
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 mt-3 bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="mt-3 flex flex-1 flex-col gap-4 bg-gradient-to-br from-slate-50 to-blue-50 p-4 pt-0">
           <Button
             variant="outline"
             onClick={() => navigate("/dataktp")}
-            className="mb-4 w-fit"
+            className="mt-4 w-fit bg-blue-500 text-white"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali

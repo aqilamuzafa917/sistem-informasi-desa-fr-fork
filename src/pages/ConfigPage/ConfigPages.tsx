@@ -353,7 +353,7 @@ export default function ConfigPages() {
                   <Button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="w-full md:w-auto"
+                    className="w-full md:w-auto rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600"
                   >
                     {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
                   </Button>

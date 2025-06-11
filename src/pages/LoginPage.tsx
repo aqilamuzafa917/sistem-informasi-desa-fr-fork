@@ -89,10 +89,10 @@ export default function LoginPage() {
               <Lock className="h-8 w-8 text-white" />
             </div>
             <h1 className="bg-gradient-to-r from-[#00b4d8] to-[#48cc6c] bg-clip-text text-3xl font-bold text-transparent">
-              Welcome Back
+              Selamat Datang
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Sign in to your account to continue
+              Sign in untuk melanjutkan ke Halaman Admin
             </p>
           </div>
 
@@ -139,7 +139,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Email Address
+                Email
               </label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
