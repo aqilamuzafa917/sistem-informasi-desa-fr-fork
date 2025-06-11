@@ -10,9 +10,11 @@ interface PengajuanFormStepsProps {
   setJenisSurat: (value: string) => void;
   formData: Partial<SuratPayload>;
   handleInputChange: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e:
+      | React.ChangeEvent<
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
+      | { target: { name: string; value: unknown } },
   ) => void;
   uploadedFiles: File[];
   uploadError: string | null;
@@ -27,11 +29,14 @@ interface PengajuanFormStepsProps {
 const LetterSpecificFormFields: React.FC<{
   jenisSurat: string;
   handleInputChange: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e:
+      | React.ChangeEvent<
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
+      | { target: { name: string; value: unknown } },
   ) => void;
-}> = ({ jenisSurat, handleInputChange }) => {
+  formData: Partial<SuratPayload>;
+}> = ({ jenisSurat, handleInputChange, formData }) => {
   switch (jenisSurat) {
     case "SK_PINDAH":
       return (
@@ -118,6 +123,73 @@ const LetterSpecificFormFields: React.FC<{
               </option>
               <option value="Antar Provinsi">Antar Provinsi</option>
             </FormField>
+          </div>
+          <div className="mt-4">
+            <h4 className="mb-2 text-sm font-medium text-gray-700">
+              Data Pengikut Pindah
+            </h4>
+            <div className="space-y-2">
+              {(formData.data_pengikut_pindah || []).map(
+                (pengikut: { nik: string }, index: number) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <FormField
+                      label={`NIK Pengikut ${index + 1}`}
+                      name="data_pengikut_pindah"
+                      value={pengikut.nik}
+                      onChange={(e) => {
+                        const newPengikut = [
+                          ...(formData.data_pengikut_pindah || []),
+                        ];
+                        newPengikut[index] = { nik: e.target.value };
+                        handleInputChange({
+                          target: {
+                            name: "data_pengikut_pindah",
+                            value: newPengikut,
+                          },
+                        });
+                      }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newPengikut = [
+                          ...(formData.data_pengikut_pindah || []),
+                        ];
+                        newPengikut.splice(index, 1);
+                        handleInputChange({
+                          target: {
+                            name: "data_pengikut_pindah",
+                            value: newPengikut,
+                          },
+                        });
+                      }}
+                      className="mt-6 rounded-md bg-red-100 p-2 text-red-600 hover:bg-red-200"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                ),
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const newPengikut = [
+                    ...(formData.data_pengikut_pindah || []),
+                    { nik: "" },
+                  ];
+                  handleInputChange({
+                    target: {
+                      name: "data_pengikut_pindah",
+                      value: newPengikut,
+                    },
+                  });
+                }}
+                className="mt-2 rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-200"
+              >
+                + Tambah Pengikut
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -725,6 +797,7 @@ const PengajuanFormSteps: React.FC<PengajuanFormStepsProps> = ({
               <LetterSpecificFormFields
                 jenisSurat={jenisSurat}
                 handleInputChange={handleInputChange}
+                formData={formData}
               />
 
               {/* Use the FileUploadSection component */}

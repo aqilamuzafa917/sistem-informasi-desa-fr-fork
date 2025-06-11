@@ -25,7 +25,7 @@ export interface SuratPayload {
   provinsi_tujuan?: string | null;
   alasan_pindah?: string | null;
   klasifikasi_pindah?: string | null;
-  data_pengikut_pindah?: string | null;
+  data_pengikut_pindah?: Array<{ nik: string }> | null;
   nama_bayi?: string | null;
   tempat_dilahirkan?: string | null;
   tempat_kelahiran?: string | null;
@@ -87,4 +87,4 @@ export interface SuratPayload {
   umur_siswa?: number | null;
   nomor_kk_hilang?: string | null;
   deskripsi_keperluan?: string | null;
-} 
+}
