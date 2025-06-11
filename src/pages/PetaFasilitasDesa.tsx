@@ -38,20 +38,144 @@ interface POIResponse {
 
 export default function PetaFasilitasDesa() {
   const { desaConfig, loading } = useDesa();
-  const [poiData, setPoiData] = React.useState<POIFeature[]>([]);
+  const [allPoiData, setAllPoiData] = React.useState<POIFeature[]>([]);
   const [isLoadingPoi, setIsLoadingPoi] = React.useState(true);
   const [polygonData, setPolygonData] = React.useState<[number, number][]>([]);
   const [isLoadingPolygon, setIsLoadingPolygon] = React.useState(true);
+  const [initialDataLoaded, setInitialDataLoaded] = React.useState(false);
 
-  // Fetch POI data
+  // State untuk kategori yang aktif
+  const [activeCategories, setActiveCategories] = React.useState<{
+    sekolah: boolean;
+    ibadah: boolean;
+    kesehatan: boolean;
+    lainnya: boolean;
+  }>({
+    sekolah: true,
+    ibadah: true,
+    kesehatan: true,
+    lainnya: true,
+  });
+
+  // Toggle kategori
+  const toggleCategory = (kategori: keyof typeof activeCategories) => {
+    setActiveCategories((prev) => ({
+      ...prev,
+      [kategori]: !prev[kategori],
+    }));
+  };
+
+  // Function to categorize POI based on amenity
+  const categorizePOI = (amenity: string): string => {
+    switch (amenity) {
+      case "school":
+        return "sekolah";
+      case "place_of_worship":
+        return "ibadah";
+      case "hospital":
+      case "clinic":
+        return "kesehatan";
+      default:
+        return "lainnya";
+    }
+  };
+
+  // Filter POI data based on active categories
+  const filteredPoiData = React.useMemo(() => {
+    return allPoiData.filter((feature) => {
+      const category = categorizePOI(feature.properties.tags.amenity);
+      return activeCategories[category as keyof typeof activeCategories];
+    });
+  }, [allPoiData, activeCategories]);
+
+  // Get marker icon based on amenity type
+  const getMarkerIcon = (amenity: string) => {
+    let iconColor = "";
+
+    switch (amenity) {
+      case "school":
+        iconColor = "green";
+        break;
+      case "place_of_worship":
+        iconColor = "blue";
+        break;
+      case "hospital":
+      case "clinic":
+        iconColor = "red";
+        break;
+      default:
+        iconColor = "orange";
+    }
+
+    return new L.Icon({
+      iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${iconColor}.png`,
+      shadowUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+  };
+
+  // Fetch all POI data once on component mount
   React.useEffect(() => {
-    const fetchPoiData = async () => {
+    const fetchAllPoiData = async () => {
       try {
-        const response = await axios.get<POIResponse>(
-          `${API_CONFIG.baseURL}/api/publik/map/poi`,
-          { headers: API_CONFIG.headers },
+        setIsLoadingPoi(true);
+
+        // Fetch data from different endpoints
+        const fetchPromises = [
+          axios.get<POIResponse>(
+            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=school`,
+            { headers: API_CONFIG.headers },
+          ),
+          axios.get<POIResponse>(
+            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=place_of_worship`,
+            { headers: API_CONFIG.headers },
+          ),
+          axios.get<POIResponse>(
+            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=hospital`,
+            { headers: API_CONFIG.headers },
+          ),
+          axios.get<POIResponse>(
+            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=clinic`,
+            { headers: API_CONFIG.headers },
+          ),
+          // Fetch all POI for "lainnya" category
+          axios.get<POIResponse>(`${API_CONFIG.baseURL}/api/publik/map/poi`, {
+            headers: API_CONFIG.headers,
+          }),
+        ];
+
+        const responses = await Promise.all(fetchPromises);
+        const allFeatures = responses.flatMap(
+          (response) => response.data.features,
         );
-        setPoiData(response.data.features);
+
+        // Remove duplicates based on coordinates and name
+        const uniqueFeatures = allFeatures.reduce(
+          (acc: POIFeature[], current) => {
+            const existingIndex = acc.findIndex(
+              (item) =>
+                item.geometry.coordinates[0] ===
+                  current.geometry.coordinates[0] &&
+                item.geometry.coordinates[1] ===
+                  current.geometry.coordinates[1] &&
+                item.properties.name === current.properties.name,
+            );
+
+            if (existingIndex === -1) {
+              acc.push(current);
+            }
+
+            return acc;
+          },
+          [],
+        );
+
+        setAllPoiData(uniqueFeatures);
+        setInitialDataLoaded(true);
       } catch (error) {
         console.error("Error fetching POI data:", error);
       } finally {
@@ -59,13 +183,16 @@ export default function PetaFasilitasDesa() {
       }
     };
 
-    fetchPoiData();
-  }, []);
+    if (!initialDataLoaded) {
+      fetchAllPoiData();
+    }
+  }, [initialDataLoaded]);
 
   // Fetch polygon data
   React.useEffect(() => {
     const fetchPolygonData = async () => {
       try {
+        setIsLoadingPolygon(true);
         const response = await axios.get<DesaData>(
           `${API_CONFIG.baseURL}/api/publik/profil-desa/1`,
           { headers: API_CONFIG.headers },
@@ -99,57 +226,6 @@ export default function PetaFasilitasDesa() {
       popupAnchor: [1, -34],
     });
   }, []);
-
-  // State untuk kategori yang aktif
-  const [activeCategories, setActiveCategories] = React.useState<{
-    sekolah: boolean;
-    ibadah: boolean;
-    kesehatan: boolean;
-    lainnya: boolean;
-  }>({
-    sekolah: true,
-    ibadah: true,
-    kesehatan: true,
-    lainnya: true,
-  });
-
-  // Toggle kategori
-  const toggleCategory = (kategori: keyof typeof activeCategories) => {
-    setActiveCategories((prev) => ({
-      ...prev,
-      [kategori]: !prev[kategori],
-    }));
-  };
-
-  // Get marker icon based on amenity type
-  const getMarkerIcon = (amenity: string) => {
-    let iconColor = "";
-
-    switch (amenity) {
-      case "school":
-        iconColor = "green";
-        break;
-      case "place_of_worship":
-        iconColor = "blue";
-        break;
-      case "hospital":
-      case "clinic":
-        iconColor = "red";
-        break;
-      default:
-        iconColor = "orange";
-    }
-
-    return new L.Icon({
-      iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${iconColor}.png`,
-      shadowUrl:
-        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
-    });
-  };
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -201,99 +277,110 @@ export default function PetaFasilitasDesa() {
         <div className="mb-6 flex flex-wrap justify-center gap-2 sm:mb-8 sm:gap-4">
           <button
             onClick={() => toggleCategory("sekolah")}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.sekolah ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 sm:px-4 sm:py-2 sm:text-base ${
+              activeCategories.sekolah
+                ? "scale-105 transform bg-green-500 text-white shadow-lg"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
           >
             <div className="h-2 w-2 rounded-full bg-green-600 sm:h-3 sm:w-3"></div>
             Sekolah
           </button>
           <button
             onClick={() => toggleCategory("ibadah")}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.ibadah ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 sm:px-4 sm:py-2 sm:text-base ${
+              activeCategories.ibadah
+                ? "scale-105 transform bg-blue-500 text-white shadow-lg"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
           >
             <div className="h-2 w-2 rounded-full bg-blue-600 sm:h-3 sm:w-3"></div>
             Tempat Ibadah
           </button>
           <button
             onClick={() => toggleCategory("kesehatan")}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.kesehatan ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 sm:px-4 sm:py-2 sm:text-base ${
+              activeCategories.kesehatan
+                ? "scale-105 transform bg-red-500 text-white shadow-lg"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
           >
             <div className="h-2 w-2 rounded-full bg-red-600 sm:h-3 sm:w-3"></div>
             Kesehatan
           </button>
           <button
             onClick={() => toggleCategory("lainnya")}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base ${activeCategories.lainnya ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 sm:px-4 sm:py-2 sm:text-base ${
+              activeCategories.lainnya
+                ? "scale-105 transform bg-orange-500 text-white shadow-lg"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
           >
             <div className="h-2 w-2 rounded-full bg-orange-600 sm:h-3 sm:w-3"></div>
             Fasilitas Lainnya
           </button>
         </div>
 
+        {/* Info jumlah POI yang ditampilkan */}
+        <div className="mb-4 text-center">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Menampilkan {filteredPoiData.length} dari {allPoiData.length}{" "}
+            fasilitas
+          </p>
+        </div>
+
         {/* Peta */}
-        <div className="z-0 mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:mb-8 dark:border-gray-700 dark:bg-gray-800">
+        <div className="z-0 mx-auto mb-6 max-w-4xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:mb-8 dark:border-gray-700 dark:bg-gray-800">
           <div className="z-0 h-[400px] w-full sm:h-[500px] md:h-[600px]">
-            {isLoadingPoi || isLoadingPolygon ? (
-              <div className="h-full w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-            ) : (
-              <MapContainer
-                center={[-6.9175, 107.5019]}
-                zoom={14}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {polygonData.length > 0 && (
-                  <Polygon
-                    positions={polygonData}
-                    pathOptions={{
-                      color: "#3b82f6",
-                      fillColor: "#60a5fa",
-                      fillOpacity: 0.3,
-                      weight: 2,
-                    }}
-                  >
-                    <Popup>
-                      <div className="text-center">
-                        <h3 className="mb-1 text-lg font-bold text-blue-600">
-                          {desaConfig?.nama_desa}
-                        </h3>
-                        <div className="mb-2 h-0.5 w-full bg-blue-200"></div>
-                        <p className="text-sm text-gray-600">
-                          <span className="font-semibold">Alamat:</span>
-                          <br /> {desaConfig?.alamat_desa}
-                        </p>
-                      </div>
-                    </Popup>
-                  </Polygon>
-                )}
-                {poiData.map((feature, index) => {
+            <MapContainer
+              center={[-6.9175, 107.5019]}
+              zoom={14}
+              style={{ height: "100%", width: "100%" }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {polygonData.length > 0 && (
+                <Polygon
+                  positions={polygonData}
+                  pathOptions={{
+                    color: "#3b82f6",
+                    fillColor: "#60a5fa",
+                    fillOpacity: 0.3,
+                    weight: 2,
+                  }}
+                >
+                  <Popup>
+                    <div className="text-center">
+                      <h3 className="mb-1 text-lg font-bold text-blue-600">
+                        {desaConfig?.nama_desa}
+                      </h3>
+                      <div className="mb-2 h-0.5 w-full bg-blue-200"></div>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">Alamat:</span>
+                        <br /> {desaConfig?.alamat_desa}
+                      </p>
+                    </div>
+                  </Popup>
+                </Polygon>
+              )}
+              {isLoadingPoi || isLoadingPolygon ? (
+                <div className="absolute top-1/2 left-1/2 z-[1000] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-lg bg-white/90 px-4 py-3 shadow-lg backdrop-blur-sm dark:bg-gray-800/90">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600"></div>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Memuat data...
+                  </span>
+                </div>
+              ) : (
+                filteredPoiData.map((feature, index) => {
                   const [longitude, latitude] = feature.geometry.coordinates;
                   const { name, tags } = feature.properties;
                   const amenity = tags.amenity;
 
-                  // Skip if category is not active
-                  if (
-                    (amenity === "school" && !activeCategories.sekolah) ||
-                    (amenity === "place_of_worship" &&
-                      !activeCategories.ibadah) ||
-                    ((amenity === "hospital" || amenity === "clinic") &&
-                      !activeCategories.kesehatan) ||
-                    (![
-                      "school",
-                      "place_of_worship",
-                      "hospital",
-                      "clinic",
-                    ].includes(amenity) &&
-                      !activeCategories.lainnya)
-                  ) {
-                    return null;
-                  }
-
                   return (
                     <Marker
-                      key={index}
+                      key={`${longitude}-${latitude}-${name}-${index}`}
                       position={[latitude, longitude]}
                       icon={getMarkerIcon(amenity)}
                     >
@@ -307,13 +394,16 @@ export default function PetaFasilitasDesa() {
                             {tags["addr:housenumber"] &&
                               ` No. ${tags["addr:housenumber"]}`}
                           </p>
+                          <p className="mt-1 text-xs text-blue-600 capitalize dark:text-blue-400">
+                            {amenity.replace(/_/g, " ")}
+                          </p>
                         </div>
                       </Popup>
                     </Marker>
                   );
-                })}
-              </MapContainer>
-            )}
+                })
+              )}
+            </MapContainer>
           </div>
         </div>
       </div>
