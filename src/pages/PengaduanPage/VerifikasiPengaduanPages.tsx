@@ -9,7 +9,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { toast } from "sonner";
-import { Toaster } from "sonner";
 import { API_CONFIG } from "../../config/api";
 import {
   ChevronLeft,
@@ -283,7 +282,6 @@ export default function VerifikasiPengaduanPage() {
 
   return (
     <>
-      <Toaster richColors position="top-center" />
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

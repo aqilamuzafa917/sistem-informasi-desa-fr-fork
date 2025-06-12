@@ -2,7 +2,6 @@ import { LabelList } from "recharts";
 import * as React from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { Toaster } from "sonner";
 import {
   Bar,
   BarChart,
@@ -237,7 +236,6 @@ export default function InfografisAPBDesa() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <Toaster position="top-right" richColors />
         <NavbarDesa />
         <div className="container mx-auto space-y-8 px-4 py-8">
           <InfografisNav activeTab="apbdesa" />
@@ -337,7 +335,6 @@ export default function InfografisAPBDesa() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <Toaster position="top-right" richColors />
       <NavbarDesa />
       <div className="container mx-auto space-y-8 px-4 py-8">
         <InfografisNav activeTab="apbdesa" />

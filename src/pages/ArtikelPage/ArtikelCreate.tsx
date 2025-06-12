@@ -21,7 +21,6 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
 import { toast } from "sonner";
-import { Toaster } from "sonner";
 import { API_CONFIG } from "../../config/api";
 
 // Fix for default marker icon in Leaflet
@@ -464,7 +463,6 @@ export default function ArtikelCreate() {
 
   return (
     <SidebarProvider>
-      <Toaster richColors position="top-center" />
       <AppSidebar />
       <SidebarInset>
         <div className="min-h-screen bg-gray-50">

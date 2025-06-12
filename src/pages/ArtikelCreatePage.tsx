@@ -21,7 +21,6 @@ import L from "leaflet";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { toast } from "sonner";
-import { Toaster } from "sonner";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
@@ -234,7 +233,6 @@ export default function ArtikelCreatePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <Toaster richColors position="top-center" />
       <NavbarDesa />
 
       {/* Header */}

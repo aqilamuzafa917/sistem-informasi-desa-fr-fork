@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,7 +118,6 @@ export default function ConfigPages() {
 
   return (
     <SidebarProvider>
-      <Toaster position="top-right" richColors />
       <AppSidebar />
       <SidebarInset>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

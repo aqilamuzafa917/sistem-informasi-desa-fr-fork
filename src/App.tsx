@@ -1,5 +1,6 @@
 // import { DarkThemeToggle } from "flowbite-react";
 import { Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 import HomePage from "./pages/HomePage"; // Import the HomePage
 import LoginPage from "./pages/LoginPage"; // Import the LoginPage
 import DashboardPage from "./pages/DashboardPage"; // Import the DashboardPage
@@ -46,6 +47,7 @@ import BelanjaCreate from "./pages/InfografisPage/BelanjaCreate";
 export default function App() {
   return (
     <>
+      <Toaster position="top-right" richColors duration={5000} />
       <DynamicTitle />
       <DynamicFavicon />
       <DynamicManifest />
