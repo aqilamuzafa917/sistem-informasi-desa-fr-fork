@@ -4,13 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
 import { API_CONFIG } from "@/config/api";
 import { toast } from "sonner";
-import { Save, ArrowLeft, CheckCircle, CalendarIcon } from "lucide-react";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { Save, CheckCircle, CalendarIcon, ChevronLeft } from "lucide-react";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -235,30 +230,31 @@ const PendapatanCreate: React.FC = () => {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate("/pendapatan")}
-                className="rounded-lg p-2 transition-colors hover:bg-gray-100"
-              >
-                <ArrowLeft className="h-5 w-5 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">
-                  Tambah Pendapatan
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Infografis / Tambah Pendapatan
-                </p>
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex h-16 items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate("/pendapatan")}
+                    className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <div>
+                    <h1 className="text-xl font-semibold text-gray-900">
+                      Tambah Pendapatan
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                      Infografis / Tambah Pendapatan
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </header>
-        <main className="-mt-4 flex-1 overflow-auto p-4 md:p-6">
-          <div className="mx-auto max-w-7xl space-y-8">
+          <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="rounded-lg bg-white p-6 shadow-sm">
               {/* Form Header */}
               <div className="mb-8 rounded-lg bg-gradient-to-r from-green-600 to-indigo-600 px-8 py-6">
@@ -495,8 +491,8 @@ const PendapatanCreate: React.FC = () => {
                 </div>
               </form>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -1,19 +1,7 @@
 "use client";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Pie,
   PieChart,
@@ -391,424 +379,425 @@ export default function BelanjaPages() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  Infografis Desa
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Belanja Desa</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <Button
-            className="mr-4 ml-auto rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
-            onClick={() => navigate("/belanja/tambah")}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Tambah Belanja
-          </Button>
-        </header>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
-          {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-4 text-center text-red-700">
-              {error}
-            </div>
-          )}
-          {!error && apiData && (
-            <div className="mx-auto max-w-7xl space-y-8">
-              {/* Stats Cards */}
-              <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-                <StatCard
-                  title="Total Belanja"
-                  value={formatCurrency(totalBelanja)}
-                  icon={DollarSign}
-                  color="bg-gradient-to-r from-blue-500 to-blue-600"
-                />
-                <StatCard
-                  title="Belanja Barang/Jasa"
-                  value={formatCurrency(belanjaBarang)}
-                  icon={Building2}
-                  color="bg-gradient-to-r from-green-500 to-green-600"
-                />
-                <StatCard
-                  title="Belanja Modal"
-                  value={formatCurrency(belanjaModal)}
-                  icon={ArrowUpRight}
-                  color="bg-gradient-to-r from-purple-500 to-purple-600"
-                />
-                <StatCard
-                  title="Belanja Tak Terduga"
-                  value={formatCurrency(belanjaTakTerduga)}
-                  icon={DollarSign}
-                  color="bg-gradient-to-r from-orange-500 to-orange-600"
-                />
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+          {/* Header */}
+          <div className="border-b border-gray-200 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Belanja Desa
+                </h1>
+                <p className="mt-1 text-sm text-gray-600">
+                  Kelola data belanja desa
+                </p>
               </div>
+              <Button
+                onClick={() => navigate("/belanja/tambah")}
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
+              >
+                <Plus className="h-5 w-5" />
+                Tambah Belanja
+              </Button>
+            </div>
+          </div>
 
-              {/* Enhanced Charts */}
-              <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-                {/* Enhanced Pie Chart */}
-                <Card className="border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-2xl font-bold text-gray-900">
-                      Komposisi Belanja {apiData.tahun_anggaran}
-                    </CardTitle>
-                    <p className="mt-2 text-gray-600">
-                      Distribusi jenis belanja desa dengan visualisasi
-                      interaktif
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="relative h-96">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <defs>
-                            {Object.entries(COLORS.gradient).map(
-                              ([key, colors]) => (
-                                <linearGradient
-                                  key={key}
-                                  id={`gradient-${key}`}
-                                  x1="0%"
-                                  y1="0%"
-                                  x2="100%"
-                                  y2="100%"
-                                >
-                                  <stop offset="0%" stopColor={colors[0]} />
-                                  <stop offset="100%" stopColor={colors[1]} />
-                                </linearGradient>
-                              ),
-                            )}
-                          </defs>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={120}
-                            innerRadius={60}
-                            dataKey="value"
-                            activeIndex={activeIndex}
-                            activeShape={renderActiveShape}
-                            onMouseEnter={(_, index) => setActiveIndex(index)}
-                            className="transition-all duration-300"
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={`url(#gradient-${entry.gradientKey})`}
-                                className="transition-opacity duration-200 hover:opacity-80"
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<CustomTooltip />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+          <div className="p-6">
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 p-4 text-center text-red-700">
+                {error}
+              </div>
+            )}
+            {!error && apiData && (
+              <div className="mx-auto max-w-7xl space-y-8">
+                {/* Stats Cards */}
+                <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+                  <StatCard
+                    title="Total Belanja"
+                    value={formatCurrency(totalBelanja)}
+                    icon={DollarSign}
+                    color="bg-gradient-to-r from-blue-500 to-blue-600"
+                  />
+                  <StatCard
+                    title="Belanja Barang/Jasa"
+                    value={formatCurrency(belanjaBarang)}
+                    icon={Building2}
+                    color="bg-gradient-to-r from-green-500 to-green-600"
+                  />
+                  <StatCard
+                    title="Belanja Modal"
+                    value={formatCurrency(belanjaModal)}
+                    icon={ArrowUpRight}
+                    color="bg-gradient-to-r from-purple-500 to-purple-600"
+                  />
+                  <StatCard
+                    title="Belanja Tak Terduga"
+                    value={formatCurrency(belanjaTakTerduga)}
+                    icon={DollarSign}
+                    color="bg-gradient-to-r from-orange-500 to-orange-600"
+                  />
+                </div>
 
-                    {/* Enhanced Legend */}
-                    <div className="mt-6 space-y-4">
-                      {chartData.map((item, index) => (
-                        <div
-                          key={index}
-                          className={`flex cursor-pointer items-center justify-between rounded-xl p-4 transition-all duration-300 ${
-                            activeIndex === index
-                              ? "scale-105 bg-gradient-to-r from-blue-50 to-green-50 shadow-md"
-                              : "bg-gray-50 hover:bg-gray-100"
-                          }`}
-                          onMouseEnter={() => setActiveIndex(index)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="h-4 w-4 rounded-full shadow-sm"
-                              style={{ backgroundColor: item.fill }}
-                            />
-                            <span className="font-medium text-gray-800">
-                              {item.name}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900">
-                              {formatCurrency(item.value)}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {item.percentage}%
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Enhanced Bar Chart */}
-                <Card className="border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-2xl font-bold text-gray-900">
-                      Tren Belanja 3 Tahun Terakhir
-                    </CardTitle>
-                    <p className="mt-2 text-gray-600">
-                      Perkembangan belanja dari berbagai jenis dengan animasi
-                      interaktif
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-96">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={historicalData}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <defs>
-                            <linearGradient
-                              id="gradient-barang"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
+                {/* Enhanced Charts */}
+                <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+                  {/* Enhanced Pie Chart */}
+                  <Card className="border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-2xl font-bold text-gray-900">
+                        Komposisi Belanja {apiData.tahun_anggaran}
+                      </CardTitle>
+                      <p className="mt-2 text-gray-600">
+                        Distribusi jenis belanja desa dengan visualisasi
+                        interaktif
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="relative h-96">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <defs>
+                              {Object.entries(COLORS.gradient).map(
+                                ([key, colors]) => (
+                                  <linearGradient
+                                    key={key}
+                                    id={`gradient-${key}`}
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="100%"
+                                    y2="100%"
+                                  >
+                                    <stop offset="0%" stopColor={colors[0]} />
+                                    <stop offset="100%" stopColor={colors[1]} />
+                                  </linearGradient>
+                                ),
+                              )}
+                            </defs>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={120}
+                              innerRadius={60}
+                              dataKey="value"
+                              activeIndex={activeIndex}
+                              activeShape={renderActiveShape}
+                              onMouseEnter={(_, index) => setActiveIndex(index)}
+                              className="transition-all duration-300"
                             >
-                              <stop
-                                offset="0%"
-                                stopColor="#3b82f6"
-                                stopOpacity={0.9}
-                              />
-                              <stop
-                                offset="100%"
-                                stopColor="#1d4ed8"
-                                stopOpacity={0.7}
-                              />
-                            </linearGradient>
-                            <linearGradient
-                              id="gradient-modal"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="0%"
-                                stopColor="#10b981"
-                                stopOpacity={0.9}
-                              />
-                              <stop
-                                offset="100%"
-                                stopColor="#059669"
-                                stopOpacity={0.7}
-                              />
-                            </linearGradient>
-                            <linearGradient
-                              id="gradient-takTerduga"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="0%"
-                                stopColor="#f59e0b"
-                                stopOpacity={0.9}
-                              />
-                              <stop
-                                offset="100%"
-                                stopColor="#d97706"
-                                stopOpacity={0.7}
-                              />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#e5e7eb"
-                            className="opacity-30"
-                          />
-                          <XAxis
-                            dataKey="year"
-                            stroke="#6b7280"
-                            fontSize={12}
-                            tick={{ fill: "#6b7280" }}
-                          />
-                          <YAxis
-                            stroke="#6b7280"
-                            fontSize={12}
-                            tickFormatter={(value) =>
-                              `${(value / 1e9).toFixed(1)}M`
-                            }
-                            tick={{ fill: "#6b7280" }}
-                          />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Legend
-                            wrapperStyle={{ paddingTop: "20px" }}
-                            iconType="circle"
-                          />
-                          <Bar
-                            dataKey="barang"
-                            name="Belanja Barang/Jasa"
-                            fill="url(#gradient-barang)"
-                            radius={[4, 4, 0, 0]}
-                            className="transition-all duration-300 hover:opacity-80"
-                          />
-                          <Bar
-                            dataKey="modal"
-                            name="Belanja Modal"
-                            fill="url(#gradient-modal)"
-                            radius={[4, 4, 0, 0]}
-                            className="transition-all duration-300 hover:opacity-80"
-                          />
-                          <Bar
-                            dataKey="takTerduga"
-                            name="Belanja Tak Terduga"
-                            fill="url(#gradient-takTerduga)"
-                            radius={[4, 4, 0, 0]}
-                            className="transition-all duration-300 hover:opacity-80"
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                              {chartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={`url(#gradient-${entry.gradientKey})`}
+                                  className="transition-opacity duration-200 hover:opacity-80"
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
 
-                    {/* Enhanced Summary Cards */}
-                    <div className="mt-6 grid grid-cols-1 gap-4">
-                      {historicalData.map((item, index) => {
-                        const total =
-                          item.barang + item.modal + item.takTerduga;
-
-                        return (
+                      {/* Enhanced Legend */}
+                      <div className="mt-6 space-y-4">
+                        {chartData.map((item, index) => (
                           <div
                             key={index}
-                            className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-green-50 p-4 transition-all duration-300 hover:shadow-md"
+                            className={`flex cursor-pointer items-center justify-between rounded-xl p-4 transition-all duration-300 ${
+                              activeIndex === index
+                                ? "scale-105 bg-gradient-to-r from-blue-50 to-green-50 shadow-md"
+                                : "bg-gray-50 hover:bg-gray-100"
+                            }`}
+                            onMouseEnter={() => setActiveIndex(index)}
                           >
                             <div className="flex items-center gap-3">
+                              <div
+                                className="h-4 w-4 rounded-full shadow-sm"
+                                style={{ backgroundColor: item.fill }}
+                              />
                               <span className="font-medium text-gray-800">
-                                Total Belanja {item.year}
+                                {item.name}
                               </span>
                             </div>
                             <div className="text-right">
                               <p className="font-bold text-gray-900">
-                                {formatCurrency(total)}
+                                {formatCurrency(item.value)}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {item.percentage}%
                               </p>
                             </div>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Enhanced Bar Chart */}
+                  <Card className="border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-2xl font-bold text-gray-900">
+                        Tren Belanja 3 Tahun Terakhir
+                      </CardTitle>
+                      <p className="mt-2 text-gray-600">
+                        Perkembangan belanja dari berbagai jenis dengan animasi
+                        interaktif
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-96">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={historicalData}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <defs>
+                              <linearGradient
+                                id="gradient-barang"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                              >
+                                <stop
+                                  offset="0%"
+                                  stopColor="#3b82f6"
+                                  stopOpacity={0.9}
+                                />
+                                <stop
+                                  offset="100%"
+                                  stopColor="#1d4ed8"
+                                  stopOpacity={0.7}
+                                />
+                              </linearGradient>
+                              <linearGradient
+                                id="gradient-modal"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                              >
+                                <stop
+                                  offset="0%"
+                                  stopColor="#10b981"
+                                  stopOpacity={0.9}
+                                />
+                                <stop
+                                  offset="100%"
+                                  stopColor="#059669"
+                                  stopOpacity={0.7}
+                                />
+                              </linearGradient>
+                              <linearGradient
+                                id="gradient-takTerduga"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                              >
+                                <stop
+                                  offset="0%"
+                                  stopColor="#f59e0b"
+                                  stopOpacity={0.9}
+                                />
+                                <stop
+                                  offset="100%"
+                                  stopColor="#d97706"
+                                  stopOpacity={0.7}
+                                />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#e5e7eb"
+                              className="opacity-30"
+                            />
+                            <XAxis
+                              dataKey="year"
+                              stroke="#6b7280"
+                              fontSize={12}
+                              tick={{ fill: "#6b7280" }}
+                            />
+                            <YAxis
+                              stroke="#6b7280"
+                              fontSize={12}
+                              tickFormatter={(value) =>
+                                `${(value / 1e9).toFixed(1)}M`
+                              }
+                              tick={{ fill: "#6b7280" }}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend
+                              wrapperStyle={{ paddingTop: "20px" }}
+                              iconType="circle"
+                            />
+                            <Bar
+                              dataKey="barang"
+                              name="Belanja Barang/Jasa"
+                              fill="url(#gradient-barang)"
+                              radius={[4, 4, 0, 0]}
+                              className="transition-all duration-300 hover:opacity-80"
+                            />
+                            <Bar
+                              dataKey="modal"
+                              name="Belanja Modal"
+                              fill="url(#gradient-modal)"
+                              radius={[4, 4, 0, 0]}
+                              className="transition-all duration-300 hover:opacity-80"
+                            />
+                            <Bar
+                              dataKey="takTerduga"
+                              name="Belanja Tak Terduga"
+                              fill="url(#gradient-takTerduga)"
+                              radius={[4, 4, 0, 0]}
+                              className="transition-all duration-300 hover:opacity-80"
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Enhanced Summary Cards */}
+                      <div className="mt-6 grid grid-cols-1 gap-4">
+                        {historicalData.map((item, index) => {
+                          const total =
+                            item.barang + item.modal + item.takTerduga;
+
+                          return (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-green-50 p-4 transition-all duration-300 hover:shadow-md"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium text-gray-800">
+                                  Total Belanja {item.year}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-gray-900">
+                                  {formatCurrency(total)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Enhanced Area Chart for Trend Analysis */}
+                <Card className="border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-2xl font-bold text-gray-900">
+                          Tabel Detail Belanja Tahun {historicalData[0]?.year}
+                        </CardTitle>
+                        <p className="mt-2 text-gray-600">
+                          Rincian belanja desa tahun {historicalData[0]?.year}{" "}
+                          dengan breakdown setiap jenis belanja
+                        </p>
+                      </div>
+                      <Button
+                        className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
+                        onClick={() => navigate("/belanja/detail")}
+                      >
+                        Detail Belanja
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-gradient-to-r from-blue-50 to-blue-100">
+                            <th className="border-b border-gray-200 px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                              Jenis Belanja
+                            </th>
+                            <th className="border-b border-gray-200 px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                              Jumlah
+                            </th>
+                            <th className="border-b border-gray-200 px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                              Persentase
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historicalData.length > 0 &&
+                            (() => {
+                              const latestData = historicalData[0];
+                              const total =
+                                latestData.barang +
+                                latestData.modal +
+                                latestData.takTerduga;
+
+                              const rows = [
+                                {
+                                  name: "Belanja Barang/Jasa",
+                                  value: latestData.barang,
+                                  color: "from-blue-500 to-blue-600",
+                                },
+                                {
+                                  name: "Belanja Modal",
+                                  value: latestData.modal,
+                                  color: "from-green-500 to-green-600",
+                                },
+                                {
+                                  name: "Belanja Tak Terduga",
+                                  value: latestData.takTerduga,
+                                  color: "from-orange-500 to-orange-600",
+                                },
+                              ];
+
+                              return (
+                                <>
+                                  {rows.map((row, index) => (
+                                    <tr
+                                      key={index}
+                                      className="transition-colors hover:bg-gray-50"
+                                    >
+                                      <td className="border-b border-gray-200 px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                          <div
+                                            className={`h-3 w-3 rounded-full bg-gradient-to-r ${row.color}`}
+                                          />
+                                          <span className="text-sm font-medium text-gray-900">
+                                            {row.name}
+                                          </span>
+                                        </div>
+                                      </td>
+                                      <td className="border-b border-gray-200 px-6 py-4 text-sm font-semibold text-gray-900">
+                                        {formatCurrency(row.value)}
+                                      </td>
+                                      <td className="border-b border-gray-200 px-6 py-4 text-sm text-gray-600">
+                                        {((row.value / total) * 100).toFixed(1)}
+                                        %
+                                      </td>
+                                    </tr>
+                                  ))}
+                                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                                    <td className="border-b border-gray-200 px-6 py-4">
+                                      <span className="text-sm font-bold text-gray-900">
+                                        Total Belanja
+                                      </span>
+                                    </td>
+                                    <td className="border-b border-gray-200 px-6 py-4 text-sm font-bold text-gray-900">
+                                      {formatCurrency(total)}
+                                    </td>
+                                    <td className="border-b border-gray-200 px-6 py-4 text-sm font-bold text-gray-900">
+                                      100%
+                                    </td>
+                                  </tr>
+                                </>
+                              );
+                            })()}
+                        </tbody>
+                      </table>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Enhanced Area Chart for Trend Analysis */}
-              <Card className="border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-2xl font-bold text-gray-900">
-                        Tabel Detail Belanja Tahun {historicalData[0]?.year}
-                      </CardTitle>
-                      <p className="mt-2 text-gray-600">
-                        Rincian belanja desa tahun {historicalData[0]?.year}{" "}
-                        dengan breakdown setiap jenis belanja
-                      </p>
-                    </div>
-                    <Button
-                      className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
-                      onClick={() => navigate("/belanja/detail")}
-                    >
-                      Detail Belanja
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-blue-50 to-blue-100">
-                          <th className="border-b border-gray-200 px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                            Jenis Belanja
-                          </th>
-                          <th className="border-b border-gray-200 px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                            Jumlah
-                          </th>
-                          <th className="border-b border-gray-200 px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                            Persentase
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historicalData.length > 0 &&
-                          (() => {
-                            const latestData = historicalData[0];
-                            const total =
-                              latestData.barang +
-                              latestData.modal +
-                              latestData.takTerduga;
-
-                            const rows = [
-                              {
-                                name: "Belanja Barang/Jasa",
-                                value: latestData.barang,
-                                color: "from-blue-500 to-blue-600",
-                              },
-                              {
-                                name: "Belanja Modal",
-                                value: latestData.modal,
-                                color: "from-green-500 to-green-600",
-                              },
-                              {
-                                name: "Belanja Tak Terduga",
-                                value: latestData.takTerduga,
-                                color: "from-orange-500 to-orange-600",
-                              },
-                            ];
-
-                            return (
-                              <>
-                                {rows.map((row, index) => (
-                                  <tr
-                                    key={index}
-                                    className="transition-colors hover:bg-gray-50"
-                                  >
-                                    <td className="border-b border-gray-200 px-6 py-4">
-                                      <div className="flex items-center gap-3">
-                                        <div
-                                          className={`h-3 w-3 rounded-full bg-gradient-to-r ${row.color}`}
-                                        />
-                                        <span className="text-sm font-medium text-gray-900">
-                                          {row.name}
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="border-b border-gray-200 px-6 py-4 text-sm font-semibold text-gray-900">
-                                      {formatCurrency(row.value)}
-                                    </td>
-                                    <td className="border-b border-gray-200 px-6 py-4 text-sm text-gray-600">
-                                      {((row.value / total) * 100).toFixed(1)}%
-                                    </td>
-                                  </tr>
-                                ))}
-                                <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
-                                  <td className="border-b border-gray-200 px-6 py-4">
-                                    <span className="text-sm font-bold text-gray-900">
-                                      Total Belanja
-                                    </span>
-                                  </td>
-                                  <td className="border-b border-gray-200 px-6 py-4 text-sm font-bold text-gray-900">
-                                    {formatCurrency(total)}
-                                  </td>
-                                  <td className="border-b border-gray-200 px-6 py-4 text-sm font-bold text-gray-900">
-                                    100%
-                                  </td>
-                                </tr>
-                              </>
-                            );
-                          })()}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

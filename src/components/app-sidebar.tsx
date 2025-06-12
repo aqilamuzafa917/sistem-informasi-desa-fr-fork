@@ -172,7 +172,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ],
     navConfigDesa: [
       {
-        title: "Config Web",
+        title: "Konfigurasi Website",
         url: "/configdesa",
         icon: Bolt,
         isActive: currentPath === "/configdesa",
