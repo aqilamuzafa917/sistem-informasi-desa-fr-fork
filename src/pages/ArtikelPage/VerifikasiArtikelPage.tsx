@@ -358,7 +358,7 @@ export default function VerifikasiArtikelPage() {
                           </h3>
                         </div>
                         <div className="prose max-w-none">
-                          <div className="rounded-lg bg-gray-50 p-6 leading-relaxed whitespace-pre-wrap text-gray-700">
+                          <div className="rounded-lg bg-gray-50 p-6 leading-relaxed break-words whitespace-pre-wrap text-gray-700">
                             {artikel.isi_artikel}
                           </div>
                         </div>

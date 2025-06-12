@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapPin,
   Calendar,
@@ -7,6 +8,7 @@ import {
   Camera,
   Tag,
   X,
+  ChevronLeft,
 } from "lucide-react";
 import { Label, Select, Textarea } from "flowbite-react";
 import { Button } from "@/components/ui/button";
@@ -16,19 +18,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import dynamic from "next/dynamic";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
 import { toast } from "sonner";
 import { Toaster } from "sonner";
@@ -88,6 +78,7 @@ function LocationMarker({
 }
 
 export default function ArtikelCreate() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     penulis_artikel: "",
     judul_artikel: "",
@@ -476,120 +467,134 @@ export default function ArtikelCreate() {
       <Toaster richColors position="top-center" />
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  Artikel
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Buat Artikel</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="mx-auto max-w-7xl space-y-8">
-            {/* Header & Stepper */}
-            <div className="mb-8">
-              <div className="mb-4">
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Buat Artikel Baru
-                </h1>
-                <p className="mt-1 text-gray-600">
-                  Lengkapi informasi artikel dan lihat preview secara real-time
-                </p>
-              </div>
-              {/* Progress Steps */}
-              <div className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm">
-                {steps.map((step, index) => {
-                  const Icon = step.icon;
-                  const isActive = currentStep === step.id;
-                  const isCompleted = currentStep > step.id;
-                  return (
-                    <div key={step.id} className="flex items-center">
-                      <div
-                        className={`flex items-center gap-3 ${
-                          isActive
-                            ? "text-blue-600"
-                            : isCompleted
-                              ? "text-green-600"
-                              : "text-gray-400"
-                        }`}
-                      >
-                        <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                            isActive
-                              ? "border-blue-600 bg-blue-50"
-                              : isCompleted
-                                ? "border-green-600 bg-green-50"
-                                : "border-gray-300"
-                          }`}
-                        >
-                          <Icon size={20} />
-                        </div>
-                        <span className="font-medium">{step.title}</span>
-                      </div>
-                      {index < steps.length - 1 && (
-                        <div
-                          className={`mx-4 h-0.5 w-16 ${
-                            isCompleted ? "bg-green-600" : "bg-gray-300"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-8">
-              {/* Form Section */}
-              <form
-                onSubmit={handleSubmit}
-                className="rounded-lg bg-white p-6 shadow-sm"
-              >
-                <div className="space-y-6">{renderFormStep()}</div>
-                {/* Navigation Buttons */}
-                <div className="mt-6 flex justify-between border-t pt-6">
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex h-16 items-center justify-between">
+                <div className="flex items-center gap-4">
                   <button
-                    type="button"
-                    onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                    disabled={currentStep === 1}
-                    className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => navigate("/artikel")}
+                    className="rounded-lg p-2 transition-colors hover:bg-gray-100"
                   >
-                    Sebelumnya
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
-                  <div className="flex gap-3">
-                    {currentStep < 3 ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentStep(Math.min(3, currentStep + 1))
-                        }
-                        className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700"
-                      >
-                        Selanjutnya
-                      </button>
-                    ) : (
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isSubmitting ? "Mengirim..." : "Publikasikan Artikel"}
-                      </Button>
-                    )}
+                  <div>
+                    <h1 className="text-xl font-semibold text-gray-900">
+                      Buat Artikel Baru
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                      Lengkapi informasi artikel dan lihat preview secara
+                      real-time
+                    </p>
                   </div>
                 </div>
-              </form>
+              </div>
             </div>
           </div>
-        </main>
+          <main className="flex-1 overflow-auto p-4 md:p-6">
+            <div className="mx-auto max-w-7xl space-y-8">
+              {/* Header & Stepper */}
+              <div className="mb-8">
+                <div className="mb-4">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    Buat Artikel Baru
+                  </h1>
+                  <p className="mt-1 text-gray-600">
+                    Lengkapi informasi artikel dan lihat preview secara
+                    real-time
+                  </p>
+                </div>
+                {/* Progress Steps */}
+                <div className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm">
+                  {steps.map((step, index) => {
+                    const Icon = step.icon;
+                    const isActive = currentStep === step.id;
+                    const isCompleted = currentStep > step.id;
+                    return (
+                      <div key={step.id} className="flex items-center">
+                        <div
+                          className={`flex items-center gap-3 ${
+                            isActive
+                              ? "text-blue-600"
+                              : isCompleted
+                                ? "text-green-600"
+                                : "text-gray-400"
+                          }`}
+                        >
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
+                              isActive
+                                ? "border-blue-600 bg-blue-50"
+                                : isCompleted
+                                  ? "border-green-600 bg-green-50"
+                                  : "border-gray-300"
+                            }`}
+                          >
+                            <Icon size={20} />
+                          </div>
+                          <span className="font-medium">{step.title}</span>
+                        </div>
+                        {index < steps.length - 1 && (
+                          <div
+                            className={`mx-4 h-0.5 w-16 ${
+                              isCompleted ? "bg-green-600" : "bg-gray-300"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-8">
+                {/* Form Section */}
+                <form
+                  onSubmit={handleSubmit}
+                  className="rounded-lg bg-white p-6 shadow-sm"
+                >
+                  <div className="space-y-6">{renderFormStep()}</div>
+                  {/* Navigation Buttons */}
+                  <div className="mt-6 flex justify-between border-t pt-6">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentStep(Math.max(1, currentStep - 1))
+                      }
+                      disabled={currentStep === 1}
+                      className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Sebelumnya
+                    </button>
+                    <div className="flex gap-3">
+                      {currentStep < 3 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCurrentStep(Math.min(3, currentStep + 1))
+                          }
+                          className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700"
+                        >
+                          Selanjutnya
+                        </button>
+                      ) : (
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isSubmitting
+                            ? "Mengirim..."
+                            : "Publikasikan Artikel"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

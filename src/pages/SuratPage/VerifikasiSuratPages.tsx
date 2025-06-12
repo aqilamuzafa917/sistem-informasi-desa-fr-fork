@@ -16,11 +16,7 @@ import {
 } from "lucide-react";
 import { API_CONFIG } from "../../config/api";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 
 // Helper function to format date strings
@@ -480,7 +476,6 @@ export default function VerifikasiSuratPages() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <SidebarTrigger className="rounded-lg p-2 transition-colors hover:bg-gray-100" />
                   <Separator orientation="vertical" className="h-6" />
                   <button
                     onClick={() => navigate(-1)}

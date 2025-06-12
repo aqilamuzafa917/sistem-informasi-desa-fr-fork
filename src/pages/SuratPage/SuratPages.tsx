@@ -1,16 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -323,35 +313,29 @@ export default function SuratPages() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbPage>Surat</BreadcrumbPage>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
-          <div className="mx-auto max-w-7xl space-y-6">
-            {/* Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+          {/* Header */}
+          <div className="border-b border-gray-200 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900">
                   Manajemen Surat
                 </h1>
-                <p className="text-gray-600">
+                <p className="mt-1 text-sm text-gray-600">
                   Kelola dan pantau status surat keterangan
                 </p>
               </div>
-              <Button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none">
-                <Plus className="h-4 w-4" />
-                Buat Surat Baru
+              <Button
+                onClick={() => navigate("/surat/buat")}
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
+              >
+                <Plus className="h-5 w-5" />
+                Buat Surat
               </Button>
             </div>
+          </div>
 
+          <div className="p-6">
             {/* Stats Cards & Card Filter */}
             <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
               <StatCard

@@ -4,14 +4,6 @@ import HomePage from "./pages/HomePage"; // Import the HomePage
 import LoginPage from "./pages/LoginPage"; // Import the LoginPage
 import DashboardPage from "./pages/DashboardPage"; // Import the DashboardPage
 import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
-import PindahPages from "./pages/SuratPage/PindahPage";
-import DomisiliPages from "./pages/SuratPage/DomisiliPages";
-import KematianPages from "./pages/SuratPage/KematianPages";
-import UsahaPages from "./pages/SuratPage/UsahaPages";
-import TidakMampuPages from "./pages/SuratPage/TidakMampuPages";
-import KehilanganKtpPages from "./pages/SuratPage/KehilanganKtpPages";
-import KehilanganKkPages from "./pages/SuratPage/KehilanganKkPages";
-import UmumPages from "./pages/SuratPage/UmumPages";
 import ArtikelPages from "./pages/ArtikelPage/ArtikelPages";
 import PendapatanPages from "./pages/InfografisPage/PendapatanPages";
 import BelanjaPages from "./pages/InfografisPage/BelanjaPages";
@@ -20,8 +12,6 @@ import DataKTPPages from "./pages/PendudukPage/KtpPages";
 import DataKKPages from "./pages/PendudukPage/KkPages";
 import PengaduanPages from "./pages/PengaduanPage/PenganduanPages";
 import ProfilPages from "./pages/ProfilPage/ProfilPages";
-import KelahiranPages from "./pages/SuratPage/KelahiranPages";
-import KipPages from "./pages/SuratPage/KipPages";
 import SuratPages from "./pages/SuratPage/SuratPages";
 import VerifikasiSuratPages from "./pages/SuratPage/VerifikasiSuratPages";
 import ProfilDesa from "./pages/ProfilDesa";
@@ -36,7 +26,7 @@ import InfografisIDM from "./pages/InfografisIDM";
 import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
 import SuratCreate from "./pages/SuratPage/SuratCreate";
 import DetailKtpPages from "./pages/PendudukPage/DetailKtpPages";
-import TambahKtpPages from "./pages/PendudukPage/TambahKtpPages";
+import KtpCreate from "./pages/PendudukPage/KtpCreate";
 import ArtikelCreate from "./pages/ArtikelPage/ArtikelCreate";
 import VerifikasiArtikelPage from "./pages/ArtikelPage/VerifikasiArtikelPage";
 import ConfigPages from "./pages/ConfigPage/ConfigPages";
@@ -95,16 +85,6 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/surat" element={<SuratPages />} />
           <Route path="/surat/:id" element={<VerifikasiSuratPages />} />
-          <Route path="/skpindah" element={<PindahPages />} />
-          <Route path="/skdomisili" element={<DomisiliPages />} />
-          <Route path="/skkematian" element={<KematianPages />} />
-          <Route path="/skkelahiran" element={<KelahiranPages />} />
-          <Route path="/skusaha" element={<UsahaPages />} />
-          <Route path="/sktidakmampu" element={<TidakMampuPages />} />
-          <Route path="/sktmkip" element={<KipPages />} />
-          <Route path="/skkehilanganktp" element={<KehilanganKtpPages />} />
-          <Route path="/skkehilangankk" element={<KehilanganKkPages />} />
-          <Route path="/skumum" element={<UmumPages />} />
           <Route path="/suratcreate" element={<SuratCreate />} />
           <Route path="/profil" element={<ProfilPages />} />
           <Route path="/artikel" element={<ArtikelPages />} />
@@ -119,7 +99,7 @@ export default function App() {
           <Route path="/peta" element={<PetaPages />} />
           <Route path="/dataktp" element={<DataKTPPages />} />
           <Route path="/dataktp/:nik" element={<DetailKtpPages />} />
-          <Route path="dataktp/tambahktp" element={<TambahKtpPages />} />
+          <Route path="/dataktp/tambahktp" element={<KtpCreate />} />
           <Route path="/datakk" element={<DataKKPages />} />
           <Route path="/pengaduan" element={<PengaduanPages />} />
           <Route path="/pengaduan/:id" element={<VerifikasiPengaduanPage />} />

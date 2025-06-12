@@ -1,26 +1,11 @@
-// import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-// import { cn } from "@/lib/utils"; // cn is not used
 import { Button } from "@/components/ui/button";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { Pagination } from "flowbite-react";
 import {
   Search,
-  // ChevronsUpDown, // ChevronsUpDown is not used
   ChevronUp,
   ChevronDown,
   Eye,
@@ -30,6 +15,7 @@ import {
   Filter,
   AlertCircle,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
@@ -56,19 +42,6 @@ interface Penduduk {
   updated_at: string;
 }
 
-// interface PaginatedPendudukData { // Not used if API returns Penduduk[] directly
-//   current_page: number;
-//   data: Penduduk[];
-//   last_page?: number;
-//   total?: number;
-//   per_page?: number;
-// }
-
-// interface PendudukResponse { // Not used if API returns Penduduk[] directly
-//   status: string;
-//   data: PaginatedPendudukData;
-// }
-
 interface PendudukStatsResponse {
   total_penduduk: number;
   total_laki_laki: number;
@@ -87,7 +60,6 @@ export default function DataKTPPages() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  // const [totalPendudukCount, setTotalPendudukCount] = useState(0); // totalPendudukCount is obtained from stats
   const itemsPerPage = 10;
 
   // State for stats API
@@ -286,44 +258,30 @@ export default function DataKTPPages() {
     setCurrentPage(1);
   };
 
-  // const handleLogout = () => {
-  //   // Clear authentication token (e.g., from localStorage)
-  //   localStorage.removeItem("authToken");
-  //   // Redirect to login page
-  //   navigate("/");
-  // };
-
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  Penduduk Desa
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data KTP</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
-          <div className="mx-auto max-w-7xl space-y-6">
-            <div className="mb-3 flex justify-end">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+          {/* Header */}
+          <div className="border-b border-gray-200 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Data KTP</h1>
+                <p className="mt-1 text-sm text-gray-600">
+                  Kelola data KTP penduduk desa
+                </p>
+              </div>
               <Button
                 onClick={() => navigate("/dataktp/tambahktp")}
-                className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
               >
+                <Plus className="h-5 w-5" />
                 Tambah KTP
               </Button>
             </div>
+          </div>
+          <div className="p-6">
             <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="flex items-center rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
                 <div className="mr-4 rounded-full bg-blue-100 p-3">
