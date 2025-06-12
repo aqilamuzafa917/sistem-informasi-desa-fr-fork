@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -13,7 +13,13 @@ import {
 import { Label, Select, Textarea } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  Polygon,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import dynamic from "next/dynamic";
@@ -48,33 +54,64 @@ interface FormData {
   media_artikel: File[] | null;
 }
 
-// Dynamic import for MapContainer to avoid SSR issues
-const MapWithNoSSR = dynamic(() => Promise.resolve(MapContainer), {
-  ssr: false,
-});
-
-function LocationMarker({
-  onLocationSelect,
-  lat,
-  lng,
-}: {
+interface MapComponentProps {
   onLocationSelect: (lat: number, lng: number) => void;
   lat?: number | null;
   lng?: number | null;
-}) {
+  villagePolygon?: [number, number][];
+}
+
+function MapComponent({
+  onLocationSelect,
+  lat,
+  lng,
+  villagePolygon,
+}: MapComponentProps) {
   const [position, setPosition] = useState<L.LatLng | null>(
     lat && lng ? L.latLng(lat, lng) : null,
   );
 
   useMapEvents({
     click(e: L.LeafletMouseEvent) {
-      setPosition(e.latlng);
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
+      // Check if point is within village polygon if polygon exists
+      if (villagePolygon && villagePolygon.length > 0) {
+        const point = e.latlng;
+        const polygon = L.polygon(villagePolygon);
+        if (polygon.getBounds().contains(point)) {
+          setPosition(point);
+          onLocationSelect(point.lat, point.lng);
+        } else {
+          toast.error("Lokasi harus berada dalam batas desa");
+        }
+      } else {
+        setPosition(e.latlng);
+        onLocationSelect(e.latlng.lat, e.latlng.lng);
+      }
     },
   });
 
-  return position === null ? null : <Marker position={position} />;
+  return (
+    <>
+      {villagePolygon && villagePolygon.length > 0 && (
+        <Polygon
+          positions={villagePolygon}
+          pathOptions={{
+            color: "#3b82f6",
+            fillColor: "#60a5fa",
+            fillOpacity: 0.3,
+            weight: 2,
+          }}
+        />
+      )}
+      {position && <Marker position={position} />}
+    </>
+  );
 }
+
+// Dynamic import for MapContainer to avoid SSR issues
+const MapWithNoSSR = dynamic(() => Promise.resolve(MapContainer), {
+  ssr: false,
+});
 
 export default function ArtikelCreate() {
   const navigate = useNavigate();
@@ -95,6 +132,7 @@ export default function ArtikelCreate() {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [villagePolygon, setVillagePolygon] = useState<[number, number][]>([]);
 
   const categories = [
     "Berita",

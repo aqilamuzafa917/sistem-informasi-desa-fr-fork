@@ -40,6 +40,7 @@ import PendapatanCreate from "./pages/InfografisPage/PendapatanCreate";
 import PendapatanDetail from "./pages/InfografisPage/PendapatanDetail";
 import BelanjaDetail from "./pages/InfografisPage/BelanjaDetail";
 import BelanjaCreate from "./pages/InfografisPage/BelanjaCreate";
+import { HomePageProvider } from "./contexts/HomePageContext";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -71,7 +72,14 @@ export default function App() {
       </nav> */}
 
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/"
+          element={
+            <HomePageProvider>
+              <HomePage />
+            </HomePageProvider>
+          }
+        />
         <Route path="/profildesa" element={<ProfilDesa />} />
         <Route path="/pengajuansurat" element={<PengajuanSuratPage />} />
         <Route path="/cekstatussurat" element={<CekStatusSuratPage />} />

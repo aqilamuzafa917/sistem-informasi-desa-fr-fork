@@ -1,13 +1,13 @@
 import { useState } from "react";
 import axios from "axios";
-import { FileText, ArrowLeft } from "lucide-react";
+import { FileText, ArrowLeft, User, FileCheck } from "lucide-react";
+import { toast } from "sonner";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
 import { SuratPayload } from "@/types/surat";
 import PengajuanFormSteps from "@/components/pengajuan-surat/PengajuanFormSteps";
 import InfoCardsSection from "@/components/pengajuan-surat/InfoCardsSection";
-import { Button } from "@/components/ui/button";
 
 export default function PengajuanSuratPage() {
   const [jenisSurat, setJenisSurat] = useState("");
@@ -17,34 +17,35 @@ export default function PengajuanSuratPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleBack = () => {
-    setJenisSurat("");
-    setFormData({});
-    setUploadedFiles([]);
-    setCurrentStep(1);
-    setUploadError(null);
-  };
+  const steps = [
+    { number: 1, title: "Pilih Surat", icon: FileText },
+    { number: 2, title: "Isi Data", icon: User },
+    { number: 3, title: "Review Data", icon: FileCheck },
+  ];
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e:
+      | React.ChangeEvent<
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
+      | { target: { name: string; value: unknown } },
   ) => {
-    const { name, value, type } = e.target;
-    let processedValue: string | number | null = value;
+    const { name, value } = e.target;
+    let processedValue: string | number | null = value as string;
 
-    if (type === "number") {
-      processedValue = value === "" ? null : parseFloat(value);
-    } else if (type === "date" || name.includes("tanggal")) {
-      processedValue = value === "" ? null : value;
-    } else if (value === "") {
-      processedValue = null;
+    // Handle number inputs
+    if (e.target instanceof HTMLInputElement && e.target.type === "number") {
+      processedValue = value === "" ? "" : Number(value);
+    }
+    // Handle empty values - keep as empty string instead of null
+    else if (value === "") {
+      processedValue = "";
     }
 
-    setFormData({
-      ...formData,
+    setFormData((prevData) => ({
+      ...prevData,
       [name]: processedValue,
-    });
+    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,30 +113,46 @@ export default function PengajuanSuratPage() {
 
     // Add all form fields except data_pengikut_pindah
     Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && key !== "data_pengikut_pindah") {
+      if (
+        value !== null &&
+        value !== undefined &&
+        key !== "data_pengikut_pindah"
+      ) {
         formDataToSend.append(key, String(value));
       }
     });
 
     // Handle data_pengikut_pindah with Laravel/PHP style array format
-    if (formData.data_pengikut_pindah && Array.isArray(formData.data_pengikut_pindah)) {
+    if (
+      formData.data_pengikut_pindah &&
+      Array.isArray(formData.data_pengikut_pindah)
+    ) {
       // Remove duplicate NIKs
-      const uniquePengikut = (formData.data_pengikut_pindah as Array<{ nik: string }>)
-        .filter((pengikut, index, self) => 
-          index === self.findIndex(p => p.nik === pengikut.nik)
-        );
+      const uniquePengikut = (
+        formData.data_pengikut_pindah as Array<{ nik: string }>
+      ).filter(
+        (pengikut, index, self) =>
+          index === self.findIndex((p) => p.nik === pengikut.nik),
+      );
 
       // Validate all NIKs
-      const invalidNIK = uniquePengikut.find(pengikut => !validateNIK(pengikut.nik));
+      const invalidNIK = uniquePengikut.find(
+        (pengikut) => !validateNIK(pengikut.nik),
+      );
       if (invalidNIK) {
-        alert(`NIK pengikut tidak valid: ${invalidNIK.nik}. NIK harus 16 digit angka.`);
+        toast.error("NIK pengikut tidak valid", {
+          description: `NIK ${invalidNIK.nik} harus 16 digit angka.`,
+        });
         setIsLoading(false);
         return;
       }
 
       // Format pengikut data in Laravel/PHP style array format
       uniquePengikut.forEach((pengikut, index) => {
-        formDataToSend.append(`data_pengikut_pindah[${index}][nik]`, pengikut.nik);
+        formDataToSend.append(
+          `data_pengikut_pindah[${index}][nik]`,
+          pengikut.nik,
+        );
       });
     }
 
@@ -145,7 +162,7 @@ export default function PengajuanSuratPage() {
     });
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${API_CONFIG.baseURL}/api/publik/surat`,
         formDataToSend,
         {
@@ -153,9 +170,12 @@ export default function PengajuanSuratPage() {
             ...API_CONFIG.headers,
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
-      alert("Pengajuan surat berhasil dikirim!");
+      toast.success("Pengajuan surat berhasil dikirim!", {
+        description: "Silakan tunggu proses verifikasi dari petugas desa.",
+        duration: 5000,
+      });
       setJenisSurat("");
       setFormData({});
       setUploadedFiles([]);
@@ -164,15 +184,22 @@ export default function PengajuanSuratPage() {
       if (axios.isAxiosError(error) && error.response) {
         // Check for specific data_pengikut_pindah errors
         if (error.response.data.errors?.data_pengikut_pindah) {
-          alert(`Error pada data pengikut: ${error.response.data.errors.data_pengikut_pindah.join("\n")}`);
+          toast.error("Error pada data pengikut", {
+            description:
+              error.response.data.errors.data_pengikut_pindah.join("\n"),
+          });
         } else {
           const errorMessages = error.response.data.errors
             ? Object.values(error.response.data.errors).flat().join("\n")
             : error.response.data.message || "Terjadi kesalahan pada server.";
-          alert(`Gagal mengirim pengajuan:\n${errorMessages}`);
+          toast.error("Gagal mengirim pengajuan", {
+            description: errorMessages,
+          });
         }
       } else {
-        alert("Gagal mengirim pengajuan. Silakan coba lagi.");
+        toast.error("Gagal mengirim pengajuan", {
+          description: "Silakan coba lagi.",
+        });
       }
     } finally {
       setIsLoading(false);
@@ -180,38 +207,53 @@ export default function PengajuanSuratPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <NavbarDesa />
 
-      <main className="container mx-auto flex-grow px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-600">
-            <FileText className="h-8 w-8 text-white" />
+      {/* Header */}
+      <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="mx-auto max-w-4xl px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => (window.location.href = "/")}
+                className="rounded-lg p-2.5 transition-colors hover:bg-gray-100"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Pengajuan Surat Online
+                </h1>
+                <p className="text-base text-gray-600">
+                  Ajukan berbagai jenis surat keterangan dengan mudah dan cepat
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              {steps.map((step) => (
+                <div
+                  key={step.number}
+                  className={`flex items-center space-x-2 rounded-lg px-3 py-2 transition-all ${
+                    currentStep === step.number
+                      ? "bg-blue-100 text-blue-700"
+                      : currentStep > step.number
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  <step.icon className="h-5 w-5" />
+                  <span className="hidden text-sm font-medium sm:block">
+                    {step.title}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">
-            Pengajuan Surat Online
-          </h1>
-          <p className="mx-auto max-w-2xl text-gray-600">
-            Ajukan berbagai jenis surat keterangan dengan mudah dan cepat.
-            Proses pengajuan akan diselesaikan dalam 1-3 hari kerja.
-          </p>
         </div>
+      </div>
 
-        {/* Back Button - Only show when jenis surat is selected */}
-        {jenisSurat && (
-          <div className="mb-6">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Kembali ke Pilihan Surat
-            </Button>
-          </div>
-        )}
-
+      <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Main Form Steps */}
         <PengajuanFormSteps
           jenisSurat={jenisSurat}
@@ -230,7 +272,7 @@ export default function PengajuanSuratPage() {
 
         {/* Info Cards Section */}
         <InfoCardsSection />
-      </main>
+      </div>
 
       <FooterDesa />
     </div>

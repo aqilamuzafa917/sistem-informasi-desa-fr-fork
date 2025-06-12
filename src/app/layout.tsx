@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { DesaProvider } from "@/contexts/DesaContext";
+import { HomePageProvider } from "@/contexts/HomePageContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <DesaProvider>{children}</DesaProvider>
+        <DesaProvider>
+          <HomePageProvider>{children}</HomePageProvider>
+        </DesaProvider>
       </body>
     </html>
   );

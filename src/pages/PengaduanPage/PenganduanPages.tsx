@@ -1,11 +1,8 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Spinner } from "flowbite-react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Eye,
   Check,
@@ -357,8 +354,7 @@ export default function PengaduanPages() {
             <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
               {loading ? (
                 <div className="flex h-64 items-center justify-center">
-                  <Spinner size="xl" />
-                  <span className="ml-2 text-gray-600">Memuat data...</span>
+                  <Spinner size="xl" text="Memuat data..." />
                 </div>
               ) : error ? (
                 <div className="py-12 text-center">

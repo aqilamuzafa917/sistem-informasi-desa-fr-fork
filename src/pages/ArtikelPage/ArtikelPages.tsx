@@ -18,9 +18,9 @@ import {
   XCircle,
   // Edit,
   Trash2,
-  RefreshCw,
   AlertCircle,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 const jenisArtikelOptions = [
   {
@@ -477,8 +477,7 @@ export default function ArtikelPages() {
             <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
               {loading ? (
                 <div className="flex h-64 items-center justify-center">
-                  <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
-                  <span className="ml-2 text-gray-600">Memuat data...</span>
+                  <Spinner size="lg" text="Memuat data..." />
                 </div>
               ) : error ? (
                 <div className="py-12 text-center">

@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Button,
   Table,
-  Spinner,
   TableHead,
   TableBody,
   TableRow,
@@ -14,6 +13,7 @@ import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
 import { toast } from "sonner";
+import { usePenduduk } from "@/hooks/usePenduduk";
 import {
   HiDownload,
   HiSearch,
@@ -23,6 +23,7 @@ import {
   HiXCircle,
   HiExclamationCircle,
 } from "react-icons/hi";
+import { Spinner } from "@/components/ui/spinner";
 
 // Define the interface for the API response
 interface SuratApiResponse {
@@ -46,6 +47,13 @@ export default function CekStatusSuratPage() {
   const [downloadingPdf, setDownloadingPdf] = useState<number | null>(null);
   const [statusData, setStatusData] = useState<SuratApiResponse[] | null>(null);
   const [error, setError] = useState("");
+
+  // Add usePenduduk hook for NIK search
+  const {
+    penduduk: pendudukPemohon,
+    loading: loadingPemohon,
+    error: errorPemohon,
+  } = usePenduduk(nik);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNik(e.target.value);
@@ -316,6 +324,23 @@ export default function CekStatusSuratPage() {
                     <span>{error}</span>
                   </div>
                 )}
+                {pendudukPemohon?.nama && (
+                  <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+                    <HiCheckCircle className="h-4 w-4" />
+                    <span>Nama: {pendudukPemohon.nama}</span>
+                  </div>
+                )}
+                {loadingPemohon && (
+                  <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                    <Spinner size="sm" text="Memeriksa data penduduk..." />
+                  </div>
+                )}
+                {errorPemohon && (
+                  <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                    <HiXCircle className="h-4 w-4" />
+                    <span>{errorPemohon}</span>
+                  </div>
+                )}
               </div>
             </form>
           </div>
@@ -325,10 +350,7 @@ export default function CekStatusSuratPage() {
         {isLoading && (
           <Card className="border-0 bg-white shadow-lg dark:bg-gray-800">
             <div className="flex flex-col items-center justify-center py-16">
-              <Spinner size="xl" />
-              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-                Mencari data pengajuan surat...
-              </p>
+              <Spinner size="lg" text="Mencari data pengajuan surat..." />
             </div>
           </Card>
         )}
@@ -401,7 +423,7 @@ export default function CekStatusSuratPage() {
 
               {/* Mobile Card View */}
               <div className="space-y-4 sm:hidden">
-                {statusData.map((surat, index) => (
+                {statusData.map((surat) => (
                   <div
                     key={surat.id_surat}
                     className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
@@ -470,7 +492,7 @@ export default function CekStatusSuratPage() {
                           className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
                         >
                           {downloadingPdf === surat.id_surat ? (
-                            <Spinner size="xs" />
+                            <Spinner size="sm" />
                           ) : (
                             <>
                               <HiDownload className="h-3.5 w-3.5" />
@@ -488,24 +510,26 @@ export default function CekStatusSuratPage() {
               <div className="hidden overflow-x-auto rounded-lg border border-gray-200 sm:block dark:border-gray-700">
                 <Table hoverable className="min-w-full">
                   <TableHead className="bg-gray-50 dark:bg-gray-700">
-                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
-                      Nomor Surat
-                    </TableHeadCell>
-                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
-                      Jenis Surat
-                    </TableHeadCell>
-                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
-                      Tanggal
-                    </TableHeadCell>
-                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
-                      Status
-                    </TableHeadCell>
-                    <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
-                      Catatan
-                    </TableHeadCell>
-                    <TableHeadCell className="px-4 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
-                      Aksi
-                    </TableHeadCell>
+                    <TableRow>
+                      <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
+                        Nomor Surat
+                      </TableHeadCell>
+                      <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
+                        Jenis Surat
+                      </TableHeadCell>
+                      <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
+                        Tanggal
+                      </TableHeadCell>
+                      <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
+                        Status
+                      </TableHeadCell>
+                      <TableHeadCell className="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
+                        Catatan
+                      </TableHeadCell>
+                      <TableHeadCell className="px-4 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase dark:text-gray-400">
+                        Aksi
+                      </TableHeadCell>
+                    </TableRow>
                   </TableHead>
                   <TableBody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                     {statusData.map((surat, index) => (
@@ -572,7 +596,7 @@ export default function CekStatusSuratPage() {
                               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
                             >
                               {downloadingPdf === surat.id_surat ? (
-                                <Spinner size="xs" />
+                                <Spinner size="sm" />
                               ) : (
                                 <>
                                   <HiDownload className="h-3.5 w-3.5" />

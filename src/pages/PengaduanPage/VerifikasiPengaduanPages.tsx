@@ -22,8 +22,8 @@ import {
   Eye,
   Trash2,
   Save,
-  RefreshCw,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 // Interface for pengaduan media
 interface MediaPengaduan {
@@ -318,10 +318,7 @@ export default function VerifikasiPengaduanPage() {
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
               {loading ? (
                 <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <RefreshCw className="h-5 w-5 animate-spin" />
-                    <span>Loading...</span>
-                  </div>
+                  <Spinner size="lg" text="Memuat data..." />
                 </div>
               ) : !pengaduan ? (
                 <div className="flex h-[calc(100vh-4rem)] items-center justify-center">

@@ -18,6 +18,7 @@ import { API_CONFIG } from "../../config/api";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -422,13 +423,13 @@ export default function VerifikasiSuratPages() {
           },
         },
       );
-      alert("Surat berhasil diverifikasi");
+      toast.success("Surat berhasil diverifikasi");
       if (surat) {
         setSurat({ ...surat, status_surat: status, catatan });
       }
     } catch (error) {
       console.error("Gagal memverifikasi surat:", error);
-      alert("Gagal memverifikasi surat");
+      toast.error("Gagal memverifikasi surat");
     } finally {
       setSubmitting(false);
     }
