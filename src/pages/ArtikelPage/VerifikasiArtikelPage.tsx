@@ -269,7 +269,6 @@ export default function VerifikasiArtikelPage() {
 
   return (
     <>
-      <Toaster richColors position="top-center" />
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

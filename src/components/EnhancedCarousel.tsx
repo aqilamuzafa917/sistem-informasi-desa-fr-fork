@@ -55,21 +55,6 @@ const EnhancedCarousel = ({
     return () => clearInterval(interval);
   }, [isPlaying, isHovered, loading, nextSlide, articles.length]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") prevSlide();
-      if (e.key === "ArrowRight") nextSlide();
-      if (e.key === " ") {
-        e.preventDefault();
-        setIsPlaying(!isPlaying);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nextSlide, prevSlide, isPlaying]);
-
   // Reset slide when articles change
   useEffect(() => {
     setCurrentSlide(0);

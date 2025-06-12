@@ -14,7 +14,6 @@ import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
 import { toast } from "sonner";
-import { Toaster } from "sonner";
 import {
   HiDownload,
   HiSearch,
@@ -264,7 +263,6 @@ export default function CekStatusSuratPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-900">
-      <Toaster position="top-right" richColors />
       <NavbarDesa />
 
       <div className="container mx-auto flex-grow px-4 py-8">
