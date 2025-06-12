@@ -17,7 +17,6 @@ import {
   LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Toaster } from "sonner";
 import { API_CONFIG } from "../../config/api";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";

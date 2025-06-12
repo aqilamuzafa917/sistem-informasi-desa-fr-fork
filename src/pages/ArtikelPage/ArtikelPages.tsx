@@ -59,13 +59,6 @@ const statusOptions = [
     color: "bg-yellow-100 text-yellow-800",
     icon: Clock,
   },
-  {
-    value: "Ditolak",
-    label: "Ditolak",
-    count: 0,
-    color: "bg-red-100 text-red-800",
-    icon: XCircle,
-  },
 ];
 
 interface Artikel {
@@ -91,7 +84,7 @@ interface Artikel {
   // updated_at: string; // Not displayed in table
 }
 
-type StatusArtikelFilter = "Semua" | "Diterbitkan" | "Diajukan" | "Ditolak";
+type StatusArtikelFilter = "Semua" | "Diterbitkan" | "Diajukan";
 
 interface StatCardProps {
   title: string;
@@ -422,11 +415,7 @@ export default function ArtikelPages() {
                       ? totalArtikelCount
                       : status.value === "Diterbitkan"
                         ? artikelDiterbitkanCount
-                        : status.value === "Diajukan"
-                          ? artikelDiajukanCount
-                          : totalArtikelCount -
-                            artikelDiterbitkanCount -
-                            artikelDiajukanCount;
+                        : artikelDiajukanCount;
                   return (
                     <FilterButton
                       key={status.value}
