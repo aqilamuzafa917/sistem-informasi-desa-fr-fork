@@ -58,6 +58,19 @@ const LetterSpecificFormFields: React.FC<{
     error: errorPelapor,
   } = usePenduduk((formData.nik_penduduk_pelapor_lahir as string) || "");
 
+  // Add hooks for SK Kematian and SKTM KIP NIK fields
+  const {
+    penduduk: pendudukMeninggal,
+    loading: loadingMeninggal,
+    error: errorMeninggal,
+  } = usePenduduk((formData.nik_penduduk_meninggal as string) || "");
+
+  const {
+    penduduk: pendudukSiswa,
+    loading: loadingSiswa,
+    error: errorSiswa,
+  } = usePenduduk((formData.nik_penduduk_siswa as string) || "");
+
   switch (jenisSurat) {
     case "SK_PINDAH":
       return (
@@ -246,6 +259,10 @@ const LetterSpecificFormFields: React.FC<{
               onChange={handleInputChange}
               required
               placeholder="16 digit NIK almarhum/almarhumah"
+              showNama={true}
+              namaPenduduk={pendudukMeninggal?.nama}
+              loadingNama={loadingMeninggal}
+              errorNama={errorMeninggal}
             />
             <FormField
               label="Tanggal Kematian"
@@ -622,6 +639,10 @@ const LetterSpecificFormFields: React.FC<{
               onChange={handleInputChange}
               required
               placeholder="16 digit NIK siswa"
+              showNama={true}
+              namaPenduduk={pendudukSiswa?.nama}
+              loadingNama={loadingSiswa}
+              errorNama={errorSiswa}
             />
             <FormField
               label="Nama Sekolah Siswa"
