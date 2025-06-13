@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { API_CONFIG } from "../../config/api";
-import { Spinner } from "flowbite-react";
+import { Spinner } from "@/components/ui/spinner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 interface DesaConfig {
@@ -138,7 +138,7 @@ export default function ConfigPages() {
             <div className="min-h-[100vh] flex-1 rounded-xl bg-transparent p-4 md:min-h-min">
               {isLoading ? (
                 <div className="flex h-40 items-center justify-center">
-                  <Spinner size="xl" />
+                  <Spinner size="xl" text="Memuat data..." />
                 </div>
               ) : (
                 <div className="flex flex-col gap-6">

@@ -15,11 +15,11 @@ import {
   XCircle,
   Download,
   AlertCircle,
-  RefreshCw,
 } from "lucide-react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
+import { Spinner } from "@/components/ui/spinner";
 
 const frameworks = [
   { value: "SK_KEHILANGAN_KTP", label: "SK Kehilangan KTP" },
@@ -433,8 +433,7 @@ export default function SuratPages() {
             <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
               {loading ? (
                 <div className="flex h-64 items-center justify-center">
-                  <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
-                  <span className="ml-2 text-gray-600">Memuat data...</span>
+                  <Spinner size="xl" text="Memuat data..." />
                 </div>
               ) : error ? (
                 <div className="py-12 text-center">

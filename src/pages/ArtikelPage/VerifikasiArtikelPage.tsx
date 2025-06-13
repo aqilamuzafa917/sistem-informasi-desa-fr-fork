@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { API_CONFIG } from "../../config/api";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polygon, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -150,6 +150,7 @@ export default function VerifikasiArtikelPage() {
   const [submitting, setSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [villagePolygon, setVillagePolygon] = useState<[number, number][]>([]);
 
   useEffect(() => {
     const fetchArtikel = async () => {
@@ -180,6 +181,25 @@ export default function VerifikasiArtikelPage() {
       fetchArtikel();
     }
   }, [id]);
+
+  // Fetch village polygon data
+  useEffect(() => {
+    const fetchVillagePolygon = async () => {
+      try {
+        const response = await axios.get<DesaData>(
+          `${API_CONFIG.baseURL}/api/publik/profil-desa/1`,
+          { headers: API_CONFIG.headers },
+        );
+        if (response.data.polygon_desa) {
+          setVillagePolygon(response.data.polygon_desa);
+        }
+      } catch (error) {
+        console.error("Error fetching village polygon:", error);
+      }
+    };
+
+    fetchVillagePolygon();
+  }, []);
 
   const handleVerifikasi = async () => {
     try {
@@ -431,19 +451,38 @@ export default function VerifikasiArtikelPage() {
                             Lokasi Kejadian
                           </h3>
                         </div>
-                        <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200">
+                        <div className="mt-6 h-[300px] w-full overflow-hidden rounded-lg border border-gray-200">
                           <MapContainer
                             center={[artikel.latitude, artikel.longitude]}
-                            zoom={15}
+                            zoom={14}
                             style={{ height: "100%", width: "100%" }}
                           >
                             <TileLayer
                               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             />
+                            {villagePolygon.length > 0 && (
+                              <Polygon
+                                positions={villagePolygon}
+                                pathOptions={{
+                                  color: "#3b82f6",
+                                  fillColor: "#60a5fa",
+                                  fillOpacity: 0.3,
+                                  weight: 2,
+                                }}
+                              />
+                            )}
                             <Marker
                               position={[artikel.latitude, artikel.longitude]}
-                            />
+                            >
+                              <Popup>
+                                <div className="text-center">
+                                  <h3 className="mb-1 text-lg font-bold text-blue-600">
+                                    {artikel.location_name}
+                                  </h3>
+                                </div>
+                              </Popup>
+                            </Marker>
                           </MapContainer>
                         </div>
                       </div>

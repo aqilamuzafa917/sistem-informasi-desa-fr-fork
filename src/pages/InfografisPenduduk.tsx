@@ -10,8 +10,8 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
-  RadialBarChart,
-  RadialBar,
+  BarChart,
+  Bar,
 } from "recharts";
 import * as React from "react";
 import {
@@ -132,6 +132,17 @@ export default function InfografisPenduduk() {
   const [stats, setStats] = React.useState<PendudukStats | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const { desaConfig } = useDesa();
+  const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
+
+  const handleMouseEnter = (state: { activeTooltipIndex?: number }) => {
+    if (state && state.activeTooltipIndex !== undefined) {
+      setActiveIndex(state.activeTooltipIndex);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setActiveIndex(null);
+  };
 
   React.useEffect(() => {
     const fetchStats = async () => {
@@ -740,34 +751,45 @@ export default function InfografisPenduduk() {
               Tingkat Pendidikan Penduduk
             </CardTitle>
             <CardDescription>
-              Visualisasi radial interaktif menunjukkan distribusi tingkat
-              pendidikan dengan persentase detail
+              Visualisasi distribusi tingkat pendidikan dengan breakdown jumlah
+              penduduk
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center gap-12 lg:flex-row">
               <div className="lg:w-1/2">
                 <ResponsiveContainer width="100%" height={400}>
-                  <RadialBarChart
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="20%"
-                    outerRadius="80%"
+                  <BarChart
                     data={chartDataPendidikan}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                   >
-                    <RadialBar
-                      dataKey="jumlah"
-                      cornerRadius={10}
-                      animationDuration={1500}
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="tingkat"
+                      tick={{ fontSize: 11, fill: "#64748b", fontWeight: 500 }}
+                      stroke="#94a3b8"
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                      interval={0}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                      stroke="#94a3b8"
+                      label={{
+                        value: "",
+                        angle: -90,
+                        position: "insideLeft",
+                      }}
                     />
                     <Tooltip
-                      content={({ active, payload }) => {
+                      content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
                             <div className="rounded-2xl border border-gray-200/50 bg-white/95 p-4 shadow-2xl backdrop-blur-sm">
                               <div className="text-lg font-bold text-slate-800">
-                                {data.tingkat}
+                                {label}
                               </div>
                               <div className="text-xl font-bold text-cyan-600">
                                 {data.jumlah.toLocaleString()} jiwa
@@ -781,34 +803,61 @@ export default function InfografisPenduduk() {
                         return null;
                       }}
                     />
-                  </RadialBarChart>
+                    <Bar
+                      dataKey="jumlah"
+                      radius={[4, 4, 0, 0]}
+                      animationDuration={1500}
+                      animationBegin={0}
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      {chartDataPendidikan.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.fill}
+                          fillOpacity={activeIndex === index ? 1 : 0.8}
+                          stroke={activeIndex === index ? entry.fill : "none"}
+                          strokeWidth={activeIndex === index ? 3 : 0}
+                          style={{
+                            filter:
+                              activeIndex === index
+                                ? "drop-shadow(0 8px 16px rgba(0,180,216,0.3))"
+                                : "none",
+                            transition: "all 0.3s ease",
+                          }}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
               <div className="space-y-4 lg:w-1/2">
-                {chartDataPendidikan.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white p-4 transition-all duration-300 hover:shadow-lg"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="h-6 w-6 rounded-full shadow-md"
-                        style={{ backgroundColor: item.fill }}
-                      ></div>
-                      <div>
-                        <span className="font-bold text-slate-800">
-                          {item.tingkat}
-                        </span>
-                        <div className="text-sm text-slate-600">
-                          {item.percentage}% dari total
+                {chartDataPendidikan
+                  .sort((a, b) => b.jumlah - a.jumlah) // Sort by highest value
+                  .map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white p-4 transition-all duration-300 hover:shadow-lg"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="h-6 w-6 rounded-full shadow-md"
+                          style={{ backgroundColor: item.fill }}
+                        ></div>
+                        <div>
+                          <span className="font-bold text-slate-800">
+                            {item.tingkat}
+                          </span>
+                          <div className="text-sm text-slate-600">
+                            {item.percentage}% dari total
+                          </div>
                         </div>
                       </div>
+                      <span className="text-xl font-black text-slate-800">
+                        {item.jumlah.toLocaleString()}
+                      </span>
                     </div>
-                    <span className="text-xl font-black text-slate-800">
-                      {item.jumlah.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           </CardContent>

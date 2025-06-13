@@ -4,6 +4,8 @@ import { SuratPayload } from "@/types/surat";
 import FormField from "./FormField";
 import FileUploadSection from "./FileUploadSection";
 import { letterTypes } from "@/constants/surat";
+import { usePenduduk } from "@/hooks/usePenduduk";
+import PengikutPindahField from "./PengikutPindahField";
 
 interface PengajuanFormStepsProps {
   jenisSurat: string;
@@ -37,6 +39,38 @@ const LetterSpecificFormFields: React.FC<{
   ) => void;
   formData: Partial<SuratPayload>;
 }> = ({ jenisSurat, handleInputChange, formData }) => {
+  // Add hooks for SK Kelahiran NIK fields
+  const {
+    penduduk: pendudukIbu,
+    loading: loadingIbu,
+    error: errorIbu,
+  } = usePenduduk((formData.nik_penduduk_ibu as string) || "");
+
+  const {
+    penduduk: pendudukAyah,
+    loading: loadingAyah,
+    error: errorAyah,
+  } = usePenduduk((formData.nik_penduduk_ayah as string) || "");
+
+  const {
+    penduduk: pendudukPelapor,
+    loading: loadingPelapor,
+    error: errorPelapor,
+  } = usePenduduk((formData.nik_penduduk_pelapor_lahir as string) || "");
+
+  // Add hooks for SK Kematian and SKTM KIP NIK fields
+  const {
+    penduduk: pendudukMeninggal,
+    loading: loadingMeninggal,
+    error: errorMeninggal,
+  } = usePenduduk((formData.nik_penduduk_meninggal as string) || "");
+
+  const {
+    penduduk: pendudukSiswa,
+    loading: loadingSiswa,
+    error: errorSiswa,
+  } = usePenduduk((formData.nik_penduduk_siswa as string) || "");
+
   switch (jenisSurat) {
     case "SK_PINDAH":
       return (
@@ -48,50 +82,71 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="Alamat Tujuan"
               name="alamat_tujuan"
+              value={formData.alamat_tujuan || ""}
               onChange={handleInputChange}
               required
               as="textarea"
               className="md:col-span-2"
+              placeholder="Jl. Merdeka No. 123, RT 01/RW 02"
             />
             <FormField
               label="RT Tujuan"
               name="rt_tujuan"
+              value={formData.rt_tujuan || ""}
               onChange={handleInputChange}
               required
+              type="number"
+              min="1"
+              max="999"
+              placeholder="001"
             />
             <FormField
               label="RW Tujuan"
               name="rw_tujuan"
+              value={formData.rw_tujuan || ""}
               onChange={handleInputChange}
               required
+              type="number"
+              min="1"
+              max="999"
+              placeholder="001"
             />
             <FormField
               label="Kelurahan/Desa Tujuan"
               name="kelurahan_desa_tujuan"
+              value={formData.kelurahan_desa_tujuan || ""}
               onChange={handleInputChange}
               required
+              placeholder="Kelurahan Merdeka"
             />
             <FormField
               label="Kecamatan Tujuan"
               name="kecamatan_tujuan"
+              value={formData.kecamatan_tujuan || ""}
               onChange={handleInputChange}
               required
+              placeholder="Kecamatan Jakarta Pusat"
             />
             <FormField
               label="Kabupaten/Kota Tujuan"
               name="kabupaten_kota_tujuan"
+              value={formData.kabupaten_kota_tujuan || ""}
               onChange={handleInputChange}
               required
+              placeholder="Kota Jakarta Pusat"
             />
             <FormField
               label="Provinsi Tujuan"
               name="provinsi_tujuan"
+              value={formData.provinsi_tujuan || ""}
               onChange={handleInputChange}
               required
+              placeholder="DKI Jakarta"
             />
             <FormField
               label="Alasan Pindah"
               name="alasan_pindah"
+              value={formData.alasan_pindah || ""}
               as="select"
               onChange={handleInputChange}
               required
@@ -108,6 +163,7 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="Klasifikasi Pindah"
               name="klasifikasi_pindah"
+              value={formData.klasifikasi_pindah || ""}
               as="select"
               onChange={handleInputChange}
               required
@@ -128,49 +184,41 @@ const LetterSpecificFormFields: React.FC<{
             <h4 className="mb-2 text-sm font-medium text-gray-700">
               Data Pengikut Pindah
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {(formData.data_pengikut_pindah || []).map(
                 (pengikut: { nik: string }, index: number) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <FormField
-                      label={`NIK Pengikut ${index + 1}`}
-                      name="data_pengikut_pindah"
-                      value={pengikut.nik}
-                      onChange={(e) => {
-                        const newPengikut = [
-                          ...(formData.data_pengikut_pindah || []),
-                        ];
-                        newPengikut[index] = { nik: e.target.value };
-                        handleInputChange({
-                          target: {
-                            name: "data_pengikut_pindah",
-                            value: newPengikut,
-                          },
-                        });
-                      }}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newPengikut = [
-                          ...(formData.data_pengikut_pindah || []),
-                        ];
-                        newPengikut.splice(index, 1);
-                        handleInputChange({
-                          target: {
-                            name: "data_pengikut_pindah",
-                            value: newPengikut,
-                          },
-                        });
-                      }}
-                      className="mt-6 rounded-md bg-red-100 p-2 text-red-600 hover:bg-red-200"
-                    >
-                      Hapus
-                    </button>
-                  </div>
+                  <PengikutPindahField
+                    key={index}
+                    pengikut={pengikut}
+                    index={index}
+                    onUpdate={(idx, nik) => {
+                      const newPengikut = [
+                        ...(formData.data_pengikut_pindah || []),
+                      ];
+                      newPengikut[idx] = { nik };
+                      handleInputChange({
+                        target: {
+                          name: "data_pengikut_pindah",
+                          value: newPengikut,
+                        },
+                      });
+                    }}
+                    onRemove={(idx) => {
+                      const newPengikut = [
+                        ...(formData.data_pengikut_pindah || []),
+                      ];
+                      newPengikut.splice(idx, 1);
+                      handleInputChange({
+                        target: {
+                          name: "data_pengikut_pindah",
+                          value: newPengikut,
+                        },
+                      });
+                    }}
+                  />
                 ),
               )}
+
               <button
                 type="button"
                 onClick={() => {
@@ -207,13 +255,20 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="NIK Penduduk Meninggal"
               name="nik_penduduk_meninggal"
+              value={formData.nik_penduduk_meninggal || ""}
               onChange={handleInputChange}
               required
+              placeholder="16 digit NIK almarhum/almarhumah"
+              showNama={true}
+              namaPenduduk={pendudukMeninggal?.nama}
+              loadingNama={loadingMeninggal}
+              errorNama={errorMeninggal}
             />
             <FormField
               label="Tanggal Kematian"
               name="tanggal_kematian"
               type="date"
+              value={formData.tanggal_kematian || ""}
               onChange={handleInputChange}
               required
             />
@@ -221,26 +276,33 @@ const LetterSpecificFormFields: React.FC<{
               label="Waktu Kematian"
               name="waktu_kematian"
               type="time"
+              value={formData.waktu_kematian || ""}
               onChange={handleInputChange}
               required
             />
             <FormField
               label="Tempat Kematian"
               name="tempat_kematian"
+              value={formData.tempat_kematian || ""}
               onChange={handleInputChange}
               required
+              placeholder="RSUD Kota, Rumah, Puskesmas"
             />
             <FormField
               label="Penyebab Kematian"
               name="penyebab_kematian"
+              value={formData.penyebab_kematian || ""}
               onChange={handleInputChange}
               required
+              placeholder="Sakit jantung, kecelakaan, usia lanjut"
             />
             <FormField
               label="Hubungan Pelapor Kematian"
               name="hubungan_pelapor_kematian"
+              value={formData.hubungan_pelapor_kematian || ""}
               onChange={handleInputChange}
               required
+              placeholder="Anak kandung, suami/istri, saudara"
             />
           </div>
         </div>
@@ -255,22 +317,26 @@ const LetterSpecificFormFields: React.FC<{
             </h3>
             <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
               <FormField
-                label="Nama Bayi"
+                label="Nama Lengkap Bayi"
                 name="nama_bayi"
+                value={formData.nama_bayi || ""}
                 onChange={handleInputChange}
                 required
+                placeholder="Nama lengkap sesuai yang diinginkan"
               />
               <FormField
                 label="Tempat Dilahirkan"
                 name="tempat_dilahirkan"
-                placeholder="Rumah Sakit/Klinik/Rumah"
+                placeholder="RSUD Kota, Rumah Bersalin, Puskesmas"
+                value={formData.tempat_dilahirkan || ""}
                 onChange={handleInputChange}
                 required
               />
               <FormField
                 label="Tempat Kelahiran (Kota/Kab)"
                 name="tempat_kelahiran"
-                placeholder="Contoh: Jakarta"
+                placeholder="Jakarta Selatan"
+                value={formData.tempat_kelahiran || ""}
                 onChange={handleInputChange}
                 required
               />
@@ -278,6 +344,7 @@ const LetterSpecificFormFields: React.FC<{
                 label="Tanggal Lahir Bayi"
                 name="tanggal_lahir_bayi"
                 type="date"
+                value={formData.tanggal_lahir_bayi || ""}
                 onChange={handleInputChange}
                 required
               />
@@ -285,12 +352,14 @@ const LetterSpecificFormFields: React.FC<{
                 label="Waktu Lahir Bayi"
                 name="waktu_lahir_bayi"
                 type="time"
+                value={formData.waktu_lahir_bayi || ""}
                 onChange={handleInputChange}
                 required
               />
               <FormField
                 label="Jenis Kelamin Bayi"
                 name="jenis_kelamin_bayi"
+                value={formData.jenis_kelamin_bayi || ""}
                 as="select"
                 onChange={handleInputChange}
                 required
@@ -302,6 +371,7 @@ const LetterSpecificFormFields: React.FC<{
               <FormField
                 label="Jenis Kelahiran"
                 name="jenis_kelahiran"
+                value={formData.jenis_kelahiran || ""}
                 as="select"
                 onChange={handleInputChange}
                 required
@@ -317,12 +387,16 @@ const LetterSpecificFormFields: React.FC<{
                 label="Anak ke-"
                 name="anak_ke"
                 type="number"
+                value={formData.anak_ke || ""}
                 onChange={handleInputChange}
                 required
+                placeholder="1"
+                min="1"
               />
               <FormField
                 label="Penolong Kelahiran"
                 name="penolong_kelahiran"
+                value={formData.penolong_kelahiran || ""}
                 as="select"
                 onChange={handleInputChange}
                 required
@@ -337,15 +411,22 @@ const LetterSpecificFormFields: React.FC<{
                 label="Berat Bayi (kg)"
                 name="berat_bayi_kg"
                 type="number"
+                value={formData.berat_bayi_kg || ""}
                 onChange={handleInputChange}
-                placeholder="Contoh: 3.2"
+                placeholder="3.2"
+                min="0.1"
+                max="10"
+                step="0.1"
               />
               <FormField
                 label="Panjang Bayi (cm)"
                 name="panjang_bayi_cm"
                 type="number"
+                value={formData.panjang_bayi_cm || ""}
                 onChange={handleInputChange}
-                placeholder="Contoh: 50"
+                placeholder="50"
+                min="20"
+                max="100"
               />
             </div>
           </div>
@@ -358,26 +439,46 @@ const LetterSpecificFormFields: React.FC<{
               <FormField
                 label="NIK Ibu"
                 name="nik_penduduk_ibu"
+                value={formData.nik_penduduk_ibu || ""}
                 onChange={handleInputChange}
                 required
+                placeholder="16 digit NIK ibu kandung"
+                showNama={true}
+                namaPenduduk={pendudukIbu?.nama}
+                loadingNama={loadingIbu}
+                errorNama={errorIbu}
               />
               <FormField
                 label="NIK Ayah"
                 name="nik_penduduk_ayah"
+                value={formData.nik_penduduk_ayah || ""}
                 onChange={handleInputChange}
                 required
+                placeholder="16 digit NIK ayah kandung"
+                showNama={true}
+                namaPenduduk={pendudukAyah?.nama}
+                loadingNama={loadingAyah}
+                errorNama={errorAyah}
               />
               <FormField
                 label="NIK Pelapor Kelahiran"
                 name="nik_penduduk_pelapor_lahir"
+                value={formData.nik_penduduk_pelapor_lahir || ""}
                 onChange={handleInputChange}
                 required
+                placeholder="16 digit NIK pelapor"
+                showNama={true}
+                namaPenduduk={pendudukPelapor?.nama}
+                loadingNama={loadingPelapor}
+                errorNama={errorPelapor}
               />
               <FormField
                 label="Hubungan Pelapor dengan Bayi"
                 name="hubungan_pelapor_lahir"
+                value={formData.hubungan_pelapor_lahir || ""}
                 onChange={handleInputChange}
                 required
+                placeholder="Ibu kandung, ayah kandung, kakek/nenek"
               />
             </div>
           </div>
@@ -394,28 +495,35 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="Nama Usaha"
               name="nama_usaha"
+              value={formData.nama_usaha || ""}
               onChange={handleInputChange}
               required
+              placeholder="Warung Makan Sederhana, Toko Kelontong Berkah"
             />
             <FormField
               label="Jenis Usaha"
               name="jenis_usaha"
+              value={formData.jenis_usaha || ""}
               onChange={handleInputChange}
               required
+              placeholder="Kuliner, perdagangan, jasa, manufaktur"
             />
           </div>
           <FormField
             label="Alamat Usaha"
             name="alamat_usaha"
+            value={formData.alamat_usaha || ""}
             as="textarea"
             onChange={handleInputChange}
             required
             className="mt-4"
+            placeholder="Jl. Raya Industri No. 45, RT 03/RW 02, Kelurahan..."
           />
           <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
             <FormField
               label="Status Bangunan Usaha"
               name="status_bangunan_usaha"
+              value={formData.status_bangunan_usaha || ""}
               as="select"
               onChange={handleInputChange}
               required
@@ -430,6 +538,7 @@ const LetterSpecificFormFields: React.FC<{
               label="Sejak Tanggal Usaha"
               name="sejak_tanggal_usaha"
               type="date"
+              value={formData.sejak_tanggal_usaha || ""}
               onChange={handleInputChange}
               required
             />
@@ -439,22 +548,31 @@ const LetterSpecificFormFields: React.FC<{
               label="Perkiraan Modal Usaha (Rp)"
               name="perkiraan_modal_usaha"
               type="number"
+              value={formData.perkiraan_modal_usaha || ""}
               onChange={handleInputChange}
               required
+              placeholder="50000000"
+              min="0"
             />
             <FormField
               label="Perkiraan Pendapatan Usaha/bln (Rp)"
               name="perkiraan_pendapatan_usaha"
               type="number"
+              value={formData.perkiraan_pendapatan_usaha || ""}
               onChange={handleInputChange}
               required
+              placeholder="15000000"
+              min="0"
             />
             <FormField
               label="Jumlah Tenaga Kerja"
               name="jumlah_tenaga_kerja"
               type="number"
+              value={formData.jumlah_tenaga_kerja || ""}
               onChange={handleInputChange}
               required
+              placeholder="3"
+              min="0"
             />
           </div>
         </div>
@@ -470,15 +588,20 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="Pekerjaan Kepala Keluarga"
               name="pekerjaan_kepala_keluarga"
+              value={formData.pekerjaan_kepala_keluarga || ""}
               onChange={handleInputChange}
               required
+              placeholder="Buruh harian lepas, pedagang kecil, tidak bekerja"
             />
             <FormField
               label="Penghasilan Perbulan Kepala Keluarga (Rp)"
               name="penghasilan_perbulan_kepala_keluarga"
               type="number"
+              value={formData.penghasilan_perbulan_kepala_keluarga || ""}
               onChange={handleInputChange}
               required
+              placeholder="1500000"
+              min="0"
             />
           </div>
         </div>
@@ -494,39 +617,56 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="Pekerjaan Kepala Keluarga"
               name="pekerjaan_kepala_keluarga"
+              value={formData.pekerjaan_kepala_keluarga || ""}
               onChange={handleInputChange}
               required
+              placeholder="Buruh harian lepas, pedagang kecil, tidak bekerja"
             />
             <FormField
               label="Penghasilan Perbulan Kepala Keluarga (Rp)"
               name="penghasilan_perbulan_kepala_keluarga"
               type="number"
+              value={formData.penghasilan_perbulan_kepala_keluarga || ""}
               onChange={handleInputChange}
               required
+              placeholder="1500000"
+              min="0"
             />
             <FormField
               label="NIK Siswa (yang mengajukan KIP)"
               name="nik_penduduk_siswa"
+              value={formData.nik_penduduk_siswa || ""}
               onChange={handleInputChange}
               required
+              placeholder="16 digit NIK siswa"
+              showNama={true}
+              namaPenduduk={pendudukSiswa?.nama}
+              loadingNama={loadingSiswa}
+              errorNama={errorSiswa}
             />
             <FormField
               label="Nama Sekolah Siswa"
               name="nama_sekolah"
+              value={formData.nama_sekolah || ""}
               onChange={handleInputChange}
               required
+              placeholder="SD Negeri 01, SMP Negeri 1 Jakarta"
             />
             <FormField
               label="NISN Siswa"
               name="nisn_siswa"
+              value={formData.nisn_siswa || ""}
               onChange={handleInputChange}
               required
+              placeholder="1234567890"
             />
             <FormField
               label="Kelas Siswa"
               name="kelas_siswa"
+              value={formData.kelas_siswa || ""}
               onChange={handleInputChange}
               required
+              placeholder="VII A, X IPA 1, III B"
             />
           </div>
         </div>
@@ -542,13 +682,16 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="Nomor KTP Hilang"
               name="nomor_ktp_hilang"
+              value={formData.nomor_ktp_hilang || ""}
               onChange={handleInputChange}
               required
+              placeholder="16 digit NIK pada KTP yang hilang"
             />
             <FormField
               label="Tanggal Perkiraan Hilang"
               name="tanggal_perkiraan_hilang"
               type="date"
+              value={formData.tanggal_perkiraan_hilang || ""}
               onChange={handleInputChange}
               required
             />
@@ -556,30 +699,37 @@ const LetterSpecificFormFields: React.FC<{
           <FormField
             label="Lokasi Perkiraan Hilang"
             name="lokasi_perkiraan_hilang"
+            value={formData.lokasi_perkiraan_hilang || ""}
             as="textarea"
             onChange={handleInputChange}
             required
             className="mt-4"
+            placeholder="Di angkot Blok M-Tanah Abang, di pasar, di mall"
           />
           <FormField
             label="Kronologi Singkat Kehilangan"
             name="kronologi_singkat"
+            value={formData.kronologi_singkat || ""}
             as="textarea"
             rows={4}
             onChange={handleInputChange}
             required
             className="mt-4"
+            placeholder="KTP hilang saat naik angkot. Baru sadar hilang setelah turun di tujuan..."
           />
           <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
             <FormField
               label="Nomor Laporan Polisi (Jika Ada)"
               name="nomor_laporan_polisi"
+              value={formData.nomor_laporan_polisi || ""}
               onChange={handleInputChange}
+              placeholder="LP/123/IV/2024/METRO (opsional)"
             />
             <FormField
               label="Tanggal Laporan Polisi (Jika Ada)"
               name="tanggal_laporan_polisi"
               type="date"
+              value={formData.tanggal_laporan_polisi || ""}
               onChange={handleInputChange}
             />
           </div>
@@ -596,13 +746,16 @@ const LetterSpecificFormFields: React.FC<{
             <FormField
               label="Nomor KK Hilang"
               name="nomor_kk_hilang"
+              value={formData.nomor_kk_hilang || ""}
               onChange={handleInputChange}
               required
+              placeholder="16 digit nomor KK yang hilang"
             />
             <FormField
               label="Tanggal Perkiraan Hilang"
               name="tanggal_perkiraan_hilang"
               type="date"
+              value={formData.tanggal_perkiraan_hilang || ""}
               onChange={handleInputChange}
               required
             />
@@ -610,19 +763,23 @@ const LetterSpecificFormFields: React.FC<{
           <FormField
             label="Lokasi Perkiraan Hilang"
             name="lokasi_perkiraan_hilang"
+            value={formData.lokasi_perkiraan_hilang || ""}
             as="textarea"
             onChange={handleInputChange}
             required
             className="mt-4"
+            placeholder="Di angkot Blok M-Tanah Abang, di pasar, di mall"
           />
           <FormField
             label="Kronologi Singkat Kehilangan"
             name="kronologi_singkat"
+            value={formData.kronologi_singkat || ""}
             as="textarea"
             rows={4}
             onChange={handleInputChange}
             required
             className="mt-4"
+            placeholder="KK hilang saat naik angkot. Baru sadar hilang setelah turun di tujuan..."
           />
         </div>
       );
@@ -636,11 +793,12 @@ const LetterSpecificFormFields: React.FC<{
           <FormField
             label="Deskripsi Lengkap Keperluan"
             name="deskripsi_keperluan"
+            value={formData.deskripsi_keperluan || ""}
             as="textarea"
             rows={4}
             onChange={handleInputChange}
             required
-            placeholder="Jelaskan secara rinci keperluan Anda untuk surat keterangan umum ini."
+            placeholder="Saya memerlukan surat keterangan untuk keperluan pengurusan beasiswa S1 di Universitas Indonesia. Surat ini akan digunakan sebagai bukti bahwa saya adalah penduduk asli desa/kelurahan ini dan bermaksud melanjutkan pendidikan tinggi..."
           />
         </div>
       );
@@ -687,6 +845,13 @@ const PengajuanFormSteps: React.FC<PengajuanFormStepsProps> = ({
   handleSubmit,
   isLoading,
 }) => {
+  // Hook untuk NIK pemohon
+  const {
+    penduduk: pendudukPemohon,
+    loading: loadingPemohon,
+    error: errorPemohon,
+  } = usePenduduk((formData.nik_pemohon as string) || "");
+
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-xl">
       <form onSubmit={handleSubmit}>
@@ -779,13 +944,19 @@ const PengajuanFormSteps: React.FC<PengajuanFormStepsProps> = ({
                   <FormField
                     label="NIK Pemohon"
                     name="nik_pemohon"
+                    value={formData.nik_pemohon || ""}
                     onChange={handleInputChange}
                     required
                     placeholder="Masukkan NIK pemohon"
+                    showNama={true}
+                    namaPenduduk={pendudukPemohon?.nama}
+                    loadingNama={loadingPemohon}
+                    errorNama={errorPemohon}
                   />
                   <FormField
                     label="Keperluan"
                     name="keperluan"
+                    value={formData.keperluan || ""}
                     onChange={handleInputChange}
                     required
                     placeholder="Untuk keperluan apa surat ini"

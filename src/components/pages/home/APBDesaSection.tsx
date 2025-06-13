@@ -91,256 +91,206 @@ export function APBDesaSection() {
 
           {/* Right Section - APB Information */}
           <div className="flex-1 bg-gradient-to-br from-white to-gray-50 p-8 dark:from-gray-800 dark:to-gray-900">
-            {isLoading ? (
-              <div className="space-y-6">
-                <div className="mb-8">
-                  <div className="mb-2 h-8 w-48 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                  <div className="h-4 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+            <div className="mb-8">
+              <h2 className="mb-2 text-2xl font-bold text-gray-800 dark:text-white">
+                APB DESA{" "}
+                {isLoading ? (
+                  <span className="inline-block h-6 w-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></span>
+                ) : (
+                  <span className="text-blue-600 dark:text-blue-400">
+                    {latestYearData?.tahun_anggaran}
+                  </span>
+                )}
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Anggaran Pendapatan dan Belanja Desa
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* Income Card */}
+              <div className="group relative overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                <div className="absolute top-0 right-0 h-32 w-32 opacity-5 transition-opacity group-hover:opacity-10">
+                  <svg
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#48cc6c"
+                    strokeWidth="2"
+                  >
+                    <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" />
+                  </svg>
                 </div>
-                <div className="space-y-6">
-                  {/* Income Card Loading */}
-                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    <div className="mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
-                        <div>
-                          <div className="mb-2 h-6 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                          <div className="h-4 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                        </div>
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-green-100 p-3 transition-transform duration-200 group-hover:scale-110 dark:bg-green-900/30">
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#48cc6c"
+                          strokeWidth="2"
+                          className="text-green-600 dark:text-green-400"
+                        >
+                          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                          Total Pendapatan
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Tahun {latestYearData?.tahun_anggaran}
+                        </p>
                       </div>
                     </div>
-                    <div className="h-10 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
                   </div>
-
-                  {/* Expense Card Loading */}
-                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    <div className="mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
-                        <div>
-                          <div className="mb-2 h-6 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                          <div className="h-4 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                        </div>
-                      </div>
-                    </div>
+                  {isLoading ? (
                     <div className="h-10 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                  </div>
-
-                  {/* Balance Card Loading */}
-                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    <div className="mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
-                        <div>
-                          <div className="mb-2 h-6 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                          <div className="h-4 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="h-10 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
-                  </div>
-                </div>
-
-                {/* Button Loading */}
-                <div className="mt-8">
-                  <div className="h-14 w-full animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-green-600 sm:text-3xl dark:text-green-400">
+                      {latestYearData
+                        ? formatRupiah(
+                            parseFloat(latestYearData.total_pendapatan),
+                          )
+                        : "Rp0,00"}
+                    </p>
+                  )}
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="mb-8">
-                  <h2 className="mb-2 text-2xl font-bold text-gray-800 dark:text-white">
-                    APB DESA{" "}
-                    <span className="text-blue-600 dark:text-blue-400">
-                      {latestYearData?.tahun_anggaran}
-                    </span>
-                  </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Anggaran Pendapatan dan Belanja Desa
-                  </p>
-                </div>
 
-                <div className="space-y-6">
-                  {/* Income Card */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-                    <div className="absolute top-0 right-0 h-32 w-32 opacity-5 transition-opacity group-hover:opacity-10">
-                      <svg
-                        width="100"
-                        height="100"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#48cc6c"
-                        strokeWidth="2"
-                      >
-                        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" />
-                      </svg>
-                    </div>
-                    <div className="relative z-10">
-                      <div className="mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-xl bg-green-100 p-3 transition-transform duration-200 group-hover:scale-110 dark:bg-green-900/30">
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#48cc6c"
-                              strokeWidth="2"
-                              className="text-green-600 dark:text-green-400"
-                            >
-                              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                              Total Pendapatan
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Tahun {latestYearData?.tahun_anggaran}
-                            </p>
-                          </div>
-                        </div>
+              {/* Expense Card */}
+              <div className="group relative overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-rose-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                <div className="absolute top-0 right-0 h-32 w-32 opacity-5 transition-opacity group-hover:opacity-10">
+                  <svg
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ef4444"
+                    strokeWidth="2"
+                  >
+                    <polyline points="22,12 18,12 15,3 9,21 6,12 2,12" />
+                  </svg>
+                </div>
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-red-100 p-3 transition-transform duration-200 group-hover:scale-110 dark:bg-red-900/30">
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#ef4444"
+                          strokeWidth="2"
+                          className="text-red-600 dark:text-red-400"
+                        >
+                          <rect x="2" y="5" width="20" height="14" rx="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" />
+                        </svg>
                       </div>
-                      <p className="text-2xl font-bold text-green-600 sm:text-3xl dark:text-green-400">
-                        {latestYearData
-                          ? formatRupiah(
-                              parseFloat(latestYearData.total_pendapatan),
-                            )
-                          : "Rp0,00"}
-                      </p>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                          Total Belanja
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Tahun {latestYearData?.tahun_anggaran}
+                        </p>
+                      </div>
                     </div>
                   </div>
+                  {isLoading ? (
+                    <div className="h-10 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-red-600 sm:text-3xl dark:text-red-400">
+                      {latestYearData
+                        ? formatRupiah(parseFloat(latestYearData.total_belanja))
+                        : "Rp0,00"}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                  {/* Expense Card */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-rose-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-                    <div className="absolute top-0 right-0 h-32 w-32 opacity-5 transition-opacity group-hover:opacity-10">
-                      <svg
-                        width="100"
-                        height="100"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#ef4444"
-                        strokeWidth="2"
-                      >
-                        <polyline points="22,12 18,12 15,3 9,21 6,12 2,12" />
-                      </svg>
-                    </div>
-                    <div className="relative z-10">
-                      <div className="mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-xl bg-red-100 p-3 transition-transform duration-200 group-hover:scale-110 dark:bg-red-900/30">
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#ef4444"
-                              strokeWidth="2"
-                              className="text-red-600 dark:text-red-400"
-                            >
-                              <rect x="2" y="5" width="20" height="14" rx="2" />
-                              <line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                              Total Belanja
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Tahun {latestYearData?.tahun_anggaran}
-                            </p>
-                          </div>
-                        </div>
+              {/* Balance Card */}
+              <div className="group relative overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                <div className="absolute top-0 right-0 h-32 w-32 opacity-5 transition-opacity group-hover:opacity-10">
+                  <svg
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </div>
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-blue-100 p-3 transition-transform duration-200 group-hover:scale-110 dark:bg-blue-900/30">
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="2"
+                          className="text-blue-600 dark:text-blue-400"
+                        >
+                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
                       </div>
-                      <p className="text-2xl font-bold text-red-600 sm:text-3xl dark:text-red-400">
-                        {latestYearData
-                          ? formatRupiah(
-                              parseFloat(latestYearData.total_belanja),
-                            )
-                          : "Rp0,00"}
-                      </p>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                          Sisa Anggaran
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Tahun {latestYearData?.tahun_anggaran}
+                        </p>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Balance Card */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-                    <div className="absolute top-0 right-0 h-32 w-32 opacity-5 transition-opacity group-hover:opacity-10">
-                      <svg
-                        width="100"
-                        height="100"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 8v8" />
-                        <path d="M8 12h8" />
-                      </svg>
-                    </div>
-                    <div className="relative z-10">
-                      <div className="mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-xl bg-blue-100 p-3 transition-transform duration-200 group-hover:scale-110 dark:bg-blue-900/30">
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#3b82f6"
-                              strokeWidth="2"
-                              className="text-blue-600 dark:text-blue-400"
-                            >
-                              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                              Saldo Sisa
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Tahun {latestYearData?.tahun_anggaran}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-2xl font-bold text-blue-600 sm:text-3xl dark:text-blue-400">
-                        {latestYearData
-                          ? formatRupiah(
-                              parseFloat(latestYearData.total_pendapatan) -
-                                parseFloat(latestYearData.total_belanja),
-                            )
-                          : "Rp0,00"}
-                      </p>
-                    </div>
-                  </div>
+                  {isLoading ? (
+                    <div className="h-10 w-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-blue-600 sm:text-3xl dark:text-blue-400">
+                      {latestYearData
+                        ? formatRupiah(parseFloat(latestYearData.saldo_sisa))
+                        : "Rp0,00"}
+                    </p>
+                  )}
                 </div>
+              </div>
+            </div>
 
-                <div className="mt-8">
-                  <a href="/Infografis/apbdesa" className="block">
-                    <button className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-base font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
-                      LIHAT DATA LEBIH LENGKAP
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="transition-transform duration-300 group-hover:translate-x-1"
-                      >
-                        <polyline points="9,18 15,12 9,6" />
-                      </svg>
-                    </button>
-                  </a>
-                </div>
-              </>
-            )}
+            <div className="mt-8">
+              <a href="/infografis/apbdesa" className="block">
+                <button className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-base font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
+                  LIHAT DATA LEBIH LENGKAP
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  >
+                    <polyline points="9,18 15,12 9,6" />
+                  </svg>
+                </button>
+              </a>
+            </div>
           </div>
         </div>
       </div>

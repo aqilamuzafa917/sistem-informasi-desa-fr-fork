@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polygon, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import NavbarDesa from "@/components/NavbarDesa";
@@ -37,6 +37,10 @@ interface Article {
   location_name?: string;
 }
 
+interface DesaData {
+  polygon_desa: [number, number][];
+}
+
 export default function ArtikelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [article, setArticle] = useState<Article | null>(null);
@@ -44,6 +48,7 @@ export default function ArtikelDetailPage() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showFloatingHeader, setShowFloatingHeader] = useState(false);
+  const [villagePolygon, setVillagePolygon] = useState<[number, number][]>([]);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -88,6 +93,25 @@ export default function ArtikelDetailPage() {
 
     fetchArticle();
   }, [id]);
+
+  // Fetch village polygon data
+  useEffect(() => {
+    const fetchVillagePolygon = async () => {
+      try {
+        const response = await axios.get<DesaData>(
+          `${API_CONFIG.baseURL}/api/publik/profil-desa/1`,
+          { headers: API_CONFIG.headers },
+        );
+        if (response.data.polygon_desa) {
+          setVillagePolygon(response.data.polygon_desa);
+        }
+      } catch (error) {
+        console.error("Error fetching village polygon:", error);
+      }
+    };
+
+    fetchVillagePolygon();
+  }, []);
 
   // Scroll progress and floating header effect
   useEffect(() => {
@@ -445,25 +469,37 @@ export default function ArtikelDetailPage() {
 
                 {/* Enhanced Map Section */}
                 {article.latitude && article.longitude && (
-                  <div className="mt-8">
-                    <div className="relative">
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400/20 to-green-400/20 blur-xl"></div>
-                      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/20 shadow-2xl dark:border-gray-600/20">
-                        <MapContainer
-                          center={[article.latitude, article.longitude]}
-                          zoom={15}
-                          style={{ height: "100%", width: "100%" }}
-                        >
-                          <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          />
-                          <Marker
-                            position={[article.latitude, article.longitude]}
-                          />
-                        </MapContainer>
-                      </div>
-                    </div>
+                  <div className="mt-8 h-[300px] w-full overflow-hidden rounded-lg border border-gray-200">
+                    <MapContainer
+                      center={[article.latitude, article.longitude]}
+                      zoom={14}
+                      style={{ height: "100%", width: "100%" }}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      {villagePolygon.length > 0 && (
+                        <Polygon
+                          positions={villagePolygon}
+                          pathOptions={{
+                            color: "#3b82f6",
+                            fillColor: "#60a5fa",
+                            fillOpacity: 0.3,
+                            weight: 2,
+                          }}
+                        />
+                      )}
+                      <Marker position={[article.latitude, article.longitude]}>
+                        <Popup>
+                          <div className="text-center">
+                            <h3 className="mb-1 text-lg font-bold text-blue-600">
+                              {article.location_name}
+                            </h3>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
                   </div>
                 )}
               </div>

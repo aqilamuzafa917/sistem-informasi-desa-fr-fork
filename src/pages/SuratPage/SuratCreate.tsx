@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea"; // Assuming you have a Textarea component
 import { API_CONFIG } from "../../config/api";
+import { toast } from "sonner";
 
 // Interface for the form data, can be expanded as needed
 interface FormData {
@@ -201,7 +202,7 @@ export default function SuratCreate() {
         },
       );
       console.log("Server Response:", response.data);
-      alert("Pengajuan surat berhasil dikirim!");
+      toast.success("Pengajuan surat berhasil dikirim!");
       setJenisSurat("");
       setFormData({});
     } catch (error) {
@@ -210,7 +211,7 @@ export default function SuratCreate() {
         console.error("Error Response Data:", error.response.data);
         console.error("Error Response Status:", error.response.status);
       }
-      alert("Gagal mengirim pengajuan surat. Lihat konsol untuk detail.");
+      toast.error("Gagal mengirim pengajuan surat. Lihat konsol untuk detail.");
     } finally {
       setSubmitting(false);
     }

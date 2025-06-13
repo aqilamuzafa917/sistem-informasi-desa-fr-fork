@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   Eye,
   EyeOff,
-  Mail,
+  AtSign,
   Lock,
   AlertCircle,
   CheckCircle,
   ArrowRight,
-  Home,
+  ArrowLeft,
 } from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "@/config/api";
@@ -81,6 +81,24 @@ export default function LoginPage() {
       </div>
 
       <div className="relative w-full max-w-md">
+        {/* Back to Home Button - Outside the card for better visibility */}
+        <div className="mb-6">
+          <button
+            onClick={() => navigate("/")}
+            className="group flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200/60 bg-white/80 px-6 py-3 text-gray-600 shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-[#00b4d8]/30 hover:bg-white/90 hover:text-[#00b4d8] hover:shadow-xl dark:border-gray-600/50 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:border-[#00b4d8]/50 dark:hover:bg-gray-800/90 dark:hover:text-[#00b4d8]"
+          >
+            <ArrowLeft className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-1" />
+            <div className="text-center">
+              <div className="text-sm font-medium">
+                Kembali ke Halaman Utama
+              </div>
+              {/* <div className="text-xs opacity-75">
+                Ini adalah halaman khusus admin
+              </div> */}
+            </div>
+          </button>
+        </div>
+
         {/* Main Card */}
         <div className="transform rounded-2xl border border-white/20 bg-white/90 p-8 shadow-2xl backdrop-blur-lg transition-all duration-300 hover:scale-[1.02] dark:border-gray-700/50 dark:bg-gray-800/90">
           {/* Header */}
@@ -89,11 +107,15 @@ export default function LoginPage() {
               <Lock className="h-8 w-8 text-white" />
             </div>
             <h1 className="bg-gradient-to-r from-[#00b4d8] to-[#48cc6c] bg-clip-text text-3xl font-bold text-transparent">
-              Selamat Datang
+              Admin Login
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Sign in untuk melanjutkan ke Halaman Admin
+              Masuk ke Panel Administrasi
             </p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+              <Lock className="h-3 w-3" />
+              Akses Terbatas - Hanya untuk Admin Desa
+            </div>
           </div>
 
           {/* Alert Messages */}
@@ -125,7 +147,7 @@ export default function LoginPage() {
                   Success!
                 </p>
                 <p className="text-sm text-green-600 dark:text-green-300">
-                  Logging you in...
+                  Mengarahkan ke dashboard admin...
                 </p>
               </div>
             </div>
@@ -139,11 +161,11 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Email
+                Email Admin
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <Mail className="h-5 w-5 text-[#00b4d8]" />
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
+                  <AtSign className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </div>
                 <input
                   id="email"
@@ -152,8 +174,8 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading || success}
-                  className="w-full rounded-lg border border-gray-300 bg-white/50 py-3 pr-4 pl-10 text-gray-900 placeholder-gray-400 backdrop-blur-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-[#00b4d8] disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white"
-                  placeholder="Enter your email address"
+                  className="focus:ring-opacity-50 w-full rounded-lg border border-gray-300 bg-white py-3 pr-4 pl-10 text-gray-900 placeholder-gray-500 shadow-sm transition-all duration-200 focus:border-[#00b4d8] focus:ring-2 focus:ring-[#00b4d8] disabled:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-700"
+                  placeholder="Masukkan email admin"
                 />
               </div>
             </div>
@@ -164,11 +186,11 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Password
+                Password Admin
               </label>
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <Lock className="h-5 w-5 text-[#00b4d8]" />
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
+                  <Lock className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </div>
                 <input
                   id="password"
@@ -177,14 +199,14 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading || success}
-                  className="w-full rounded-lg border border-gray-300 bg-white/50 py-3 pr-12 pl-10 text-gray-900 placeholder-gray-400 backdrop-blur-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-[#00b4d8] disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700/50 dark:text-white"
-                  placeholder="Enter your password"
+                  className="focus:ring-opacity-50 w-full rounded-lg border border-gray-300 bg-white py-3 pr-12 pl-10 text-gray-900 placeholder-gray-500 shadow-sm transition-all duration-200 focus:border-[#00b4d8] focus:ring-2 focus:ring-[#00b4d8] disabled:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-700"
+                  placeholder="Masukkan password admin"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading || success}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#00b4d8] transition-colors hover:text-[#48cc6c] disabled:opacity-50 dark:hover:text-[#48cc6c]"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 transition-colors hover:text-[#00b4d8] focus:text-[#00b4d8] focus:outline-none disabled:opacity-50 dark:text-gray-400 dark:hover:text-[#00b4d8]"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -204,41 +226,27 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                  Signing in...
+                  Masuk ke Admin Panel...
                 </>
               ) : success ? (
                 <>
                   <CheckCircle className="h-5 w-5" />
-                  Success!
+                  Berhasil!
                 </>
               ) : (
                 <>
-                  Sign In
+                  Masuk ke Admin Panel
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="mt-8 border-t border-gray-200 pt-6 dark:border-gray-700">
-            {/* Navigation Links */}
-            <div className="flex justify-center">
-              <button
-                onClick={() => navigate("/")}
-                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[#00b4d8] transition-colors hover:bg-gray-50 hover:text-[#48cc6c] dark:text-[#00b4d8] dark:hover:bg-gray-700/50 dark:hover:text-[#48cc6c]"
-              >
-                <Home className="h-4 w-4" />
-                Back to Home
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Protected by enterprise-grade security
+            Dilindungi dengan keamanan tingkat enterprise
           </p>
         </div>
       </div>

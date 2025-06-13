@@ -19,7 +19,7 @@ import {
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Spinner } from "flowbite-react";
+import { Spinner } from "@/components/ui/spinner";
 import { API_CONFIG } from "../../config/api";
 import { DollarSign, Building2, ArrowUpRight, Plus } from "lucide-react";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
@@ -335,7 +335,7 @@ export default function PendapatanPages() {
         <AppSidebar />
         <SidebarInset>
           <div className="flex flex-1 items-center justify-center p-4">
-            <Spinner size="xl" />
+            <Spinner size="xl" text="Memuat data..." />
           </div>
         </SidebarInset>
       </SidebarProvider>
