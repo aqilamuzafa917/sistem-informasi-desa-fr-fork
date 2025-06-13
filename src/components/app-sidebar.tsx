@@ -7,8 +7,9 @@ import {
   House,
   Images,
   MessageCircleWarning,
-  Users,
   Bolt,
+  User,
+  ShieldUser,
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
@@ -22,7 +23,6 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { NavPenduduk } from "./nav-penduduk";
 import { NavInfografis } from "./nav-infografis";
 import { useDesa } from "@/contexts/DesaContext";
 
@@ -87,27 +87,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/admin/peta",
             isActive: currentPath === "/admin/peta",
           },
+          {
+            title: "IDM",
+            url: "/admin/idm",
+            isActive: currentPath === "/admin/idm",
+          },
         ],
       },
     ],
     navPenduduk: [
       {
         title: "Penduduk",
-        url: "#",
-        icon: Users,
-        isActive: ["/dataktp", "/datakk"].includes(currentPath),
-        items: [
-          {
-            title: "Data KTP",
-            url: "/admin/dataktp",
-            isActive: currentPath === "/admin/dataktp",
-          },
-          {
-            title: "Data KK",
-            url: "/admin/datakk",
-            isActive: currentPath === "/admin/datakk",
-          },
-        ],
+        url: "/admin/penduduk",
+        icon: User,
+        isActive: currentPath === "/admin/penduduk",
       },
     ],
     navPengaduan: [
@@ -124,6 +117,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/admin/configdesa",
         icon: Bolt,
         isActive: currentPath === "/admin/configdesa",
+      },
+    ],
+    navUser: [
+      {
+        title: "Kelola User",
+        url: "/admin/user",
+        icon: ShieldUser,
+        isActive: currentPath === "/admin/user",
       },
     ],
   };
@@ -178,7 +179,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <NavPenduduk items={data.navPenduduk} />
+          {data.navPenduduk.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
           {data.navArtikel.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
@@ -201,6 +211,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           ))}
           {data.navConfigDesa.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <a href={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          {data.navUser.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
                 <a href={data.url}>

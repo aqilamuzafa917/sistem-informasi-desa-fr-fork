@@ -23,6 +23,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { DesaData } from "../../types/desa";
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -149,7 +150,6 @@ export default function VerifikasiArtikelPage() {
   const [status, setStatus] = useState("diajukan");
   const [submitting, setSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [villagePolygon, setVillagePolygon] = useState<[number, number][]>([]);
 
   useEffect(() => {
@@ -224,7 +224,7 @@ export default function VerifikasiArtikelPage() {
       });
       // Wait for 2 seconds to show toast before redirecting
       setTimeout(() => {
-        window.location.href = "/artikel";
+        window.location.href = "/admin/artikel";
       }, 2000);
     } catch (error) {
       console.error("Gagal memverifikasi artikel:", error);
@@ -249,40 +249,6 @@ export default function VerifikasiArtikelPage() {
       }
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      setIsDeleting(true);
-      const token =
-        localStorage.getItem("token") || localStorage.getItem("authToken");
-      await axios.delete(`${API_CONFIG.baseURL}/api/artikel/${id}`, {
-        headers: {
-          ...API_CONFIG.headers,
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      toast.success("Artikel berhasil dihapus!", {
-        description: "Artikel telah dihapus dari sistem",
-        duration: 2000,
-      });
-
-      // Wait for 2 seconds to show toast before redirecting
-      setTimeout(() => {
-        window.location.href = "/artikel";
-      }, 2000);
-    } catch (error) {
-      console.error("Gagal menghapus artikel:", error);
-      toast.error("Gagal menghapus artikel", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Terjadi kesalahan saat menghapus artikel. Silakan coba lagi.",
-      });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -519,7 +485,7 @@ export default function VerifikasiArtikelPage() {
                           <button
                             onClick={handleVerifikasi}
                             disabled={submitting}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-green-700 disabled:bg-green-400"
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 font-medium text-white transition-all duration-200 hover:from-green-600 hover:to-green-700 disabled:from-green-300 disabled:to-green-400"
                           >
                             {submitting ? (
                               <>
@@ -534,9 +500,80 @@ export default function VerifikasiArtikelPage() {
                             )}
                           </button>
                           <button
-                            onClick={() => setShowDeleteDialog(true)}
+                            onClick={() => {
+                              toast.custom(
+                                (t) => (
+                                  <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg">
+                                    <div className="flex items-center gap-3">
+                                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                                      <div>
+                                        <h3 className="font-medium text-gray-900">
+                                          Hapus Artikel
+                                        </h3>
+                                        <p className="text-sm text-gray-600">
+                                          Tindakan ini tidak dapat dibatalkan
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <p className="mt-2 text-gray-700">
+                                      Artikel akan dihapus secara permanen dari
+                                      sistem. Apakah Anda yakin ingin
+                                      melanjutkan?
+                                    </p>
+                                    <div className="mt-4 flex justify-end gap-2">
+                                      <button
+                                        onClick={() => toast.dismiss(t)}
+                                        className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+                                      >
+                                        Batal
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          toast.dismiss(t);
+                                          toast.promise(
+                                            (async () => {
+                                              setIsDeleting(true);
+                                              const token =
+                                                localStorage.getItem("token") ||
+                                                localStorage.getItem(
+                                                  "authToken",
+                                                );
+                                              await axios.delete(
+                                                `${API_CONFIG.baseURL}/api/artikel/${id}`,
+                                                {
+                                                  headers: {
+                                                    ...API_CONFIG.headers,
+                                                    Authorization: `Bearer ${token}`,
+                                                  },
+                                                },
+                                              );
+                                              setTimeout(() => {
+                                                window.location.href =
+                                                  "/artikel";
+                                              }, 2000);
+                                              return "Artikel berhasil dihapus!";
+                                            })(),
+                                            {
+                                              loading: "Menghapus artikel...",
+                                              success: (msg) => msg,
+                                              error: (err) =>
+                                                err?.message ||
+                                                "Gagal menghapus artikel",
+                                            },
+                                          );
+                                        }}
+                                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 font-medium text-white transition-all duration-200 hover:from-red-600 hover:to-red-700 disabled:from-red-300 disabled:to-red-400"
+                                      >
+                                        Hapus
+                                      </button>
+                                    </div>
+                                  </div>
+                                ),
+                                { duration: Infinity },
+                              );
+                            }}
                             disabled={isDeleting}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-red-700 disabled:bg-red-400"
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 font-medium text-white transition-all duration-200 hover:from-red-600 hover:to-red-700 disabled:from-red-300 disabled:to-red-400"
                           >
                             {isDeleting ? (
                               <>
@@ -579,44 +616,6 @@ export default function VerifikasiArtikelPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Delete Confirmation Modal */}
-            {showDeleteDialog && (
-              <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-                <div className="w-full max-w-md rounded-xl bg-white p-6">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                      <AlertTriangle className="h-6 w-6 text-red-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Hapus Artikel
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Tindakan ini tidak dapat dibatalkan
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mb-6 text-gray-700">
-                    Artikel akan dihapus secara permanen dari sistem. Apakah
-                    Anda yakin ingin melanjutkan?
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowDeleteDialog(false)}
-                      className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
-                    >
-                      Hapus
-                    </button>
                   </div>
                 </div>
               </div>

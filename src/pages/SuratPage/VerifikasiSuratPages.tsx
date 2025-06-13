@@ -7,17 +7,14 @@ import {
   Calendar,
   User,
   MapPin,
-  CheckCircle,
-  XCircle,
   Clock,
-  AlertCircle,
-  Download,
-  Edit,
+  Eye,
+  Check,
+  LucideIcon,
 } from "lucide-react";
 import { API_CONFIG } from "../../config/api";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 // Helper function to format date strings
@@ -26,12 +23,12 @@ const formatDate = (dateString: string | null | undefined): string => {
   try {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Month is 0-indexed
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   } catch (error) {
     console.error("Error formatting date:", dateString, error);
-    return dateString; // Return original string if formatting fails
+    return dateString;
   }
 };
 
@@ -243,89 +240,71 @@ const getJenisSuratLabel = (jenisSurat: string): string => {
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "Disetujui":
-        return {
-          icon: CheckCircle,
-          color: "bg-green-100 text-green-800 border-green-200",
-          dotColor: "bg-green-500",
-        };
-      case "Ditolak":
-        return {
-          icon: XCircle,
-          color: "bg-red-100 text-red-800 border-red-200",
-          dotColor: "bg-red-500",
-        };
-      case "Diajukan":
-      default:
-        return {
-          icon: Clock,
-          color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-          dotColor: "bg-yellow-500",
-        };
-    }
+  const statusConfig = {
+    Diajukan: {
+      bg: "bg-yellow-100",
+      text: "text-yellow-800",
+      icon: Clock,
+      label: "Menunggu Verifikasi",
+    },
+    Disetujui: {
+      bg: "bg-green-100",
+      text: "text-green-800",
+      icon: Check,
+      label: "Disetujui",
+    },
+    Ditolak: {
+      bg: "bg-red-100",
+      text: "text-red-800",
+      icon: Check,
+      label: "Ditolak",
+    },
   };
 
-  const config = getStatusConfig(status);
+  const config =
+    statusConfig[status as keyof typeof statusConfig] || statusConfig.Diajukan;
   const Icon = config.icon;
 
   return (
-    <div
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium ${config.color}`}
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${config.bg} ${config.text}`}
     >
-      <div className={`h-2 w-2 rounded-full ${config.dotColor}`}></div>
-      <Icon className="h-4 w-4" />
-      {status}
-    </div>
+      <Icon size={14} />
+      {config.label}
+    </span>
   );
 };
 
-// Add type for field display props
-interface FieldDisplayProps {
+interface InfoCardProps {
+  icon: LucideIcon;
   label: string;
-  value: string | number | null;
-  icon: React.ComponentType<{ className?: string }>;
-  type?: "text" | "date" | "age";
+  value: string;
+  className?: string;
 }
 
-// Update FieldDisplay component with proper types
-const FieldDisplay = ({
+const InfoCard = ({
+  icon: Icon,
   label,
   value,
-  icon: Icon,
-  type = "text",
-}: FieldDisplayProps) => {
-  const displayValue = () => {
-    if (!value) return "-";
-    if (type === "date") return formatDate(value as string);
-    if (type === "age") return `${Math.floor(value as number)} tahun`;
-    return value.toString();
-  };
-
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
-      <div className="flex items-start gap-3">
-        {Icon && (
-          <div className="flex-shrink-0">
-            <Icon className="mt-0.5 h-5 w-5 text-gray-500" />
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <dt className="mb-1 text-sm font-medium text-gray-600">{label}</dt>
-          <dd className="text-sm break-words text-gray-900">
-            {displayValue()}
-          </dd>
-        </div>
+  className = "",
+}: InfoCardProps) => (
+  <div className={`rounded-lg bg-gray-50 p-4 ${className}`}>
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 flex-shrink-0">
+        <Icon className="h-5 w-5 text-gray-600" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="mb-1 text-sm font-medium text-gray-600">{label}</p>
+        <p className="break-words text-gray-900">{value}</p>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 // Add type for field configuration
 interface FieldConfig {
   key: keyof Surat;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   type?: "text" | "date" | "age";
 }
 
@@ -339,15 +318,6 @@ const personalInfo: FieldConfig[] = [
   { key: "jenis_kelamin_pemohon", icon: User },
   { key: "status_perkawinan_pemohon", icon: User },
   { key: "alamat_pemohon", icon: MapPin },
-];
-
-const suratInfo: FieldConfig[] = [
-  { key: "nomor_surat", icon: FileText },
-  { key: "jenis_surat", icon: FileText },
-  { key: "tanggal_pengajuan", icon: Calendar, type: "date" },
-  { key: "tanggal_disetujui", icon: Calendar, type: "date" },
-  { key: "keperluan", icon: FileText },
-  { key: "attachment_bukti_pendukung", icon: FileText },
 ];
 
 const renderFieldValue = (
@@ -385,17 +355,13 @@ export default function VerifikasiSuratPages() {
             },
           },
         );
-        console.log("API Response Data:", response.data); // Log data mentah dari API
-        console.log("Surat Data from API:", response.data); // Log data surat yang diharapkan (setelah perubahan)
-        setSurat(response.data); // Mengatur state surat langsung dari response.data
-        setStatus(response.data.status_surat || "Diajukan"); // Mengakses status_surat langsung dari response.data
+        setSurat(response.data);
+        setStatus(response.data.status_surat || "Diajukan");
         setCatatan(response.data.catatan || "");
-        console.log("Surat state after setting:", response.data); // Log state surat setelah diatur (setelah perubahan)
       } catch (error) {
         console.error("Gagal mengambil data surat:", error);
       } finally {
         setLoading(false);
-        console.log("Loading set to false"); // Log saat loading selesai
       }
     };
 
@@ -409,7 +375,6 @@ export default function VerifikasiSuratPages() {
       setSubmitting(true);
       const token =
         localStorage.getItem("token") || localStorage.getItem("authToken");
-      // Mengubah metode dari PUT menjadi PATCH dan URL menjadi ${id}/status
       await axios.patch(
         `${API_CONFIG.baseURL}/api/surat/${id}/status`,
         {
@@ -423,13 +388,33 @@ export default function VerifikasiSuratPages() {
           },
         },
       );
-      toast.success("Surat berhasil diverifikasi");
-      if (surat) {
-        setSurat({ ...surat, status_surat: status, catatan });
-      }
+      toast.success("Surat berhasil diverifikasi!", {
+        description: "Status surat telah diperbarui",
+        duration: 2000,
+      });
+      setTimeout(() => {
+        window.location.href = "/admin/surat";
+      }, 2000);
     } catch (error) {
       console.error("Gagal memverifikasi surat:", error);
-      toast.error("Gagal memverifikasi surat");
+      if (axios.isAxiosError(error) && error.response?.data?.errors) {
+        const errorMessages = Object.entries(error.response.data.errors)
+          .map(
+            ([field, messages]) =>
+              `${field}: ${(messages as string[]).join(", ")}`,
+          )
+          .join("\n");
+        toast.error("Gagal memverifikasi surat", {
+          description: errorMessages,
+        });
+      } else {
+        toast.error("Gagal memverifikasi surat", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan saat memverifikasi surat. Silakan coba lagi.",
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -440,11 +425,8 @@ export default function VerifikasiSuratPages() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <div className="flex min-h-screen items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
-              <p className="text-gray-600">Loading...</p>
-            </div>
+          <div className="flex h-64 items-center justify-center">
+            <div>Loading...</div>
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -456,11 +438,8 @@ export default function VerifikasiSuratPages() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <div className="flex min-h-screen items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <AlertCircle className="mx-auto mb-4 h-16 w-16 text-gray-400" />
-              <p className="text-gray-600">Data surat tidak ditemukan.</p>
-            </div>
+          <div className="flex h-64 items-center justify-center">
+            <div>Data surat tidak ditemukan.</div>
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -473,199 +452,186 @@ export default function VerifikasiSuratPages() {
       <SidebarInset>
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
-          <div className="border-b bg-white shadow-sm">
+          <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <Separator orientation="vertical" className="h-6" />
                   <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/admin/surat")}
                     className="rounded-lg p-2 transition-colors hover:bg-gray-100"
                   >
-                    <ChevronLeft className="h-5 w-5 text-gray-600" />
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
                   <div>
                     <h1 className="text-xl font-semibold text-gray-900">
                       Verifikasi Surat
                     </h1>
                     <p className="text-sm text-gray-500">
-                      Review dan verifikasi dokumen
+                      ID: {surat.id_surat}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={surat.status_surat || "Diajukan"} />
-                  <button className="rounded-lg p-2 transition-colors hover:bg-gray-100">
-                    <Download className="h-5 w-5 text-gray-600" />
-                  </button>
-                </div>
+                <StatusBadge status={surat.status_surat || "Diajukan"} />
               </div>
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            {/* Document Header */}
-            <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                    <FileText className="h-6 w-6 text-blue-600" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h2 className="mb-2 text-xl font-semibold text-gray-900">
-                    {getJenisSuratLabel(surat.jenis_surat)}
-                  </h2>
-                  <p className="mb-4 text-gray-600">{surat.keperluan}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      Diajukan: {formatDate(surat.tanggal_pengajuan)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <User className="h-4 w-4" />
-                      {surat.nama_pemohon}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              {/* Left Column - Document Information */}
-              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  Informasi Surat
-                </h3>
-                <div className="grid grid-cols-1 gap-4">
-                  {suratInfo.map(({ key, icon, type }) => (
-                    <FieldDisplay
-                      key={key}
-                      label={getFieldLabel(key)}
-                      value={renderFieldValue(key, surat[key] ?? null)}
-                      icon={icon}
-                      type={type}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Column - Personal Information */}
-              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
-                  <User className="h-5 w-5 text-blue-600" />
-                  Data Pemohon
-                </h3>
-                <div className="grid grid-cols-1 gap-4">
-                  {personalInfo.map(({ key, icon, type }) => (
-                    <FieldDisplay
-                      key={key}
-                      label={getFieldLabel(key)}
-                      value={renderFieldValue(key, surat[key] ?? null)}
-                      icon={icon}
-                      type={type}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Verification Panel */}
-            <div className="mt-8 space-y-6">
-              {/* Verification Form */}
-              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
-                  <Edit className="h-5 w-5 text-blue-600" />
-                  Panel Verifikasi
-                </h3>
-
-                <div className="space-y-6">
-                  {/* Status Selection */}
-                  <div>
-                    <label className="mb-3 block text-sm font-medium text-gray-700">
-                      Status Verifikasi
-                    </label>
-                    <div className="space-y-2">
-                      {["Diajukan", "Disetujui", "Ditolak"].map(
-                        (statusOption) => (
-                          <label
-                            key={statusOption}
-                            className="flex items-center"
-                          >
-                            <input
-                              type="radio"
-                              name="status"
-                              value={statusOption}
-                              checked={status === statusOption}
-                              onChange={(e) => setStatus(e.target.value)}
-                              className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="ml-3 text-sm text-gray-700">
-                              {statusOption}
-                            </span>
-                          </label>
-                        ),
-                      )}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              {/* Main Content */}
+              <div className="space-y-6 lg:col-span-2">
+                {/* Document Header */}
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="mb-4 flex items-start justify-between">
+                    <div className="flex-1">
+                      <span className="mb-3 inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                        {getJenisSuratLabel(surat.jenis_surat)}
+                      </span>
+                      <h2 className="mb-4 text-2xl font-bold text-gray-900">
+                        {surat.nomor_surat || "Surat Baru"}
+                      </h2>
                     </div>
                   </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label
-                      htmlFor="catatan"
-                      className="mb-3 block text-sm font-medium text-gray-700"
-                    >
-                      Catatan Verifikasi
-                    </label>
-                    <textarea
-                      id="catatan"
-                      value={catatan}
-                      onChange={(e) => setCatatan(e.target.value)}
-                      rows={4}
-                      className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
-                      placeholder="Tambahkan catatan verifikasi..."
+                  {/* Document Meta */}
+                  <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <InfoCard
+                      icon={User}
+                      label="Pemohon"
+                      value={surat.nama_pemohon || "-"}
+                    />
+                    <InfoCard
+                      icon={Calendar}
+                      label="Tanggal Pengajuan"
+                      value={formatDate(surat.tanggal_pengajuan)}
+                    />
+                    <InfoCard
+                      icon={Clock}
+                      label="Tanggal Disetujui"
+                      value={formatDate(surat.tanggal_disetujui)}
                     />
                   </div>
+                  {/* Document Content */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="mb-4 flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-gray-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Detail Surat
+                      </h3>
+                    </div>
+                    <div className="prose max-w-none">
+                      <div className="rounded-lg bg-gray-50 p-6 leading-relaxed break-words whitespace-pre-wrap text-gray-700">
+                        {surat.keperluan ||
+                          "Tidak ada keperluan yang disebutkan"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    <button
-                      onClick={handleVerifikasi}
-                      disabled={submitting}
-                      className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {submitting ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
-                          Memproses...
-                        </span>
-                      ) : (
-                        "Simpan Verifikasi"
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => navigate(-1)}
-                      className="w-full rounded-lg bg-gray-100 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200"
-                    >
-                      Kembali
-                    </button>
+                {/* Personal Information */}
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="mb-6 flex items-center gap-2">
+                    <User className="h-5 w-5 text-gray-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Data Pemohon
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {personalInfo.map(({ key, icon }) => (
+                      <InfoCard
+                        key={key}
+                        icon={icon}
+                        label={getFieldLabel(key)}
+                        value={renderFieldValue(key, surat[key] ?? null)}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Quick Info */}
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                <h4 className="mb-2 text-sm font-medium text-blue-900">
-                  Informasi Cepat
-                </h4>
-                <div className="space-y-2 text-sm text-blue-800">
-                  <p>• Pastikan semua data sudah sesuai</p>
-                  <p>• Periksa kelengkapan dokumen</p>
-                  <p>• Berikan catatan jika diperlukan</p>
-                  <p>• Status dapat diubah kapan saja</p>
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Verification Panel */}
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-gray-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Panel Verifikasi
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Status Surat
+                      </label>
+                      <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Diajukan">Menunggu Verifikasi</option>
+                        <option value="Disetujui">Setujui Surat</option>
+                        <option value="Ditolak">Tolak Surat</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Catatan Verifikasi
+                      </label>
+                      <textarea
+                        value={catatan}
+                        onChange={(e) => setCatatan(e.target.value)}
+                        rows={4}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                        placeholder="Tambahkan catatan verifikasi..."
+                      />
+                    </div>
+                    <div className="space-y-3 border-t border-gray-200 pt-4">
+                      <button
+                        onClick={handleVerifikasi}
+                        disabled={submitting}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 font-medium text-white transition-all duration-200 hover:from-green-600 hover:to-green-700 disabled:from-green-300 disabled:to-green-400"
+                      >
+                        {submitting ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Memproses...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Simpan Verifikasi
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Document Info */}
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                    Informasi Surat
+                  </h3>
+                  <div className="space-y-4 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Jenis Surat</span>
+                      <span className="font-medium text-gray-900">
+                        {getJenisSuratLabel(surat.jenis_surat)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Dibuat</span>
+                      <span className="font-medium text-gray-900">
+                        {formatDate(surat.created_at)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Diperbarui</span>
+                      <span className="font-medium text-gray-900">
+                        {formatDate(surat.updated_at)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

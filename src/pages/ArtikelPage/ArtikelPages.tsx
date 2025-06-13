@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
+import { toast } from "sonner";
 import {
   Eye,
   Plus,
@@ -122,6 +123,7 @@ export default function ArtikelPages() {
     useState<StatusArtikelFilter>("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [jenisArtikelFilter, setJenisArtikelFilter] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -354,6 +356,84 @@ export default function ArtikelPages() {
       )}
     </button>
   );
+
+  const handleDelete = async (id: number) => {
+    toast.custom(
+      (t) => (
+        <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <div>
+              <h3 className="font-medium text-gray-900">Konfirmasi Hapus</h3>
+              <p className="text-sm text-gray-500">
+                Apakah Anda yakin ingin menghapus artikel ini?
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => toast.dismiss(t)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t);
+                toast.promise(
+                  new Promise<string>((resolve, reject) => {
+                    setDeleteLoading(id);
+                    const token = localStorage.getItem("authToken");
+                    if (!token) {
+                      reject("Token tidak ditemukan. Silakan login kembali.");
+                      return;
+                    }
+
+                    axios
+                      .delete(`${API_CONFIG.baseURL}/api/artikel/${id}`, {
+                        headers: {
+                          ...API_CONFIG.headers,
+                          Authorization: `Bearer ${token}`,
+                        },
+                      })
+                      .then(() => {
+                        // Remove the deleted article from the list
+                        setArtikelList((prevList) =>
+                          prevList.filter(
+                            (artikel) => artikel.id_artikel !== id,
+                          ),
+                        );
+                        // Update total count
+                        setTotalArtikelCount((prev) => prev - 1);
+                        resolve("Artikel berhasil dihapus");
+                      })
+                      .catch((error) => {
+                        console.error("Error deleting article:", error);
+                        reject("Gagal menghapus artikel. Silakan coba lagi.");
+                      })
+                      .finally(() => {
+                        setDeleteLoading(null);
+                      });
+                  }),
+                  {
+                    loading: "Menghapus artikel...",
+                    success: (message: string) => message,
+                    error: (message: string) => message,
+                  },
+                );
+              }}
+              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+            >
+              Hapus
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: Infinity,
+      },
+    );
+  };
 
   return (
     <SidebarProvider>
@@ -611,15 +691,29 @@ export default function ArtikelPages() {
                               <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={() =>
-                                    navigate(`/admin/artikel/${artikel.id_artikel}`)
+                                    navigate(
+                                      `/admin/artikel/${artikel.id_artikel}`,
+                                    )
                                   }
                                   className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
                                 >
                                   <Eye className="h-3 w-3" />
                                   Detail
                                 </button>
-                                <button className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none">
-                                  <Trash2 className="h-3 w-3" />
+                                <button
+                                  onClick={() =>
+                                    handleDelete(artikel.id_artikel)
+                                  }
+                                  disabled={
+                                    deleteLoading === artikel.id_artikel
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
+                                >
+                                  {deleteLoading === artikel.id_artikel ? (
+                                    <Spinner size="sm" className="h-3 w-3" />
+                                  ) : (
+                                    <Trash2 className="h-3 w-3" />
+                                  )}
                                   Hapus
                                 </button>
                               </div>

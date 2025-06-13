@@ -174,12 +174,12 @@ export default function SuratCreate() {
     }
 
     // Log the final JSON payload
-    const jsonPayload: Record<string, any> = {};
+    const jsonPayload: Record<string, string | number | boolean | object> = {};
     for (const pair of dataToSubmit.entries()) {
       if (pair[0] === "data_pengikut_pindah") {
         try {
           jsonPayload[pair[0]] = JSON.parse(pair[1] as string);
-        } catch (e) {
+        } catch {
           jsonPayload[pair[0]] = pair[1];
         }
       } else {
