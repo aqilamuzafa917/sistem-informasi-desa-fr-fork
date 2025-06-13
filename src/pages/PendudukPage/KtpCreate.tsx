@@ -320,7 +320,7 @@ export default function KtpCreate() {
       if (response.status === 201 || response.status === 200) {
         setSuccess("Data penduduk berhasil ditambahkan!");
         setFormData(initialFormData);
-        setTimeout(() => navigate("/dataktp"), 2000);
+        setTimeout(() => navigate("/admin/dataktp"), 2000);
       } else {
         setError(
           (response.data as ErrorResponseData)?.message ||

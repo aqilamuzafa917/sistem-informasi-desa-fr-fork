@@ -435,7 +435,7 @@ export default function PendapatanDetail() {
                   </Select>
                   <Button
                     className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
-                    onClick={() => navigate("/pendapatan/tambah")}
+                    onClick={() => navigate("/admin/pendapatan/tambah")}
                   >
                     <Plus className="mr-2 h-4 w-4" /> Tambah Pendapatan
                   </Button>

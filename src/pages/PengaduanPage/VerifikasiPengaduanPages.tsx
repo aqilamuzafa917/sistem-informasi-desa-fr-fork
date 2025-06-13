@@ -2,12 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { API_CONFIG } from "../../config/api";
 import {
@@ -226,7 +221,7 @@ export default function VerifikasiPengaduanPage() {
       });
 
       setTimeout(() => {
-        window.location.href = "/pengaduan";
+        window.location.href = "/admin/pengaduan";
       }, 2000);
     } catch (error) {
       console.error("Gagal memverifikasi pengaduan:", error);
@@ -264,7 +259,7 @@ export default function VerifikasiPengaduanPage() {
       });
 
       setTimeout(() => {
-        window.location.href = "/pengaduan";
+        window.location.href = "/admin/pengaduan";
       }, 2000);
     } catch (error) {
       console.error("Gagal menghapus pengaduan:", error);
@@ -287,30 +282,28 @@ export default function VerifikasiPengaduanPage() {
         <SidebarInset>
           <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="border-b bg-white shadow-sm">
+            <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <SidebarTrigger className="rounded-lg p-2 transition-colors hover:bg-gray-100" />
-                    <Separator orientation="vertical" className="h-6" />
                     <button
-                      onClick={() => navigate(-1)}
+                      onClick={() => navigate("/admin/pengaduan")}
                       className="rounded-lg p-2 transition-colors hover:bg-gray-100"
                     >
-                      <ChevronLeft className="h-5 w-5 text-gray-600" />
+                      <ChevronLeft className="h-5 w-5" />
                     </button>
                     <div>
                       <h1 className="text-xl font-semibold text-gray-900">
                         Verifikasi Pengaduan
                       </h1>
                       <p className="text-sm text-gray-500">
-                        Review dan verifikasi pengaduan
+                        ID: {pengaduan?.id_pengaduan}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={status} />
-                  </div>
+                  {pengaduan && (
+                    <StatusBadge status={pengaduan.status_pengaduan} />
+                  )}
                 </div>
               </div>
             </div>

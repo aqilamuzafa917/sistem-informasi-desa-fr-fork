@@ -51,7 +51,7 @@ export default function LoginPage() {
       // Simpan token & redirect after success animation
       localStorage.setItem("authToken", data.token);
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/admin/dashboard");
       }, 1000);
     } catch (err) {
       if (axios.isAxiosError(err)) {

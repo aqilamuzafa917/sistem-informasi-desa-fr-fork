@@ -392,7 +392,7 @@ export default function BelanjaPages() {
                 </p>
               </div>
               <Button
-                onClick={() => navigate("/belanja/tambah")}
+                onClick={() => navigate("/admin/belanja/tambah")}
                 className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
               >
                 <Plus className="h-5 w-5" />
@@ -699,7 +699,7 @@ export default function BelanjaPages() {
                       </div>
                       <Button
                         className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
-                        onClick={() => navigate("/belanja/detail")}
+                        onClick={() => navigate("/admin/belanja/detail")}
                       >
                         Detail Belanja
                       </Button>

@@ -447,7 +447,7 @@ export default function BelanjaDetail() {
                   </Select>
                   <Button
                     className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
-                    onClick={() => navigate("/belanja/tambah")}
+                    onClick={() => navigate("/admin/belanja/tambah")}
                   >
                     <Plus className="mr-2 h-4 w-4" /> Tambah Belanja
                   </Button>

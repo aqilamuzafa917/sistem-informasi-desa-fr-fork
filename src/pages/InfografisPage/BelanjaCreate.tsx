@@ -157,7 +157,7 @@ export default function BelanjaCreate() {
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate("/belanja")}
+                    onClick={() => navigate("/admin/belanja")}
                     className="rounded-lg p-2 transition-colors hover:bg-gray-100"
                   >
                     <ChevronLeft className="h-5 w-5" />

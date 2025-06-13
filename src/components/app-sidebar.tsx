@@ -36,85 +36,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navDashboard: [
       {
         title: "Dashboard",
-        url: "/dashboard",
+        url: "/admin/dashboard",
         icon: House,
-        isActive: currentPath === "/dashboard",
+        isActive: currentPath === "/admin/dashboard",
       },
     ],
     navSurat: [
       {
         title: "Surat",
-        url: "/surat",
+        url: "/admin/surat",
         icon: Files,
         isActive: currentPath.includes("/sk"),
-        items: [
-          {
-            title: "SK Pindah",
-            url: "/skpindah",
-            isActive: currentPath === "/skpindah",
-          },
-          {
-            title: "SK Domisili",
-            url: "/skdomisili",
-            isActive: currentPath === "/skdomisili",
-          },
-          {
-            title: "SK Kematian",
-            url: "/skkematian",
-            isActive: currentPath === "/skkematian",
-          },
-          {
-            title: "SK Kelahiran",
-            url: "/skKelahiran",
-            isActive: currentPath === "/skkelahiran",
-          },
-          {
-            title: "SK Usaha",
-            url: "/skusaha",
-            isActive: currentPath === "/skusaha",
-          },
-          {
-            title: "SK Tidak Mampu",
-            url: "/sktidakmampu",
-            isActive: currentPath === "/sktidakmampu",
-          },
-          {
-            title: "SKTM KIP",
-            url: "/sktmkip",
-            isActive: currentPath === "/sktmkip",
-          },
-          {
-            title: "SK Kehilangan KTP",
-            url: "/skkehilanganktp",
-            isActive: currentPath === "/skkehilanganktp",
-          },
-          {
-            title: "SK Kehilangan KK",
-            url: "/skkehilangankk",
-            isActive: currentPath === "/skkehilangankk",
-          },
-          {
-            title: "SK Umum",
-            url: "/skumum",
-            isActive: currentPath === "/skumum",
-          },
-        ],
       },
     ],
     navProfil: [
       {
         title: "Profil Desa",
-        url: "/profil",
+        url: "/admin/profil",
         icon: AppWindow,
-        isActive: currentPath === "/profil",
+        isActive: currentPath === "/admin/profil",
       },
     ],
     navArtikel: [
       {
         title: "Artikel Desa",
-        url: "/artikel",
+        url: "/admin/artikel",
         icon: Images,
-        isActive: currentPath === "/artikel",
+        isActive: currentPath === "/admin/artikel",
       },
     ],
     navInfografis: [
@@ -126,18 +74,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         items: [
           {
             title: "Pendapatan Desa",
-            url: "/pendapatan",
-            isActive: currentPath === "/pendapatan",
+            url: "/admin/pendapatan",
+            isActive: currentPath === "/admin/pendapatan",
           },
           {
             title: "Belanja Desa",
-            url: "/belanja",
-            isActive: currentPath === "/belanja",
+            url: "/admin/belanja",
+            isActive: currentPath === "/admin/belanja",
           },
           {
             title: "Peta Fasilitas",
-            url: "/peta",
-            isActive: currentPath === "/peta",
+            url: "/admin/peta",
+            isActive: currentPath === "/admin/peta",
           },
         ],
       },
@@ -151,13 +99,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         items: [
           {
             title: "Data KTP",
-            url: "/dataktp",
-            isActive: currentPath === "/dataktp",
+            url: "/admin/dataktp",
+            isActive: currentPath === "/admin/dataktp",
           },
           {
             title: "Data KK",
-            url: "/datakk",
-            isActive: currentPath === "/datakk",
+            url: "/admin/datakk",
+            isActive: currentPath === "/admin/datakk",
           },
         ],
       },
@@ -165,17 +113,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navPengaduan: [
       {
         title: "Pengaduan Warga",
-        url: "/pengaduan",
+        url: "/admin/pengaduan",
         icon: MessageCircleWarning,
-        isActive: currentPath === "/pengaduan",
+        isActive: currentPath === "/admin/pengaduan",
       },
     ],
     navConfigDesa: [
       {
         title: "Konfigurasi Website",
-        url: "/configdesa",
+        url: "/admin/configdesa",
         icon: Bolt,
-        isActive: currentPath === "/configdesa",
+        isActive: currentPath === "/admin/configdesa",
       },
     ],
   };
@@ -189,7 +137,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/dashboard">
+              <a href="/admin/dashboard">
                 <span className="text-sm font-semibold">
                   Admin Desa {desaConfig?.nama_desa}
                 </span>
