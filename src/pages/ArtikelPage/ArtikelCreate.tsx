@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -9,6 +9,7 @@ import {
   Tag,
   X,
   ChevronLeft,
+  Check,
 } from "lucide-react";
 import { Label, Select, Textarea } from "flowbite-react";
 import { Button } from "@/components/ui/button";
@@ -132,7 +133,7 @@ export default function ArtikelCreate() {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [villagePolygon, setVillagePolygon] = useState<[number, number][]>([]);
+  const [villagePolygon] = useState<[number, number][]>([]);
 
   const categories = [
     "Berita",
@@ -401,10 +402,11 @@ export default function ArtikelCreate() {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <LocationMarker
+                <MapComponent
                   onLocationSelect={handleLocationSelect}
                   lat={formData.latitude}
                   lng={formData.longitude}
+                  villagePolygon={villagePolygon}
                 />
               </MapWithNoSSR>
             </div>
@@ -520,8 +522,7 @@ export default function ArtikelCreate() {
                       Buat Artikel Baru
                     </h1>
                     <p className="text-sm text-gray-500">
-                      Lengkapi informasi artikel dan lihat preview secara
-                      real-time
+                      Lengkapi informasi artikel
                     </p>
                   </div>
                 </div>
@@ -530,57 +531,86 @@ export default function ArtikelCreate() {
           </div>
           <main className="flex-1 overflow-auto p-4 md:p-6">
             <div className="mx-auto max-w-7xl space-y-8">
-              {/* Header & Stepper */}
               <div className="mb-8">
-                <div className="mb-4">
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    Buat Artikel Baru
-                  </h1>
-                  <p className="mt-1 text-gray-600">
-                    Lengkapi informasi artikel dan lihat preview secara
-                    real-time
-                  </p>
-                </div>
-                {/* Progress Steps */}
-                <div className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm">
-                  {steps.map((step, index) => {
-                    const Icon = step.icon;
-                    const isActive = currentStep === step.id;
-                    const isCompleted = currentStep > step.id;
-                    return (
-                      <div key={step.id} className="flex items-center">
-                        <div
-                          className={`flex items-center gap-3 ${
-                            isActive
-                              ? "text-blue-600"
-                              : isCompleted
-                                ? "text-green-600"
-                                : "text-gray-400"
-                          }`}
-                        >
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                              isActive
-                                ? "border-blue-600 bg-blue-50"
-                                : isCompleted
-                                  ? "border-green-600 bg-green-50"
-                                  : "border-gray-300"
+                {/* Progress Steps - New Compact Pills Design */}
+                <div className="rounded-xl bg-white p-6 shadow-sm">
+                  <div className="relative">
+                    {/* Progress Line */}
+                    <div className="absolute top-6 right-0 left-0 -z-10 h-0.5 bg-gray-200">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out"
+                        style={{
+                          width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between">
+                      {steps.map((step) => {
+                        const Icon = step.icon;
+                        const isActive = currentStep === step.id;
+                        const isCompleted = currentStep > step.id;
+
+                        return (
+                          <button
+                            key={step.id}
+                            onClick={() => setCurrentStep(step.id)}
+                            className={`group relative flex flex-col items-center transition-all duration-300 ${
+                              isActive ? "scale-105" : "hover:scale-102"
                             }`}
                           >
-                            <Icon size={20} />
-                          </div>
-                          <span className="font-medium">{step.title}</span>
-                        </div>
-                        {index < steps.length - 1 && (
-                          <div
-                            className={`mx-4 h-0.5 w-16 ${
-                              isCompleted ? "bg-green-600" : "bg-gray-300"
-                            }`}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
+                            {/* Icon Circle */}
+                            <div
+                              className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
+                                isActive
+                                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25"
+                                  : isCompleted
+                                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25"
+                                    : "border-2 border-gray-200 bg-white text-gray-400 group-hover:border-gray-300 group-hover:text-gray-600"
+                              }`}
+                            >
+                              {isCompleted ? (
+                                <Check size={20} className="animate-pulse" />
+                              ) : (
+                                <Icon size={20} />
+                              )}
+
+                              {/* Pulse animation for active step */}
+                              {isActive && (
+                                <div className="absolute inset-0 animate-ping rounded-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20" />
+                              )}
+                            </div>
+
+                            {/* Step Title */}
+                            <span
+                              className={`mt-2 text-sm font-medium transition-colors duration-300 ${
+                                isActive
+                                  ? "text-blue-600"
+                                  : isCompleted
+                                    ? "text-green-600"
+                                    : "text-gray-500 group-hover:text-gray-700"
+                              }`}
+                            >
+                              {step.title}
+                            </span>
+
+                            {/* Step Number Badge */}
+                            <div
+                              className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
+                                isActive
+                                  ? "bg-blue-100 text-blue-600"
+                                  : isCompleted
+                                    ? "bg-green-100 text-green-600"
+                                    : "bg-gray-100 text-gray-400"
+                              }`}
+                            >
+                              {step.id}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-8">

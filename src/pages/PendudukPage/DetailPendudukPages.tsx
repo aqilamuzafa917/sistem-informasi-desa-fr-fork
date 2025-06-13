@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Spinner } from "flowbite-react"; // For loading indicator
 import { API_CONFIG } from "../../config/api";
 
@@ -32,7 +31,7 @@ interface PendudukDetail {
   no_kk: string;
 }
 
-export default function DetailKtpPages() {
+export default function DetailPendudukPages() {
   const { nik } = useParams<{ nik: string }>();
   const navigate = useNavigate();
   const [penduduk, setPenduduk] = useState<PendudukDetail | null>(null);
@@ -70,7 +69,7 @@ export default function DetailKtpPages() {
   );
 
   useEffect(() => {
-    const fetchDetailKtp = async () => {
+    const fetchDetailPenduduk = async () => {
       if (!nik) {
         setError("NIK tidak ditemukan di URL.");
         setLoading(false);
@@ -126,7 +125,7 @@ export default function DetailKtpPages() {
       }
     };
 
-    fetchDetailKtp();
+    fetchDetailPenduduk();
   }, [nik, navigate, formatDate]); // Added formatDate to dependencies as it's used inside
 
   const detailItems = penduduk
@@ -165,14 +164,14 @@ export default function DetailKtpPages() {
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate("/admin/dataktp")}
+                    onClick={() => navigate("/admin/penduduk")}
                     className="rounded-lg p-2 transition-colors hover:bg-gray-100"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <div>
                     <h1 className="text-xl font-semibold text-gray-900">
-                      Detail Data KTP
+                      Detail Data Penduduk
                     </h1>
                     <p className="text-sm text-gray-500">
                       NIK: {penduduk?.nik}
@@ -184,14 +183,6 @@ export default function DetailKtpPages() {
           </div>
 
           <div className="mt-3 flex flex-1 flex-col gap-4 bg-gradient-to-br from-slate-50 to-blue-50 p-4 pt-0">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/admin/dataktp")}
-              className="mt-4 w-fit bg-blue-500 text-white"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali
-            </Button>
 
             {loading && (
               <div className="flex justify-center py-10">

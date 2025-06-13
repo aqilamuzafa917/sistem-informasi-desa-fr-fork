@@ -26,6 +26,7 @@ import {
   ChevronRight,
   CalendarIcon,
   ChevronLeft,
+  BookUser,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -218,14 +219,13 @@ interface ErrorResponseData {
   errors?: Record<string, string[]>;
 }
 
-interface StepIndicatorProps {
-  step: number;
-  title: string;
-  isActive: boolean;
-  isCompleted: boolean;
-}
+const steps = [
+  { id: 1, title: "Informasi Personal", icon: User },
+  { id: 2, title: "Alamat", icon: Home },
+  { id: 3, title: "Data Tambahan", icon: Briefcase },
+];
 
-export default function KtpCreate() {
+export default function PendudukCreate() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<PendudukFormData>(initialFormData);
   const [loading, setLoading] = useState(false);
@@ -320,7 +320,7 @@ export default function KtpCreate() {
       if (response.status === 201 || response.status === 200) {
         setSuccess("Data penduduk berhasil ditambahkan!");
         setFormData(initialFormData);
-        setTimeout(() => navigate("/admin/dataktp"), 2000);
+        setTimeout(() => navigate("/admin/penduduk"), 2000);
       } else {
         setError(
           (response.data as ErrorResponseData)?.message ||
@@ -361,85 +361,6 @@ export default function KtpCreate() {
     setLoading(false);
   };
 
-  const getCompletionPercentage = () => {
-    const filledFields = Object.values(formData).filter(
-      (value) => value !== "",
-    ).length;
-    return Math.round((filledFields / Object.keys(formData).length) * 100);
-  };
-
-  const getStepCompletion = (step: number) => {
-    const stepFields = {
-      1: [
-        "nik",
-        "nama",
-        "tempat_lahir",
-        "tanggal_lahir",
-        "jenis_kelamin",
-        "agama",
-      ],
-      2: [
-        "alamat",
-        "rt",
-        "rw",
-        "desa_kelurahan",
-        "kecamatan",
-        "kabupaten_kota",
-        "provinsi",
-        "kode_pos",
-      ],
-      3: ["status_perkawinan", "pekerjaan", "kewarganegaraan", "pendidikan"],
-    };
-
-    const fields = stepFields[step as keyof typeof stepFields] || [];
-    const completed = fields.filter(
-      (field) => formData[field as keyof PendudukFormData] !== "",
-    ).length;
-    return Math.round((completed / fields.length) * 100);
-  };
-
-  const StepIndicator = ({
-    step,
-    title,
-    isActive,
-    isCompleted,
-  }: StepIndicatorProps) => (
-    <div className={`flex items-center ${step < 3 ? "flex-1" : ""}`}>
-      <div className="flex flex-col items-center">
-        <div
-          className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-            isCompleted
-              ? "border-green-500 bg-green-500 text-white"
-              : isActive
-                ? "border-blue-500 bg-blue-500 text-white"
-                : "border-gray-300 bg-white text-gray-400"
-          }`}
-        >
-          {isCompleted ? (
-            <CheckCircle className="h-6 w-6" />
-          ) : (
-            <span className="font-semibold">{step}</span>
-          )}
-        </div>
-        <div className="mt-2 text-center">
-          <p
-            className={`text-sm font-medium ${isActive ? "text-blue-600" : "text-gray-500"}`}
-          >
-            {title}
-          </p>
-          <p className="text-xs text-gray-400">
-            {getStepCompletion(step)}% selesai
-          </p>
-        </div>
-      </div>
-      {step < 3 && (
-        <div
-          className={`mx-4 h-0.5 flex-1 ${getStepCompletion(step) === 100 ? "bg-green-500" : "bg-gray-200"}`}
-        />
-      )}
-    </div>
-  );
-
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -461,7 +382,7 @@ export default function KtpCreate() {
                       Tambah Data Penduduk
                     </h1>
                     <p className="text-sm text-gray-500">
-                      Formulir Pendaftaran KTP
+                      Formulir Pendaftaran Penduduk
                     </p>
                   </div>
                 </div>
@@ -470,71 +391,83 @@ export default function KtpCreate() {
           </div>
 
           <div className="p-4">
-            {/* Progress Overview */}
             <div className="mb-8 rounded-2xl border border-gray-200/50 bg-white/70 p-6 shadow-sm backdrop-blur-sm">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Progress Pengisian
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Lengkapi semua informasi yang diperlukan
-                  </p>
+              <div className="relative">
+                {/* Progress Line */}
+                <div className="absolute top-6 right-0 left-0 -z-10 h-0.5 bg-gray-200">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out"
+                    style={{
+                      width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                    }}
+                  />
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">
-                      {getCompletionPercentage()}%
-                    </p>
-                    <p className="text-xs text-gray-500">Selesai</p>
-                  </div>
-                  <div className="h-16 w-16">
-                    <svg className="h-16 w-16 -rotate-90 transform">
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="transparent"
-                        className="text-gray-200"
-                      />
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="transparent"
-                        strokeDasharray={`${2 * Math.PI * 28}`}
-                        strokeDashoffset={`${2 * Math.PI * 28 * (1 - getCompletionPercentage() / 100)}`}
-                        className="text-blue-500 transition-all duration-500"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
 
-              {/* Step Indicators */}
-              <div className="flex items-center">
-                <StepIndicator
-                  step={1}
-                  title="Informasi Personal"
-                  isActive={currentStep === 1}
-                  isCompleted={getStepCompletion(1) === 100}
-                />
-                <StepIndicator
-                  step={2}
-                  title="Alamat"
-                  isActive={currentStep === 2}
-                  isCompleted={getStepCompletion(2) === 100}
-                />
-                <StepIndicator
-                  step={3}
-                  title="Data Tambahan"
-                  isActive={currentStep === 3}
-                  isCompleted={getStepCompletion(3) === 100}
-                />
+                <div className="flex justify-between">
+                  {steps.map((step) => {
+                    const Icon = step.icon;
+                    const isActive = currentStep === step.id;
+                    const isCompleted = currentStep > step.id;
+
+                    return (
+                      <button
+                        key={step.id}
+                        onClick={() => setCurrentStep(step.id)}
+                        className={`group relative flex flex-col items-center transition-all duration-300 ${
+                          isActive ? "scale-105" : "hover:scale-102"
+                        }`}
+                      >
+                        {/* Icon Circle */}
+                        <div
+                          className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
+                            isActive
+                              ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25"
+                              : isCompleted
+                                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25"
+                                : "border-2 border-gray-200 bg-white text-gray-400 group-hover:border-gray-300 group-hover:text-gray-600"
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <CheckCircle size={20} className="animate-pulse" />
+                          ) : (
+                            <Icon size={20} />
+                          )}
+
+                          {/* Pulse animation for active step */}
+                          {isActive && (
+                            <div className="absolute inset-0 animate-ping rounded-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20" />
+                          )}
+                        </div>
+
+                        {/* Step Title */}
+                        <span
+                          className={`mt-2 text-sm font-medium transition-colors duration-300 ${
+                            isActive
+                              ? "text-blue-600"
+                              : isCompleted
+                                ? "text-green-600"
+                                : "text-gray-500 group-hover:text-gray-700"
+                          }`}
+                        >
+                          {step.title}
+                        </span>
+
+                        {/* Step Number Badge */}
+                        <div
+                          className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
+                            isActive
+                              ? "bg-blue-100 text-blue-600"
+                              : isCompleted
+                                ? "bg-green-100 text-green-600"
+                                : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {step.id}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -618,7 +551,7 @@ export default function KtpCreate() {
                             placeholder="Masukkan Nomor KK 16 digit"
                             required
                           />
-                          <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+                          <BookUser className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                         </div>
                       </div>
 
