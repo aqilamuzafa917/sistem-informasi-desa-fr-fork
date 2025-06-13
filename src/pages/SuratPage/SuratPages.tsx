@@ -9,7 +9,6 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  Calendar,
   FileText,
   CheckCircle,
   Clock,
@@ -456,11 +455,10 @@ export default function SuratPages() {
                           Jenis Surat
                         </th>
                         <th
-                          className="cursor-pointer px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors hover:bg-gray-100"
+                          className="max-w-[110px] min-w-[90px] cursor-pointer px-1 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors hover:bg-gray-100"
                           onClick={() => handleSort("tanggal_pengajuan")}
                         >
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
                             Tgl Pengajuan
                             {sortField === "tanggal_pengajuan" &&
                               (sortDirection === "asc" ? (
@@ -471,11 +469,10 @@ export default function SuratPages() {
                           </div>
                         </th>
                         <th
-                          className="cursor-pointer px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors hover:bg-gray-100"
+                          className="max-w-[110px] min-w-[90px] cursor-pointer px-1 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors hover:bg-gray-100"
                           onClick={() => handleSort("tanggal_disetujui")}
                         >
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
                             Tgl Disetujui
                             {sortField === "tanggal_disetujui" &&
                               (sortDirection === "asc" ? (
@@ -510,7 +507,7 @@ export default function SuratPages() {
                               {surat.nomor_surat}
                             </div>
                           </td>
-                          <td className="max-w-[150px] px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                          <td className="max-w-[220px] px-3 py-2 text-xs whitespace-nowrap text-gray-900">
                             <div
                               className="truncate"
                               title={
@@ -528,10 +525,10 @@ export default function SuratPages() {
                               </span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                          <td className="max-w-[110px] min-w-[90px] px-1 py-2 text-xs whitespace-nowrap text-gray-900">
                             {formatDate(surat.tanggal_pengajuan)}
                           </td>
-                          <td className="px-3 py-2 text-xs whitespace-nowrap text-gray-900">
+                          <td className="max-w-[110px] min-w-[90px] px-1 py-2 text-xs whitespace-nowrap text-gray-900">
                             {surat.tanggal_disetujui
                               ? formatDate(surat.tanggal_disetujui)
                               : "-"}
