@@ -394,7 +394,7 @@ export default function PendapatanPages() {
                 </p>
               </div>
               <Button
-                onClick={() => navigate("/pendapatan/tambah")}
+                onClick={() => navigate("/admin/pendapatan/tambah")}
                 className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
               >
                 <Plus className="h-5 w-5" />
@@ -702,7 +702,7 @@ export default function PendapatanPages() {
                       </div>
                       <Button
                         className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
-                        onClick={() => navigate("/pendapatan/detail")}
+                        onClick={() => navigate("/admin/pendapatan/detail")}
                       >
                         Detail Pendapatan
                       </Button>

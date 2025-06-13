@@ -92,28 +92,28 @@ export default function App() {
         <Route path="/petafasilitasdesa" element={<PetaFasilitasDesa />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/surat" element={<SuratPages />} />
-          <Route path="/surat/:id" element={<VerifikasiSuratPages />} />
-          <Route path="/suratcreate" element={<SuratCreate />} />
-          <Route path="/profil" element={<ProfilPages />} />
-          <Route path="/artikel" element={<ArtikelPages />} />
-          <Route path="/artikel/buat" element={<ArtikelCreate />} />
-          <Route path="/artikel/:id" element={<VerifikasiArtikelPage />} />
-          <Route path="/pendapatan" element={<PendapatanPages />} />
-          <Route path="/pendapatan/detail" element={<PendapatanDetail />} />
-          <Route path="/pendapatan/tambah" element={<PendapatanCreate />} />
-          <Route path="/belanja" element={<BelanjaPages />} />
-          <Route path="/belanja/detail" element={<BelanjaDetail />} />
-          <Route path="/belanja/tambah" element={<BelanjaCreate />} />
-          <Route path="/peta" element={<PetaPages />} />
-          <Route path="/dataktp" element={<DataKTPPages />} />
-          <Route path="/dataktp/:nik" element={<DetailKtpPages />} />
-          <Route path="/dataktp/tambahktp" element={<KtpCreate />} />
-          <Route path="/datakk" element={<DataKKPages />} />
-          <Route path="/pengaduan" element={<PengaduanPages />} />
-          <Route path="/pengaduan/:id" element={<VerifikasiPengaduanPage />} />
-          <Route path="/configdesa" element={<ConfigPages />} />
+          <Route path="/admin/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/surat" element={<SuratPages />} />
+          <Route path="/admin/surat/:id" element={<VerifikasiSuratPages />} />
+          <Route path="/admin/suratcreate" element={<SuratCreate />} />
+          <Route path="/admin/profil" element={<ProfilPages />} />
+          <Route path="/admin/artikel" element={<ArtikelPages />} />
+          <Route path="/admin/artikel/buat" element={<ArtikelCreate />} />
+          <Route path="/admin/artikel/:id" element={<VerifikasiArtikelPage />} />
+          <Route path="/admin/pendapatan" element={<PendapatanPages />} />
+          <Route path="/admin/pendapatan/detail" element={<PendapatanDetail />} />
+          <Route path="/admin/pendapatan/tambah" element={<PendapatanCreate />} />
+          <Route path="/admin/belanja" element={<BelanjaPages />} />
+          <Route path="/admin/belanja/detail" element={<BelanjaDetail />} />
+          <Route path="/admin/belanja/tambah" element={<BelanjaCreate />} />
+          <Route path="/admin/peta" element={<PetaPages />} />
+          <Route path="/admin/dataktp" element={<DataKTPPages />} />
+          <Route path="/admin/dataktp/:nik" element={<DetailKtpPages />} />
+          <Route path="/admin/dataktp/tambahktp" element={<KtpCreate />} />
+          <Route path="/admin/datakk" element={<DataKKPages />} />
+          <Route path="/admin/pengaduan" element={<PengaduanPages />} />
+          <Route path="/admin/pengaduan/:id" element={<VerifikasiPengaduanPage />} />
+          <Route path="/admin/configdesa" element={<ConfigPages />} />
         </Route>
       </Routes>
 

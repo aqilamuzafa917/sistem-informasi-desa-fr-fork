@@ -273,7 +273,7 @@ export default function DataKTPPages() {
                 </p>
               </div>
               <Button
-                onClick={() => navigate("/dataktp/tambahktp")}
+                onClick={() => navigate("/admin/dataktp/tambahktp")}
                 className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
               >
                 <Plus className="h-5 w-5" />
@@ -473,7 +473,7 @@ export default function DataKTPPages() {
                           <td className="px-3 py-2 text-xs font-medium whitespace-nowrap">
                             <button
                               onClick={() =>
-                                navigate(`/dataktp/${penduduk.nik}`)
+                                navigate(`/admin/dataktp/${penduduk.nik}`)
                               }
                               className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
                             >

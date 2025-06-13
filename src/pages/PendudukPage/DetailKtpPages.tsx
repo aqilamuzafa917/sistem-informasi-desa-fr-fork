@@ -2,22 +2,9 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  BreadcrumbLink,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft } from "lucide-react";
 import { Spinner } from "flowbite-react"; // For loading indicator
 import { API_CONFIG } from "../../config/api";
 
@@ -171,76 +158,82 @@ export default function DetailKtpPages() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink onClick={() => navigate("/dataktp")}>
-                    Data KTP
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Detail Data KTP</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex h-16 items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate("/admin/dataktp")}
+                    className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <div>
+                    <h1 className="text-xl font-semibold text-gray-900">
+                      Detail Data KTP
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                      NIK: {penduduk?.nik}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </header>
 
-        <div className="mt-3 flex flex-1 flex-col gap-4 bg-gradient-to-br from-slate-50 to-blue-50 p-4 pt-0">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/dataktp")}
-            className="mt-4 w-fit bg-blue-500 text-white"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali
-          </Button>
+          <div className="mt-3 flex flex-1 flex-col gap-4 bg-gradient-to-br from-slate-50 to-blue-50 p-4 pt-0">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/dataktp")}
+              className="mt-4 w-fit bg-blue-500 text-white"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Kembali
+            </Button>
 
-          {loading && (
-            <div className="flex justify-center py-10">
-              <Spinner size="xl" />
-            </div>
-          )}
-          {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-4 text-center text-red-700">
-              {error}
-            </div>
-          )}
-
-          {penduduk && !loading && !error && (
-            <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
-              <div className="px-4 py-5 sm:px-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">
-                  Detail Informasi Penduduk
-                </h3>
-                <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                  Rincian data pribadi penduduk.
-                </p>
+            {loading && (
+              <div className="flex justify-center py-10">
+                <Spinner size="xl" />
               </div>
-              <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
-                <dl className="sm:divide-y sm:divide-gray-200">
-                  {detailItems.map((item) => (
-                    <div
-                      key={item.label}
-                      className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 sm:py-4"
-                    >
-                      <dt className="text-sm font-medium text-gray-500">
-                        {item.label}
-                      </dt>
-                      <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        {item.value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
+            )}
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 p-4 text-center text-red-700">
+                {error}
               </div>
-            </div>
-          )}
+            )}
+
+            {penduduk && !loading && !error && (
+              <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
+                <div className="px-4 py-5 sm:px-6">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Detail Informasi Penduduk
+                  </h3>
+                  <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                    Rincian data pribadi penduduk.
+                  </p>
+                </div>
+                <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
+                  <dl className="sm:divide-y sm:divide-gray-200">
+                    {detailItems.map((item) => (
+                      <div
+                        key={item.label}
+                        className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 sm:py-4"
+                      >
+                        <dt className="text-sm font-medium text-gray-500">
+                          {item.label}
+                        </dt>
+                        <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                          {item.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
