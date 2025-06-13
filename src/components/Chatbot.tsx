@@ -7,6 +7,7 @@ import { CHATBOT_MINIMIZE_EVENT } from "./NavbarDesa";
 import { PengaduanPopup } from "./PengaduanPopup";
 import React from "react";
 import { useDesa } from "@/contexts/DesaContext";
+import { v4 as uuidv4 } from "uuid";
 
 interface Message {
   text: string;
@@ -16,6 +17,8 @@ interface Message {
 }
 
 const STORAGE_KEY = "chatbot_messages";
+const SESSION_ID_KEY = "chatbot_session_id";
+const MESSAGE_HISTORY_LIMIT = 10; // Number of previous messages to include in context
 
 // Consistent theme colors
 const theme = {
@@ -35,6 +38,26 @@ export function Chatbot() {
   const [isOpen, setIsOpen] = useState(isHome);
   const [showPopup, setShowPopup] = useState(isHome);
   const [isPengaduanOpen, setIsPengaduanOpen] = useState(false);
+  const [sessionId] = useState<string>(() => {
+    // Try to get session ID from localStorage first
+    const storedSessionId = localStorage.getItem(SESSION_ID_KEY);
+    if (storedSessionId) return storedSessionId;
+
+    // If not in localStorage, try sessionStorage
+    const sessionStoredId = sessionStorage.getItem(SESSION_ID_KEY);
+    if (sessionStoredId) return sessionStoredId;
+
+    // Generate new UUID if no session ID exists
+    const newSessionId = uuidv4();
+    // Try to store in localStorage first
+    try {
+      localStorage.setItem(SESSION_ID_KEY, newSessionId);
+    } catch {
+      // Fallback to sessionStorage if localStorage fails
+      sessionStorage.setItem(SESSION_ID_KEY, newSessionId);
+    }
+    return newSessionId;
+  });
   const [messages, setMessages] = useState<Message[]>(() => {
     const savedMessages = localStorage.getItem(STORAGE_KEY);
     return savedMessages ? JSON.parse(savedMessages) : [];
@@ -138,21 +161,31 @@ export function Chatbot() {
       setInputMessage("");
     }
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        text: messageToSend,
-        isUser: true,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    // Add new user message to state
+    const newUserMessage = {
+      text: messageToSend,
+      isUser: true,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, newUserMessage]);
     setIsLoading(true);
 
     try {
+      // Get last N messages for context, excluding the one we just added
+      const recentMessages = messages
+        .slice(-MESSAGE_HISTORY_LIMIT)
+        .map((msg) => ({
+          role: msg.isUser ? "user" : "assistant",
+          content: msg.text,
+          timestamp: msg.timestamp,
+        }));
+
       const { data } = await axios.post(
         `${API_CONFIG.baseURL}/api/publik/chatbot/send`,
         {
           message: messageToSend,
+          session_id: sessionId,
+          message_history: recentMessages,
         },
         {
           headers: API_CONFIG.headers,
