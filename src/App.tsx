@@ -24,6 +24,7 @@ import InfografisPenduduk from "./pages/InfografisPenduduk";
 import InfografisAPBDesa from "./pages/InfografisAPBDesa";
 import InfografisIDM from "./pages/InfografisIDM";
 import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
+import PetaPotensiDesa from "./pages/PetaPotensiDesa";
 import SuratCreate from "./pages/SuratPage/SuratCreate";
 import PendudukCreate from "./pages/PendudukPage/PendudukCreate";
 import ArtikelCreate from "./pages/ArtikelPage/ArtikelCreate";
@@ -94,6 +95,7 @@ export default function App() {
         <Route path="/infografis/apbdesa" element={<InfografisAPBDesa />} />
         <Route path="/infografis/idm" element={<InfografisIDM />} />
         <Route path="/petafasilitasdesa" element={<PetaFasilitasDesa />} />
+        <Route path="/petapotensidesa" element={<PetaPotensiDesa />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/admin/dashboard" element={<DashboardPage />} />
