@@ -9,6 +9,7 @@ import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
+  Ban,
 } from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "@/config/api";
@@ -55,11 +56,22 @@ export default function LoginPage() {
       }, 1000);
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.message ||
-            err.response?.data?.error ||
-            err.message,
-        );
+        // Handle specific error cases
+        if (err.response?.status === 403) {
+          setError("Akun Anda telah di-revoke. Silakan hubungi administrator.");
+        } else if (err.response?.status === 401) {
+          setError("Email atau password salah.");
+        } else if (err.response?.status === 429) {
+          setError(
+            "Terlalu banyak percobaan login. Silakan coba lagi dalam beberapa menit.",
+          );
+        } else {
+          setError(
+            err.response?.data?.message ||
+              err.response?.data?.error ||
+              err.message,
+          );
+        }
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -121,10 +133,16 @@ export default function LoginPage() {
           {/* Alert Messages */}
           {error && (
             <div className="animate-in slide-in-from-top-2 mb-6 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 duration-300 dark:border-red-800 dark:bg-red-900/20">
-              <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-500" />
+              {error.includes("di-revoke") ? (
+                <Ban className="h-5 w-5 flex-shrink-0 text-red-500" />
+              ) : (
+                <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-500" />
+              )}
               <div className="flex-1">
                 <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                  Login Error!
+                  {error.includes("di-revoke")
+                    ? "Akun Di-revoke!"
+                    : "Login Error!"}
                 </p>
                 <p className="text-sm text-red-600 dark:text-red-300">
                   {error}
