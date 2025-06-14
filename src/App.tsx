@@ -8,7 +8,6 @@ import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRou
 import ArtikelPages from "./pages/ArtikelPage/ArtikelPages";
 import PendapatanPages from "./pages/InfografisPage/PendapatanPages";
 import BelanjaPages from "./pages/InfografisPage/BelanjaPages";
-import PetaPages from "./pages/InfografisPage/PetaPages";
 import PendudukPages from "./pages/PendudukPage/PendudukPages";
 import DataKKPages from "./pages/PendudukPage/KkPages";
 import PengaduanPages from "./pages/PengaduanPage/PenganduanPages";
@@ -44,6 +43,8 @@ import DetailPendudukPages from "./pages/PendudukPage/DetailPendudukPages";
 import UserPages from "./pages/UserPage/UserPages";
 import UserCreate from "./pages/UserPage/UserCreate";
 import ChatbotLogPages from "./pages/ChatBotPage/ChabotLogPages";
+import IDMPages from "./pages/InfografisPage/IdmPages";
+import PetaFasilitasPages from "./pages/PetaPage/PetaFasilitasPages";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -118,12 +119,16 @@ export default function App() {
           <Route path="/admin/belanja" element={<BelanjaPages />} />
           <Route path="/admin/belanja/detail" element={<BelanjaDetail />} />
           <Route path="/admin/belanja/tambah" element={<BelanjaCreate />} />
-          <Route path="/admin/peta" element={<PetaPages />} />
           <Route path="/admin/penduduk" element={<PendudukPages />} />
           <Route
             path="/admin/penduduk/:nik"
             element={<DetailPendudukPages />}
           />
+          <Route
+            path="/admin/idm"
+            element={<IDMPages />}
+          />
+          <Route path="/admin/petafasilitas" element={<PetaFasilitasPages />} />
           <Route path="/admin/penduduk/tambah" element={<PendudukCreate />} />
           <Route path="/admin/datakk" element={<DataKKPages />} />
           <Route path="/admin/pengaduan" element={<PengaduanPages />} />

@@ -14,10 +14,16 @@ import { toast } from "sonner";
 import { SuratPayload } from "@/types/surat";
 import { useNavigate } from "react-router-dom";
 
+// Interface for Pengikut data
+interface Pengikut {
+  nik: string;
+}
+
 // Interface for the form data
 interface FormData
   extends Omit<Partial<SuratPayload>, "attachment_bukti_pendukung"> {
   attachment_bukti_pendukung?: File | null;
+  data_pengikut_pindah?: Pengikut[]; // Update type for data_pengikut_pindah
 }
 
 const jenisSuratOptions = [
@@ -43,6 +49,7 @@ export default function SuratCreate() {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [pengikutList, setPengikutList] = useState<Pengikut[]>([]); // Initialize as empty array to make it optional
 
   const steps = [
     { id: 1, title: "Pilih Surat", icon: FileText },
@@ -119,6 +126,22 @@ export default function SuratCreate() {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddPengikut = () => {
+    setPengikutList((prev) => [...prev, { nik: "" }]);
+  };
+
+  const handleRemovePengikut = (index: number) => {
+    setPengikutList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handlePengikutNikChange = (index: number, value: string) => {
+    setPengikutList((prev) =>
+      prev.map((pengikut, i) =>
+        i === index ? { ...pengikut, nik: value } : pengikut,
+      ),
+    );
+  };
+
   const validateNIK = (nik: string) => {
     return nik && nik.length === 16 && /^\d+$/.test(nik);
   };
@@ -149,20 +172,11 @@ export default function SuratCreate() {
     });
 
     // Handle data_pengikut_pindah with Laravel/PHP style array format
-    if (
-      formData.data_pengikut_pindah &&
-      Array.isArray(formData.data_pengikut_pindah)
-    ) {
-      // Remove duplicate NIKs
-      const uniquePengikut = (
-        formData.data_pengikut_pindah as Array<{ nik: string }>
-      ).filter(
-        (pengikut, index, self) =>
-          index === self.findIndex((p) => p.nik === pengikut.nik),
-      );
+    if (jenisSurat === "SK_PINDAH") {
+      const filteredPengikut = pengikutList.filter((p) => p.nik.trim() !== "");
 
       // Validate all NIKs
-      const invalidNIK = uniquePengikut.find(
+      const invalidNIK = filteredPengikut.find(
         (pengikut) => !validateNIK(pengikut.nik),
       );
       if (invalidNIK) {
@@ -174,7 +188,7 @@ export default function SuratCreate() {
       }
 
       // Format pengikut data in Laravel/PHP style array format
-      uniquePengikut.forEach((pengikut, index) => {
+      filteredPengikut.forEach((pengikut, index) => {
         formDataToSend.append(
           `data_pengikut_pindah[${index}][nik]`,
           pengikut.nik,
@@ -384,14 +398,48 @@ export default function SuratCreate() {
                 "select",
               )}
             </div>
-            {renderFormField(
-              "data_pengikut_pindah",
-              "Data Pengikut Pindah (Nama, NIK, Hubungan - pisahkan dengan ; jika lebih dari satu)",
-              "text",
-              false,
-              undefined,
-              "textarea",
-            )}
+            <div>
+              <Label>Data Pengikut Pindah</Label>
+              <p className="text-muted-foreground mb-2 text-sm">
+                Tambahkan NIK pengikut yang ikut pindah.
+              </p>
+              {pengikutList.map((pengikut, index) => (
+                <div key={index} className="mb-3 flex items-end gap-2">
+                  <div className="flex-1">
+                    <Label htmlFor={`nik_pengikut_${index}`} className="mb-2">
+                      NIK Pengikut {index + 1}
+                    </Label>
+                    <Input
+                      id={`nik_pengikut_${index}`}
+                      name={`nik_pengikut_${index}`}
+                      type="text"
+                      value={pengikut.nik}
+                      onChange={(e) =>
+                        handlePengikutNikChange(index, e.target.value)
+                      }
+                      className="bg-background"
+                      placeholder="Masukkan NIK Pengikut"
+                    />
+                  </div>
+                  {pengikutList.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => handleRemovePengikut(index)}
+                    >
+                      Hapus
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                onClick={handleAddPengikut}
+                className="bg-gray-800 text-white hover:bg-gray-900"
+              >
+                + Tambah Pengikut
+              </Button>
+            </div>
           </div>
         );
       case "SK_KEMATIAN":

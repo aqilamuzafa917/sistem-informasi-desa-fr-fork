@@ -10,6 +10,7 @@ import {
   Bolt,
   User,
   ShieldUser,
+  Map,
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavInfografis } from "./nav-infografis";
 import { useDesa } from "@/contexts/DesaContext";
+import { NavPeta } from "./nav-peta";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation();
@@ -83,14 +85,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             isActive: currentPath === "/admin/belanja",
           },
           {
-            title: "Peta Fasilitas",
-            url: "/admin/peta",
-            isActive: currentPath === "/admin/peta",
-          },
-          {
             title: "IDM",
             url: "/admin/idm",
             isActive: currentPath === "/admin/idm",
+          },
+        ],
+      },
+    ],
+    navPeta: [
+      {
+        title: "Peta Desa",
+        url: "#",
+        icon: Map,
+        isActive: ["/petafasilitas", "/petapotensi"].includes(currentPath),
+        items: [
+          {
+            title: "Peta Fasilitas",
+            url: "/admin/petafasilitas",
+            isActive: currentPath === "/admin/petafasilitas",
+          },
+          {
+            title: "Peta Potensi",
+            url: "/admin/petapotensi",
+            isActive: currentPath === "/admin/petapotensi",
           },
         ],
       },
@@ -208,17 +225,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           ))}
           <NavInfografis items={data.navInfografis} />
+          <NavPeta items={data.navPeta} />
           {data.navPengaduan.map((data) => (
-            <SidebarMenuItem key={data.title}>
-              <SidebarMenuButton asChild isActive={data.isActive}>
-                <Link to={data.url}>
-                  <data.icon />
-                  <span>{data.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          {data.navConfigDesa.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
                 <Link to={data.url}>
@@ -239,6 +247,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           ))}
           {data.navChatBot.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <Link to={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          {data.navConfigDesa.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
                 <Link to={data.url}>
