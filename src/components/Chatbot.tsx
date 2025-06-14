@@ -16,9 +16,29 @@ interface Message {
   isError?: boolean;
 }
 
+interface ContextMessage {
+  role: "user" | "model";
+  content: string;
+  timestamp: string;
+}
+
 const STORAGE_KEY = "chatbot_messages";
+const CONTEXT_HISTORY_KEY = "chatbot_context_history";
 const SESSION_ID_KEY = "chatbot_session_id";
 const MESSAGE_HISTORY_LIMIT = 10; // Number of previous messages to include in context
+
+// Function result keywords for context filtering
+const FUNCTION_RESULT_KEYWORDS = [
+  "Status Pengajuan Surat",
+  "Total Penduduk",
+  "Total Kepala Keluarga",
+  "Laporan APBDesa",
+  "Total Pendapatan",
+  "Artikel Terbaru Desa",
+  "Data Tidak Ditemukan",
+  "NIK Tidak Ditemukan",
+  "Gagal Mengambil Data",
+];
 
 // Consistent theme colors
 const theme = {
@@ -62,16 +82,24 @@ export function Chatbot() {
     const savedMessages = localStorage.getItem(STORAGE_KEY);
     return savedMessages ? JSON.parse(savedMessages) : [];
   });
+  const [contextHistory, setContextHistory] = useState<ContextMessage[]>(() => {
+    const savedContext = localStorage.getItem(CONTEXT_HISTORY_KEY);
+    return savedContext ? JSON.parse(savedContext) : [];
+  });
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
   const lastScrollY = useRef(0);
 
-  // Save messages to localStorage whenever they change
+  // Save messages and context history to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem(CONTEXT_HISTORY_KEY, JSON.stringify(contextHistory));
+  }, [contextHistory]);
 
   // Handle scroll behavior
   useEffect(() => {
@@ -161,49 +189,67 @@ export function Chatbot() {
       setInputMessage("");
     }
 
-    // Add new user message to state
-    const newUserMessage = {
+    // Add new user message to UI state
+    const newUserMessage: Message = {
       text: messageToSend,
       isUser: true,
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, newUserMessage]);
+
+    // Add user message to context history
+    const newContextMessage: ContextMessage = {
+      role: "user",
+      content: messageToSend,
+      timestamp: newUserMessage.timestamp,
+    };
+    setContextHistory((prev) => [...prev, newContextMessage]);
+
     setIsLoading(true);
 
     try {
-      // Get last N messages for context, excluding the one we just added
-      const recentMessages = messages
-        .slice(-MESSAGE_HISTORY_LIMIT)
-        .map((msg) => ({
-          role: msg.isUser ? "user" : "assistant",
-          content: msg.text,
-          timestamp: msg.timestamp,
-        }));
-
       const { data } = await axios.post(
         `${API_CONFIG.baseURL}/api/publik/chatbot/send`,
         {
           message: messageToSend,
           session_id: sessionId,
-          message_history: recentMessages,
+          message_history: contextHistory.slice(-MESSAGE_HISTORY_LIMIT),
         },
         {
           headers: API_CONFIG.headers,
         },
       );
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: data.reply,
-          isUser: false,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+
+      const chatbotReply = data.reply;
+      const newBotMessage: Message = {
+        text: chatbotReply,
+        isUser: false,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Always add bot response to UI messages
+      setMessages((prev) => [...prev, newBotMessage]);
+
+      // Check if the response is a function result
+      const isFunctionResult = FUNCTION_RESULT_KEYWORDS.some((keyword) =>
+        chatbotReply.includes(keyword),
+      );
+
+      // Only add to context history if it's not a function result
+      if (!isFunctionResult) {
+        const newBotContextMessage: ContextMessage = {
+          role: "model",
+          content: chatbotReply,
+          timestamp: newBotMessage.timestamp,
+        };
+        setContextHistory((prev) => [...prev, newBotContextMessage]);
+      }
     } catch {
+      const errorMessage = "Maaf, terjadi kesalahan. Silakan coba lagi.";
       setMessages((prev) => [
         ...prev,
         {
-          text: "Maaf, terjadi kesalahan. Silakan coba lagi.",
+          text: errorMessage,
           isUser: false,
           timestamp: new Date().toISOString(),
           isError: true,
