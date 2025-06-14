@@ -5,9 +5,6 @@ import "leaflet/dist/leaflet.css";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import PetaNav from "@/components/PetaNav";
-// Memperbaiki masalah icon Leaflet di React
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import { useDesa } from "@/contexts/DesaContext";
 import axios from "axios";
 import { API_CONFIG } from "@/config/api";
@@ -16,15 +13,15 @@ import {
   MapPin,
   Calendar,
   Building2,
-  School,
-  Church,
-  Hospital,
   Maximize2,
   Minimize2,
   Search,
 } from "lucide-react";
+// Memperbaiki masalah icon Leaflet di React
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-interface POIFeature {
+interface PotensiFeature {
   type: "Feature";
   geometry: {
     type: "Point";
@@ -42,74 +39,101 @@ interface POIFeature {
   };
 }
 
-interface POIResponse {
-  type: "FeatureCollection";
-  features: POIFeature[];
-}
-
-const categoryConfig = [
+// Dummy data for potensi
+const dummyPotensiData: PotensiFeature[] = [
   {
-    key: "sekolah",
-    label: "Sekolah",
-    icon: School,
-    color: "green",
-    bgColor: "bg-green-500",
-    textColor: "text-green-600",
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [107.5105222441776, -6.912986707035502],
+    },
+    properties: {
+      name: "Sawah Padi Desa",
+      tags: {
+        "addr:street": "Jalan Sawah",
+        amenity: "farm",
+        building: "farm",
+        name: "Sawah Padi Desa",
+      },
+    },
   },
   {
-    key: "ibadah",
-    label: "Tempat Ibadah",
-    icon: Church,
-    color: "blue",
-    bgColor: "bg-blue-500",
-    textColor: "text-blue-600",
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [107.5115222441776, -6.913986707035502],
+    },
+    properties: {
+      name: "Peternakan Ayam",
+      tags: {
+        "addr:street": "Jalan Peternakan",
+        amenity: "farmyard",
+        building: "farmyard",
+        name: "Peternakan Ayam",
+      },
+    },
   },
   {
-    key: "kesehatan",
-    label: "Kesehatan",
-    icon: Hospital,
-    color: "red",
-    bgColor: "bg-red-500",
-    textColor: "text-red-600",
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [107.5125222441776, -6.914986707035502],
+    },
+    properties: {
+      name: "Industri Kecil",
+      tags: {
+        "addr:street": "Jalan Industri",
+        amenity: "industrial",
+        building: "industrial",
+        name: "Industri Kecil",
+      },
+    },
   },
   {
-    key: "lainnya",
-    label: "Fasilitas Lainnya",
-    icon: Building2,
-    color: "orange",
-    bgColor: "bg-orange-500",
-    textColor: "text-orange-600",
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [107.5135222441776, -6.915986707035502],
+    },
+    properties: {
+      name: "Wisata Alam",
+      tags: {
+        "addr:street": "Jalan Wisata",
+        amenity: "tourism",
+        building: "tourism",
+        name: "Wisata Alam",
+      },
+    },
   },
 ];
 
-export default function PetaFasilitasDesa() {
+export default function PetaPotensiDesa() {
   const { desaConfig, loading } = useDesa();
-  const [allPoiData, setAllPoiData] = React.useState<POIFeature[]>([]);
-  const [isLoadingPoi, setIsLoadingPoi] = React.useState(true);
+  const [allPotensiData] = React.useState<PotensiFeature[]>(dummyPotensiData);
+  const [isLoadingPotensi] = React.useState(false);
   const [polygonData, setPolygonData] = React.useState<[number, number][]>([]);
   const [isLoadingPolygon, setIsLoadingPolygon] = React.useState(true);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const mapRef = React.useRef<L.Map | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [selectedFacility, setSelectedFacility] =
-    React.useState<POIFeature | null>(null);
-  const fetchStatusRef = React.useRef({ poi: false, polygon: false });
+  const [selectedPotensi, setSelectedPotensi] =
+    React.useState<PotensiFeature | null>(null);
 
   // State untuk kategori yang aktif
   const [activeCategories, setActiveCategories] = React.useState<{
-    sekolah: boolean;
-    ibadah: boolean;
-    kesehatan: boolean;
-    lainnya: boolean;
+    pertanian: boolean;
+    peternakan: boolean;
+    industri: boolean;
+    wisata: boolean;
   }>({
-    sekolah: true,
-    ibadah: true,
-    kesehatan: true,
-    lainnya: true,
+    pertanian: true,
+    peternakan: true,
+    industri: true,
+    wisata: true,
   });
 
   // Simplified loading state
-  const isPageLoading = loading || isLoadingPoi || isLoadingPolygon;
+  const isPageLoading = loading || isLoadingPotensi || isLoadingPolygon;
 
   // Toggle kategori
   const toggleCategory = (kategori: keyof typeof activeCategories) => {
@@ -119,25 +143,26 @@ export default function PetaFasilitasDesa() {
     }));
   };
 
-  // Function to categorize POI based on amenity
-  const categorizePOI = (amenity: string): string => {
+  // Function to categorize Potensi based on amenity
+  const categorizePotensi = (amenity: string): string => {
     switch (amenity) {
-      case "school":
-        return "sekolah";
-      case "place_of_worship":
-        return "ibadah";
-      case "hospital":
-      case "clinic":
-        return "kesehatan";
+      case "farm":
+        return "pertanian";
+      case "farmyard":
+        return "peternakan";
+      case "industrial":
+        return "industri";
+      case "tourism":
+        return "wisata";
       default:
         return "lainnya";
     }
   };
 
-  // Filter POI data based on active categories and search query
-  const filteredPoiData = React.useMemo(() => {
-    return allPoiData.filter((feature) => {
-      const category = categorizePOI(feature.properties.tags.amenity);
+  // Filter Potensi data based on active categories and search query
+  const filteredPotensiData = React.useMemo(() => {
+    return allPotensiData.filter((feature) => {
+      const category = categorizePotensi(feature.properties.tags.amenity);
       const matchesCategory =
         activeCategories[category as keyof typeof activeCategories];
 
@@ -154,25 +179,27 @@ export default function PetaFasilitasDesa() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [allPoiData, activeCategories, searchQuery]);
+  }, [allPotensiData, activeCategories, searchQuery]);
 
   // Get marker icon based on amenity type
   const getMarkerIcon = (amenity: string) => {
     let iconColor = "";
 
     switch (amenity) {
-      case "school":
+      case "farm":
         iconColor = "green";
         break;
-      case "place_of_worship":
+      case "farmyard":
         iconColor = "blue";
         break;
-      case "hospital":
-      case "clinic":
+      case "industrial":
         iconColor = "red";
         break;
-      default:
+      case "tourism":
         iconColor = "orange";
+        break;
+      default:
+        iconColor = "gray";
     }
 
     return new L.Icon({
@@ -186,91 +213,11 @@ export default function PetaFasilitasDesa() {
     });
   };
 
-  // Fetch all POI data once on component mount
-  React.useEffect(() => {
-    // PENJAGA: Jika fetchStatusRef.current.poi sudah true, jangan jalankan lagi
-    if (fetchStatusRef.current.poi) return;
-
-    const fetchAllPoiData = async () => {
-      try {
-        setIsLoadingPoi(true);
-        // Set flag ke true DI AWAL untuk mencegah pemanggilan ganda
-        fetchStatusRef.current.poi = true;
-
-        // Fetch data from different endpoints
-        const fetchPromises = [
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=school`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=place_of_worship`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=hospital`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=clinic`,
-            { headers: API_CONFIG.headers },
-          ),
-          // Fetch all POI for "lainnya" category
-          axios.get<POIResponse>(`${API_CONFIG.baseURL}/api/publik/map/poi`, {
-            headers: API_CONFIG.headers,
-          }),
-        ];
-
-        const responses = await Promise.all(fetchPromises);
-        const allFeatures = responses.flatMap(
-          (response) => response.data.features,
-        );
-
-        // Remove duplicates based on coordinates and name
-        const uniqueFeatures = allFeatures.reduce(
-          (acc: POIFeature[], current) => {
-            const existingIndex = acc.findIndex(
-              (item) =>
-                item.geometry.coordinates[0] ===
-                  current.geometry.coordinates[0] &&
-                item.geometry.coordinates[1] ===
-                  current.geometry.coordinates[1] &&
-                item.properties.name === current.properties.name,
-            );
-
-            if (existingIndex === -1) {
-              acc.push(current);
-            }
-
-            return acc;
-          },
-          [],
-        );
-
-        setAllPoiData(uniqueFeatures);
-      } catch (error) {
-        console.error("Error fetching POI data:", error);
-        // Jika gagal, set flag kembali ke false agar bisa dicoba lagi nanti
-        fetchStatusRef.current.poi = false;
-      } finally {
-        setIsLoadingPoi(false);
-      }
-    };
-
-    fetchAllPoiData();
-  }, []); // Empty dependency array since we only want to run once
-
   // Fetch polygon data
   React.useEffect(() => {
-    // PENJAGA: Jika fetchStatusRef.current.polygon sudah true, jangan jalankan lagi
-    if (fetchStatusRef.current.polygon) return;
-
     const fetchPolygonData = async () => {
       try {
         setIsLoadingPolygon(true);
-        // Set flag ke true DI AWAL untuk mencegah pemanggilan ganda
-        fetchStatusRef.current.polygon = true;
-
         const response = await axios.get<DesaData>(
           `${API_CONFIG.baseURL}/api/publik/profil-desa/1`,
           { headers: API_CONFIG.headers },
@@ -283,15 +230,13 @@ export default function PetaFasilitasDesa() {
         }
       } catch (error) {
         console.error("Error fetching polygon data:", error);
-        // Jika gagal, set flag kembali ke false agar bisa dicoba lagi nanti
-        fetchStatusRef.current.polygon = false;
       } finally {
         setIsLoadingPolygon(false);
       }
     };
 
     fetchPolygonData();
-  }, []); // Empty dependency array since we only want to run once
+  }, []);
 
   // Fix untuk icon Leaflet di React
   React.useEffect(() => {
@@ -325,14 +270,14 @@ export default function PetaFasilitasDesa() {
     }, 100);
   };
 
-  // Function to handle facility selection
-  const handleFacilitySelect = (facility: POIFeature) => {
-    setSelectedFacility(facility);
+  // Function to handle potensi selection
+  const handlePotensiSelect = (potensi: PotensiFeature) => {
+    setSelectedPotensi(potensi);
     if (mapRef.current) {
-      const [longitude, latitude] = facility.geometry.coordinates;
+      const [longitude, latitude] = potensi.geometry.coordinates;
       mapRef.current.setView([latitude, longitude], 17, {
         animate: true,
-        duration: 0.4, // Duration in seconds
+        duration: 0.4,
         easeLinearity: 0.25,
         noMoveStart: false,
       });
@@ -344,7 +289,7 @@ export default function PetaFasilitasDesa() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <NavbarDesa />
         <div className="container mx-auto space-y-8 px-4 py-8">
-          <PetaNav activeTab="fasilitas" />
+          <PetaNav activeTab="potensi" />
 
           {/* Header Section Skeleton */}
           <div className="mb-16">
@@ -392,7 +337,7 @@ export default function PetaFasilitasDesa() {
                 <div className="h-[700] w-full animate-pulse bg-gray-200 dark:bg-gray-700"></div>
               </div>
 
-              {/* Facilities List Skeleton */}
+              {/* Potensi List Skeleton */}
               <div className="space-y-6">
                 {/* Filter Kategori Skeleton */}
                 <div className="flex w-full flex-wrap gap-2">
@@ -407,7 +352,7 @@ export default function PetaFasilitasDesa() {
                 {/* Search Bar Skeleton */}
                 <div className="h-12 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
 
-                {/* Facilities List Items Skeleton */}
+                {/* Potensi List Items Skeleton */}
                 <div className="grid h-[600px] grid-cols-1 gap-4 overflow-y-auto pr-2">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
@@ -436,7 +381,7 @@ export default function PetaFasilitasDesa() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <NavbarDesa />
       <div className="container mx-auto space-y-8 px-4 py-8">
-        <PetaNav activeTab="fasilitas" />
+        <PetaNav activeTab="potensi" />
 
         {/* Header Section */}
         <div className="mb-16">
@@ -452,7 +397,7 @@ export default function PetaFasilitasDesa() {
                       <Building2 size={24} />
                     </div>
                     <h1 className="text-4xl font-bold">
-                      Peta Fasilitas Desa {desaConfig?.nama_desa}
+                      Peta Potensi Desa {desaConfig?.nama_desa}
                     </h1>
                   </div>
                   <div className="flex items-center gap-2 text-blue-100">
@@ -477,11 +422,11 @@ export default function PetaFasilitasDesa() {
                 </div>
               </div>
 
-              {/* Info jumlah POI yang ditampilkan */}
+              {/* Info jumlah Potensi yang ditampilkan */}
               <div className="mt-4 text-center">
                 <p className="text-sm text-blue-100">
-                  Menampilkan {filteredPoiData.length} dari {allPoiData.length}{" "}
-                  fasilitas
+                  Menampilkan {filteredPotensiData.length} dari{" "}
+                  {allPotensiData.length} potensi
                 </p>
               </div>
             </div>
@@ -495,10 +440,10 @@ export default function PetaFasilitasDesa() {
             <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl">
               <div className="mb-8 text-center">
                 <h2 className="mb-2 text-2xl font-bold text-gray-800">
-                  Peta & Daftar Fasilitas
+                  Peta & Daftar Potensi
                 </h2>
                 <p className="text-gray-600">
-                  Fasilitas yang tersedia di Desa {desaConfig?.nama_desa}
+                  Potensi yang tersedia di Desa {desaConfig?.nama_desa}
                 </p>
               </div>
 
@@ -566,7 +511,7 @@ export default function PetaFasilitasDesa() {
                           </Popup>
                         </Polygon>
                       )}
-                      {filteredPoiData.map((feature, index) => {
+                      {filteredPotensiData.map((feature, index) => {
                         const [longitude, latitude] =
                           feature.geometry.coordinates;
                         const { name, tags } = feature.properties;
@@ -600,54 +545,54 @@ export default function PetaFasilitasDesa() {
                   </div>
                 </div>
 
-                {/* Facilities List Section */}
+                {/* Potensi List Section */}
                 {!isFullscreen && (
                   <div className="space-y-6">
                     {/* Filter Kategori */}
                     <div className="flex w-full flex-wrap gap-2">
                       <button
-                        onClick={() => toggleCategory("sekolah")}
+                        onClick={() => toggleCategory("pertanian")}
                         className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm transition-all duration-200 ${
-                          activeCategories.sekolah
+                          activeCategories.pertanian
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
                         <div className="h-2 w-2 rounded-full bg-green-400"></div>
-                        Sekolah
+                        Pertanian
                       </button>
                       <button
-                        onClick={() => toggleCategory("ibadah")}
+                        onClick={() => toggleCategory("peternakan")}
                         className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm transition-all duration-200 ${
-                          activeCategories.ibadah
+                          activeCategories.peternakan
                             ? "bg-blue-100 text-blue-700"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
                         <div className="h-2 w-2 rounded-full bg-blue-400"></div>
-                        Tempat Ibadah
+                        Peternakan
                       </button>
                       <button
-                        onClick={() => toggleCategory("kesehatan")}
+                        onClick={() => toggleCategory("industri")}
                         className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm transition-all duration-200 ${
-                          activeCategories.kesehatan
+                          activeCategories.industri
                             ? "bg-red-100 text-red-700"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
                         <div className="h-2 w-2 rounded-full bg-red-400"></div>
-                        Kesehatan
+                        Industri
                       </button>
                       <button
-                        onClick={() => toggleCategory("lainnya")}
+                        onClick={() => toggleCategory("wisata")}
                         className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm transition-all duration-200 ${
-                          activeCategories.lainnya
+                          activeCategories.wisata
                             ? "bg-orange-100 text-orange-700"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
                         <div className="h-2 w-2 rounded-full bg-orange-400"></div>
-                        Fasilitas Lainnya
+                        Wisata
                       </button>
                     </div>
 
@@ -656,7 +601,7 @@ export default function PetaFasilitasDesa() {
                       <div className="relative">
                         <input
                           type="text"
-                          placeholder="Cari fasilitas..."
+                          placeholder="Cari potensi..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="w-full rounded-xl border border-gray-200 bg-white py-3 pr-4 pl-12 text-sm shadow-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -677,30 +622,34 @@ export default function PetaFasilitasDesa() {
                     </div>
 
                     <div className="grid h-[600px] grid-cols-1 gap-4 overflow-y-auto pr-2">
-                      {filteredPoiData.map((feature, index) => {
+                      {filteredPotensiData.map((feature, index) => {
                         const { name, tags } = feature.properties;
                         const amenity = tags.amenity;
-                        const category = categorizePOI(amenity);
-                        const config = categoryConfig.find(
-                          (c) => c.key === category,
-                        );
-                        const IconComponent = config?.icon || Building2;
+                        const category = categorizePotensi(amenity);
 
                         return (
                           <div
                             key={index}
-                            onClick={() => handleFacilitySelect(feature)}
+                            onClick={() => handlePotensiSelect(feature)}
                             className={`group transform cursor-pointer rounded-2xl border bg-white p-4 transition-all duration-300 hover:shadow-lg ${
-                              selectedFacility?.properties.name === name
+                              selectedPotensi?.properties.name === name
                                 ? "border-blue-500"
                                 : "border-gray-200 hover:border-blue-400"
                             }`}
                           >
                             <div className="flex items-start gap-4">
                               <div
-                                className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-white transition-transform duration-300 group-hover:scale-105 ${config?.bgColor || "bg-gray-500"}`}
+                                className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-white transition-transform duration-300 group-hover:scale-105 ${
+                                  category === "pertanian"
+                                    ? "bg-green-500"
+                                    : category === "peternakan"
+                                      ? "bg-blue-500"
+                                      : category === "industri"
+                                        ? "bg-red-500"
+                                        : "bg-orange-500"
+                                }`}
                               >
-                                <IconComponent size={22} />
+                                <Building2 size={22} />
                               </div>
 
                               <div className="min-w-0 flex-1">
@@ -714,9 +663,23 @@ export default function PetaFasilitasDesa() {
                                 </p>
                                 <div>
                                   <span
-                                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config?.textColor || "text-gray-600"} bg-${config?.color || "gray"}-100`}
+                                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                      category === "pertanian"
+                                        ? "bg-green-100 text-green-700"
+                                        : category === "peternakan"
+                                          ? "bg-blue-100 text-blue-700"
+                                          : category === "industri"
+                                            ? "bg-red-100 text-red-700"
+                                            : "bg-orange-100 text-orange-700"
+                                    }`}
                                   >
-                                    {config?.label || "Lainnya"}
+                                    {category === "pertanian"
+                                      ? "Pertanian"
+                                      : category === "peternakan"
+                                        ? "Peternakan"
+                                        : category === "industri"
+                                          ? "Industri"
+                                          : "Wisata"}
                                   </span>
                                 </div>
                               </div>
@@ -726,18 +689,18 @@ export default function PetaFasilitasDesa() {
                       })}
                     </div>
 
-                    {filteredPoiData.length === 0 && (
+                    {filteredPotensiData.length === 0 && (
                       <div className="py-8 text-center">
                         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
                           <Building2 size={24} className="text-gray-400" />
                         </div>
                         <h3 className="mb-2 text-base font-semibold text-gray-700">
-                          Tidak Ada Fasilitas
+                          Tidak Ada Potensi
                         </h3>
                         <p className="text-sm text-gray-500">
                           {searchQuery
-                            ? "Tidak ada fasilitas yang sesuai dengan pencarian."
-                            : "Tidak ada fasilitas yang sesuai dengan filter yang dipilih."}
+                            ? "Tidak ada potensi yang sesuai dengan pencarian."
+                            : "Tidak ada potensi yang sesuai dengan filter yang dipilih."}
                         </p>
                       </div>
                     )}

@@ -203,7 +203,7 @@ export default function NavbarDesa() {
     },
     {
       href: "/petafasilitasdesa",
-      label: "Peta Fasilitas",
+      label: "Peta",
       active: location.pathname === "/petafasilitasdesa",
       icon: (
         <svg
