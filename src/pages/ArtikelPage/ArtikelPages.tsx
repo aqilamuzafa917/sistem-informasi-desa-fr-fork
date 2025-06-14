@@ -335,27 +335,43 @@ export default function ArtikelPages() {
     onClick,
     children,
     count,
-  }) => (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
-        active
-          ? "scale-105 bg-blue-600 text-white shadow-lg"
-          : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-      }`}
-    >
-      {children}
-      {count !== undefined && (
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs ${
-            active ? "bg-blue-500" : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {count}
-        </span>
-      )}
-    </button>
-  );
+  }) => {
+    const getActiveColors = (status: string) => {
+      switch (status) {
+        case "Diterbitkan":
+          return { buttonBg: "bg-green-500" };
+        case "Diajukan":
+          return { buttonBg: "bg-yellow-500" };
+        case "Ditolak":
+          return { buttonBg: "bg-red-500" };
+        default:
+          return { buttonBg: "bg-gray-500" };
+      }
+    };
+
+    const statusLabel = React.Children.toArray(children)[1] as string;
+    const activeColors = getActiveColors(statusLabel);
+
+    return (
+      <button
+        onClick={onClick}
+        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+          active
+            ? `scale-105 ${activeColors.buttonBg} text-white shadow-lg`
+            : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        }`}
+      >
+        {children}
+        {count !== undefined && (
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs ${active ? `${activeColors.buttonBg} text-white` : "bg-gray-100 text-gray-600"}`}
+          >
+            {count}
+          </span>
+        )}
+      </button>
+    );
+  };
 
   const handleDelete = async (id: number) => {
     toast.custom(
