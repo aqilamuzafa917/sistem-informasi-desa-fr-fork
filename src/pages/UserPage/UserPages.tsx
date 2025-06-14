@@ -5,8 +5,27 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
-import { Calendar, User, Mail, AlertCircle, Plus } from "lucide-react";
+import {
+  Calendar,
+  User,
+  Mail,
+  AlertCircle,
+  Plus,
+  Ban,
+  CheckCircle,
+} from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface User {
   id: number;
@@ -15,6 +34,7 @@ interface User {
   email_verified_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  status: "active" | "revoked";
 }
 
 interface PaginationData {
@@ -44,6 +64,7 @@ export default function UserPages() {
     from: 1,
     to: 1,
   });
+  const [userToRevoke, setUserToRevoke] = useState<User | null>(null);
 
   const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return "-";
@@ -55,48 +76,116 @@ export default function UserPages() {
     });
   }, []);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          setError("Token tidak ditemukan. Silakan login kembali.");
-          setLoading(false);
-          return;
-        }
-
-        const params = new URLSearchParams({
-          page: pagination.current_page.toString(),
-          per_page: pagination.per_page.toString(),
-        });
-
-        const response = await axios.get<UserResponse>(
-          `${API_CONFIG.baseURL}/api/user-list?${params.toString()}`,
-          {
-            headers: {
-              ...API_CONFIG.headers,
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        setUserList(response.data.users);
-        setPagination(response.data.pagination);
-      } catch (err) {
-        console.error("Error fetching user data:", err);
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          setError("Sesi Anda telah berakhir. Silakan login kembali.");
-        } else {
-          setError("Gagal mengambil data user.");
-        }
-        setUserList([]);
-      } finally {
-        setLoading(false);
+  const handleRevokeUser = async (userId: number) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        toast.error("Token tidak ditemukan. Silakan login kembali.");
+        return;
       }
-    };
 
+      await axios.post(
+        `${API_CONFIG.baseURL}/api/users/${userId}/revoke`,
+        {},
+        {
+          headers: {
+            ...API_CONFIG.headers,
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      toast.success("User berhasil di-nonaktifkan");
+      // Refresh user list
+      fetchUserData();
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const errorMessage =
+          err.response?.data?.message || "Gagal menonaktifkan user";
+        toast.error(errorMessage);
+      } else {
+        toast.error("Terjadi kesalahan saat menonaktifkan user");
+      }
+    } finally {
+      setUserToRevoke(null);
+    }
+  };
+
+  const handleReactivateUser = async (userId: number) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        toast.error("Token tidak ditemukan. Silakan login kembali.");
+        return;
+      }
+
+      await axios.post(
+        `${API_CONFIG.baseURL}/api/users/${userId}/reactivate`,
+        {},
+        {
+          headers: {
+            ...API_CONFIG.headers,
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      toast.success("User berhasil di-reaktivasi");
+      // Refresh user list
+      fetchUserData();
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const errorMessage =
+          err.response?.data?.message || "Gagal me-reaktivasi user";
+        toast.error(errorMessage);
+      } else {
+        toast.error("Terjadi kesalahan saat me-reaktivasi user");
+      }
+    }
+  };
+
+  const fetchUserData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Token tidak ditemukan. Silakan login kembali.");
+        setLoading(false);
+        return;
+      }
+
+      const params = new URLSearchParams({
+        page: pagination.current_page.toString(),
+        per_page: pagination.per_page.toString(),
+      });
+
+      const response = await axios.get<UserResponse>(
+        `${API_CONFIG.baseURL}/api/user-list?${params.toString()}`,
+        {
+          headers: {
+            ...API_CONFIG.headers,
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setUserList(response.data.users);
+      setPagination(response.data.pagination);
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        setError("Sesi Anda telah berakhir. Silakan login kembali.");
+      } else {
+        setError("Gagal mengambil data user.");
+      }
+      setUserList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
   }, [navigate, pagination.current_page]);
 
@@ -108,7 +197,7 @@ export default function UserPages() {
           {/* Header */}
           <div className="border-b border-gray-200 bg-white px-6 py-4">
             <div className="flex items-center justify-between">
-              <div> 
+              <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   Kelola User
                 </h1>
@@ -174,7 +263,13 @@ export default function UserPages() {
                           Email
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Status
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                           Terdaftar
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Aksi
                         </th>
                       </tr>
                     </thead>
@@ -203,11 +298,45 @@ export default function UserPages() {
                               </span>
                             </div>
                           </td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                                user.status === "active"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {user.status === "active" ? "Aktif" : "Di-revoke"}
+                            </span>
+                          </td>
                           <td className="px-3 py-2 text-xs text-gray-600">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               {formatDate(user.created_at)}
                             </div>
+                          </td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap">
+                            {user.status === "active" ? (
+                              <Button
+                                onClick={() => setUserToRevoke(user)}
+                                variant="destructive"
+                                size="sm"
+                                className="flex items-center gap-1"
+                              >
+                                <Ban className="h-3 w-3" />
+                                Nonaktifkan
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={() => handleReactivateUser(user.id)}
+                                variant="default"
+                                size="sm"
+                                className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                Aktifkan
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -319,6 +448,35 @@ export default function UserPages() {
             )}
           </div>
         </div>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog
+          open={!!userToRevoke}
+          onOpenChange={() => setUserToRevoke(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Konfirmasi Nonaktifkan User</AlertDialogTitle>
+              <AlertDialogDescription>
+                Apakah Anda yakin ingin menonaktifkan user{" "}
+                <span className="font-semibold">{userToRevoke?.name}</span>?
+                <br />
+                User yang dinonaktifkan tidak akan dapat mengakses sistem.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() =>
+                  userToRevoke && handleRevokeUser(userToRevoke.id)
+                }
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Ya, Nonaktifkan
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SidebarInset>
     </SidebarProvider>
   );
