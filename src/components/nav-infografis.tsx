@@ -1,6 +1,8 @@
 "use client";
 
 import { ChevronRight, type LucideIcon } from "lucide-react";
+import React from "react";
+import { Link } from "react-router-dom";
 
 import {
   Collapsible,
@@ -31,13 +33,49 @@ export function NavInfografis({
     }[];
   }[];
 }) {
+  const [openStates, setOpenStates] = React.useState<Record<string, boolean>>(
+    items.reduce(
+      (acc, item) => {
+        // Check if any sub-item is active
+        const hasActiveSubItem = item.items?.some(
+          (subItem) => subItem.isActive,
+        );
+        acc[item.title] = item.isActive || hasActiveSubItem || false;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    ),
+  );
+
+  // Update open states when items change
+  React.useEffect(() => {
+    setOpenStates(
+      items.reduce(
+        (acc, item) => {
+          const hasActiveSubItem = item.items?.some(
+            (subItem) => subItem.isActive,
+          );
+          acc[item.title] = item.isActive || hasActiveSubItem || false;
+          return acc;
+        },
+        {} as Record<string, boolean>,
+      ),
+    );
+  }, [items]);
+
   return (
     <SidebarMenu>
       {items.map((item) => (
         <Collapsible
           key={item.title}
           asChild
-          defaultOpen={item.isActive}
+          open={openStates[item.title]}
+          onOpenChange={(open) => {
+            setOpenStates((prev) => ({
+              ...prev,
+              [item.title]: open,
+            }));
+          }}
           className="group/collapsible"
         >
           <SidebarMenuItem>
@@ -53,9 +91,9 @@ export function NavInfografis({
                 {item.items?.map((subItem) => (
                   <SidebarMenuSubItem key={subItem.title}>
                     <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                      <a href={`${subItem.url}`}>
+                      <Link to={`${subItem.url}`}>
                         <span>{subItem.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 ))}

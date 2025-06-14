@@ -228,7 +228,12 @@ export default function PendapatanPages() {
             ),
           }));
 
-          setHistoricalData(chartData);
+          // Sort chart data by year in ascending order
+          const sortedChartData = [...chartData].sort(
+            (a, b) => a.year - b.year,
+          );
+
+          setHistoricalData(sortedChartData);
 
           const latestData = sortedData[0];
           console.log("Latest Data:", latestData);
