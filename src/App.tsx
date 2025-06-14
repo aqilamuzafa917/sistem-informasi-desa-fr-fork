@@ -26,7 +26,7 @@ import InfografisAPBDesa from "./pages/InfografisAPBDesa";
 import InfografisIDM from "./pages/InfografisIDM";
 import PetaFasilitasDesa from "./pages/PetaFasilitasDesa";
 import SuratCreate from "./pages/SuratPage/SuratCreate";
-import PendudukCreate from "./pages/PendudukPage/PendudukCreate"; 
+import PendudukCreate from "./pages/PendudukPage/PendudukCreate";
 import ArtikelCreate from "./pages/ArtikelPage/ArtikelCreate";
 import VerifikasiArtikelPage from "./pages/ArtikelPage/VerifikasiArtikelPage";
 import ConfigPages from "./pages/ConfigPage/ConfigPages";
@@ -43,6 +43,7 @@ import { HomePageProvider } from "./contexts/HomePageContext";
 import DetailPendudukPages from "./pages/PendudukPage/DetailPendudukPages";
 import UserPages from "./pages/UserPage/UserPages";
 import UserCreate from "./pages/UserPage/UserCreate";
+import ChatbotLogPages from "./pages/ChatBotPage/ChabotLogPages";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -96,28 +97,44 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/admin/dashboard" element={<DashboardPage />} />
           <Route path="/admin/surat" element={<SuratPages />} />
+          <Route path="/admin/surat/buat" element={<SuratCreate />} />
           <Route path="/admin/surat/:id" element={<VerifikasiSuratPages />} />
-          <Route path="/admin/suratcreate" element={<SuratCreate />} />
           <Route path="/admin/profil" element={<ProfilPages />} />
           <Route path="/admin/artikel" element={<ArtikelPages />} />
           <Route path="/admin/artikel/buat" element={<ArtikelCreate />} />
-          <Route path="/admin/artikel/:id" element={<VerifikasiArtikelPage />} />
+          <Route
+            path="/admin/artikel/:id"
+            element={<VerifikasiArtikelPage />}
+          />
           <Route path="/admin/pendapatan" element={<PendapatanPages />} />
-          <Route path="/admin/pendapatan/detail" element={<PendapatanDetail />} />
-          <Route path="/admin/pendapatan/tambah" element={<PendapatanCreate />} />
+          <Route
+            path="/admin/pendapatan/detail"
+            element={<PendapatanDetail />}
+          />
+          <Route
+            path="/admin/pendapatan/tambah"
+            element={<PendapatanCreate />}
+          />
           <Route path="/admin/belanja" element={<BelanjaPages />} />
           <Route path="/admin/belanja/detail" element={<BelanjaDetail />} />
           <Route path="/admin/belanja/tambah" element={<BelanjaCreate />} />
           <Route path="/admin/peta" element={<PetaPages />} />
           <Route path="/admin/penduduk" element={<PendudukPages />} />
-          <Route path="/admin/penduduk/:nik" element={<DetailPendudukPages />} />
+          <Route
+            path="/admin/penduduk/:nik"
+            element={<DetailPendudukPages />}
+          />
           <Route path="/admin/penduduk/tambah" element={<PendudukCreate />} />
           <Route path="/admin/datakk" element={<DataKKPages />} />
           <Route path="/admin/pengaduan" element={<PengaduanPages />} />
-          <Route path="/admin/pengaduan/:id" element={<VerifikasiPengaduanPage />} />
+          <Route
+            path="/admin/pengaduan/:id"
+            element={<VerifikasiPengaduanPage />}
+          />
           <Route path="/admin/configdesa" element={<ConfigPages />} />
           <Route path="/admin/user" element={<UserPages />} />
           <Route path="/admin/user/tambah" element={<UserCreate />} />
+          <Route path="/admin/chatbot" element={<ChatbotLogPages />} />
         </Route>
       </Routes>
 

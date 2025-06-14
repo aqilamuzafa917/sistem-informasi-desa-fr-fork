@@ -1,94 +1,22 @@
 import { useState } from "react";
 import axios from "axios";
+import { FileText, User, ChevronLeft, Check } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; // Assuming you have a Textarea component
+import { Textarea } from "@/components/ui/textarea";
+import { DateTimePicker, TimePicker } from "@/components/ui/datetime-picker";
 import { API_CONFIG } from "../../config/api";
 import { toast } from "sonner";
+import { SuratPayload } from "@/types/surat";
+import { useNavigate } from "react-router-dom";
 
-// Interface for the form data, can be expanded as needed
-interface FormData {
-  jenis_surat: string;
-  nik_pemohon?: string;
-  keperluan?: string;
-  // SK_PINDAH fields
-  alamat_tujuan?: string;
-  rt_tujuan?: string;
-  rw_tujuan?: string;
-  kelurahan_desa_tujuan?: string;
-  kecamatan_tujuan?: string;
-  kabupaten_kota_tujuan?: string;
-  provinsi_tujuan?: string;
-  alasan_pindah?: string;
-  klasifikasi_pindah?: string;
-  data_pengikut_pindah?: Array<{ nik: string }>;
-  // SK_KEMATIAN fields
-  nik_penduduk_meninggal?: string;
-  tanggal_kematian?: string;
-  waktu_kematian?: string;
-  tempat_kematian?: string;
-  penyebab_kematian?: string;
-  hubungan_pelapor_kematian?: string;
-  // SK_KELAHIRAN fields
-  nama_bayi?: string;
-  tempat_dilahirkan?: string; // e.g., Rumah Sakit, Rumah
-  tempat_kelahiran?: string; // e.g., Nama Kota/Kabupaten
-  tanggal_lahir_bayi?: string;
-  waktu_lahir_bayi?: string;
-  jenis_kelamin_bayi?: string;
-  jenis_kelahiran?: string; // e.g., Tunggal, Kembar
-  anak_ke?: string;
-  penolong_kelahiran?: string; // e.g., Dokter, Bidan
-  berat_bayi_kg?: string;
-  panjang_bayi_cm?: string;
-  nik_penduduk_ibu?: string;
-  nik_penduduk_ayah?: string;
-  nik_penduduk_pelapor_lahir?: string;
-  hubungan_pelapor_lahir?: string;
-  // SK_USAHA fields
-  nama_usaha?: string;
-  jenis_usaha?: string;
-  alamat_usaha?: string;
-  status_bangunan_usaha?: string;
-  perkiraan_modal_usaha?: string;
-  perkiraan_pendapatan_usaha?: string;
-  jumlah_tenaga_kerja?: string;
-  sejak_tanggal_usaha?: string;
-  // SK_TIDAK_MAMPU & SKTM_KIP fields
-  penghasilan_perbulan_kepala_keluarga?: string;
-  pekerjaan_kepala_keluarga?: string;
-  // KARTU_INDONESIA_PINTAR fields (extends SKTM)
-  nik_penduduk_siswa?: string;
-  nama_sekolah?: string;
-  nisn_siswa?: string;
-  kelas_siswa?: string;
-  // SK_KEHILANGAN_KTP fields
-  nomor_ktp_hilang?: string;
-  tanggal_perkiraan_hilang?: string;
-  lokasi_perkiraan_hilang?: string;
-  kronologi_singkat?: string;
-  nomor_laporan_polisi?: string;
-  tanggal_laporan_polisi?: string;
-  // SK_KEHILANGAN_KK (similar to KTP but for KK)
-  nomor_kk_hilang?: string;
-  // SK_UMUM fields
-  deskripsi_keperluan?: string;
+// Interface for the form data
+interface FormData
+  extends Omit<Partial<SuratPayload>, "attachment_bukti_pendukung"> {
   attachment_bukti_pendukung?: File | null;
 }
 
@@ -105,115 +33,198 @@ const jenisSuratOptions = [
     label: "SKTM untuk Kartu Indonesia Pintar (KIP)",
   },
   { value: "SK_KEHILANGAN_KTP", label: "SK Kehilangan KTP" },
-  // Add other letter types as needed, e.g., SK_KEHILANGAN_KK, SK_UMUM
 ];
 
 export default function SuratCreate() {
+  const navigate = useNavigate();
   const [jenisSurat, setJenisSurat] = useState("");
-  const [formData, setFormData] = useState<Partial<FormData>>({});
-  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState<FormData>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleJenisSuratChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newJenisSurat = e.target.value;
-    setJenisSurat(newJenisSurat);
-    // Reset form data, but keep jenis_surat
-    setFormData({ jenis_surat: newJenisSurat });
-  };
+  const steps = [
+    { id: 1, title: "Pilih Surat", icon: FileText },
+    { id: 2, title: "Isi Data", icon: User },
+  ];
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e:
+      | React.ChangeEvent<
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
+      | { target: { name: string; value: unknown } },
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
+    let processedValue: string | number | null = value as string;
+
+    // Handle number inputs
+    if (e.target instanceof HTMLInputElement && e.target.type === "number") {
+      processedValue = value === "" ? "" : Number(value);
+    }
+    // Handle empty values - keep as empty string instead of null
+    else if (value === "") {
+      processedValue = "";
+    }
+
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: processedValue,
     }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, files } = e.target;
-    if (files && files.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: files[0],
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: null,
-      }));
+    const files = e.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    const totalFiles = uploadedFiles.length + newFiles.length;
+
+    // Validate file count
+    if (totalFiles > 2) {
+      setUploadError("Maksimal 2 file yang dapat diupload");
+      return;
     }
+
+    // Validate file types and sizes
+    const validFiles = newFiles.filter((file) => {
+      const isValidType = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+      ].includes(file.type);
+      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+
+      if (!isValidType) {
+        setUploadError("Format file harus PDF, JPG, atau PNG");
+        return false;
+      }
+      if (!isValidSize) {
+        setUploadError("Ukuran file maksimal 5MB");
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length !== newFiles.length) {
+      return;
+    }
+
+    setUploadedFiles((prev) => [...prev, ...validFiles]);
+    setUploadError(null);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const validateNIK = (nik: string) => {
+    return nik && nik.length === 16 && /^\d+$/.test(nik);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitting(true);
+    setIsLoading(true);
 
-    const dataToSubmit = new window.FormData();
+    const formDataToSend = new FormData();
+
+    // Add basic fields
+    formDataToSend.append("jenis_surat", jenisSurat);
+    formDataToSend.append(
+      "tanggal_pengajuan",
+      new Date().toISOString().split("T")[0],
+    );
+    formDataToSend.append("status_surat", "Diajukan");
+
+    // Add all form fields except data_pengikut_pindah
     Object.entries(formData).forEach(([key, value]) => {
-      if (value instanceof File) {
-        dataToSubmit.append(key, value);
-      } else if (key === "data_pengikut_pindah" && Array.isArray(value)) {
-        dataToSubmit.append(key, JSON.stringify(value));
-      } else if (value !== undefined && value !== null) {
-        dataToSubmit.append(key, String(value));
+      if (
+        value !== null &&
+        value !== undefined &&
+        key !== "data_pengikut_pindah"
+      ) {
+        formDataToSend.append(key, String(value));
       }
     });
-    dataToSubmit.append("jenis_surat", jenisSurat);
 
-    // Debug logging
-    console.log("Form Data Object:", formData);
-    console.log("Data Pengikut Pindah:", formData.data_pengikut_pindah);
+    // Handle data_pengikut_pindah with Laravel/PHP style array format
+    if (
+      formData.data_pengikut_pindah &&
+      Array.isArray(formData.data_pengikut_pindah)
+    ) {
+      // Remove duplicate NIKs
+      const uniquePengikut = (
+        formData.data_pengikut_pindah as Array<{ nik: string }>
+      ).filter(
+        (pengikut, index, self) =>
+          index === self.findIndex((p) => p.nik === pengikut.nik),
+      );
 
-    // Log FormData entries
-    console.log("FormData entries:");
-    for (const pair of dataToSubmit.entries()) {
-      console.log(pair[0] + ":", pair[1]);
-    }
-
-    // Log the final JSON payload
-    const jsonPayload: Record<string, string | number | boolean | object> = {};
-    for (const pair of dataToSubmit.entries()) {
-      if (pair[0] === "data_pengikut_pindah") {
-        try {
-          jsonPayload[pair[0]] = JSON.parse(pair[1] as string);
-        } catch {
-          jsonPayload[pair[0]] = pair[1];
-        }
-      } else {
-        jsonPayload[pair[0]] = pair[1];
+      // Validate all NIKs
+      const invalidNIK = uniquePengikut.find(
+        (pengikut) => !validateNIK(pengikut.nik),
+      );
+      if (invalidNIK) {
+        toast.error("NIK pengikut tidak valid", {
+          description: `NIK ${invalidNIK.nik} harus 16 digit angka.`,
+        });
+        setIsLoading(false);
+        return;
       }
+
+      // Format pengikut data in Laravel/PHP style array format
+      uniquePengikut.forEach((pengikut, index) => {
+        formDataToSend.append(
+          `data_pengikut_pindah[${index}][nik]`,
+          pengikut.nik,
+        );
+      });
     }
-    console.log("Final JSON Payload:", jsonPayload);
+
+    // Add files to FormData
+    uploadedFiles.forEach((file, index) => {
+      formDataToSend.append(`attachment_bukti_pendukung[${index}]`, file);
+    });
 
     try {
       const token =
         localStorage.getItem("token") || localStorage.getItem("authToken");
-      const response = await axios.post(
-        `${API_CONFIG.baseURL}/api/surat`,
-        dataToSubmit,
-        {
-          headers: {
-            ...API_CONFIG.headers,
-            Authorization: `Bearer ${token}`,
-          },
+      await axios.post(`${API_CONFIG.baseURL}/api/surat`, formDataToSend, {
+        headers: {
+          ...API_CONFIG.headers,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
-      );
-      console.log("Server Response:", response.data);
+      });
       toast.success("Pengajuan surat berhasil dikirim!");
       setJenisSurat("");
       setFormData({});
+      setUploadedFiles([]);
+      setCurrentStep(1);
     } catch (error) {
-      console.error("Gagal mengirim pengajuan surat:", error);
       if (axios.isAxiosError(error) && error.response) {
-        console.error("Error Response Data:", error.response.data);
-        console.error("Error Response Status:", error.response.status);
+        // Check for specific data_pengikut_pindah errors
+        if (error.response.data.errors?.data_pengikut_pindah) {
+          toast.error("Error pada data pengikut", {
+            description:
+              error.response.data.errors.data_pengikut_pindah.join("\n"),
+          });
+        } else {
+          const errorMessages = error.response.data.errors
+            ? Object.values(error.response.data.errors).flat().join("\n")
+            : error.response.data.message || "Terjadi kesalahan pada server.";
+          toast.error("Gagal mengirim pengajuan", {
+            description: errorMessages,
+          });
+        }
+      } else {
+        toast.error("Gagal mengirim pengajuan", {
+          description: "Silakan coba lagi.",
+        });
       }
-      toast.error("Gagal mengirim pengajuan surat. Lihat konsol untuk detail.");
     } finally {
-      setSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -260,7 +271,7 @@ export default function SuratCreate() {
           id={name}
           name={name}
           type={type}
-          onChange={handleFileChange} // Special handler for files
+          onChange={handleFileChange}
           required={required}
           className="bg-background"
         />
@@ -402,10 +413,49 @@ export default function SuratCreate() {
                 "nik_penduduk_meninggal",
                 "NIK Penduduk Meninggal",
               )}
-              {renderFormField("tanggal_kematian", "Tanggal Kematian", "date")}
+              <div className="space-y-2">
+                <Label htmlFor="tanggal_kematian">
+                  Tanggal Kematian <span className="text-destructive">*</span>
+                </Label>
+                <DateTimePicker
+                  granularity="day"
+                  value={
+                    formData.tanggal_kematian
+                      ? new Date(formData.tanggal_kematian)
+                      : undefined
+                  }
+                  onChange={(date: Date | undefined) => {
+                    handleInputChange({
+                      target: {
+                        name: "tanggal_kematian",
+                        value: date ? date.toISOString().split("T")[0] : "",
+                      },
+                    });
+                  }}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {renderFormField("waktu_kematian", "Waktu Kematian", "time")}
+              <div className="space-y-2">
+                <Label htmlFor="waktu_kematian">
+                  Waktu Kematian <span className="text-destructive">*</span>
+                </Label>
+                <TimePicker
+                  date={
+                    formData.waktu_kematian
+                      ? new Date(`2000-01-01T${formData.waktu_kematian}`)
+                      : undefined
+                  }
+                  onChange={(time: Date | undefined) => {
+                    handleInputChange({
+                      target: {
+                        name: "waktu_kematian",
+                        value: time ? time.toTimeString().slice(0, 5) : "",
+                      },
+                    });
+                  }}
+                />
+              </div>
               {renderFormField("tempat_kematian", "Tempat Kematian")}
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -431,6 +481,14 @@ export default function SuratCreate() {
               {renderFormField("nik_penduduk_ibu", "NIK Ibu")}
               {renderFormField("nik_penduduk_ayah", "NIK Ayah")}
             </div>
+            {renderFormField(
+              "keperluan",
+              "Keperluan Surat Kelahiran",
+              "text",
+              true,
+              undefined,
+              "textarea",
+            )}
             <hr />
             <h3 className="text-lg font-medium">Data Bayi</h3>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -442,8 +500,8 @@ export default function SuratCreate() {
                 true,
                 [
                   { value: "", label: "Pilih Jenis Kelamin" },
-                  { value: "LAKI-LAKI", label: "Laki-laki" },
-                  { value: "PEREMPUAN", label: "Perempuan" },
+                  { value: "Laki-laki", label: "Laki-laki" },
+                  { value: "Perempuan", label: "Perempuan" },
                 ],
                 "select",
               )}
@@ -459,12 +517,47 @@ export default function SuratCreate() {
               )}
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {renderFormField(
-                "tanggal_lahir_bayi",
-                "Tanggal Lahir Bayi",
-                "date",
-              )}
-              {renderFormField("waktu_lahir_bayi", "Waktu Lahir Bayi", "time")}
+              <div className="space-y-2">
+                <Label htmlFor="tanggal_lahir_bayi">
+                  Tanggal Lahir Bayi <span className="text-destructive">*</span>
+                </Label>
+                <DateTimePicker
+                  granularity="day"
+                  value={
+                    formData.tanggal_lahir_bayi
+                      ? new Date(formData.tanggal_lahir_bayi)
+                      : undefined
+                  }
+                  onChange={(date: Date | undefined) => {
+                    handleInputChange({
+                      target: {
+                        name: "tanggal_lahir_bayi",
+                        value: date ? date.toISOString().split("T")[0] : "",
+                      },
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="waktu_lahir_bayi">
+                  Waktu Lahir Bayi <span className="text-destructive">*</span>
+                </Label>
+                <TimePicker
+                  date={
+                    formData.waktu_lahir_bayi
+                      ? new Date(`2000-01-01T${formData.waktu_lahir_bayi}`)
+                      : undefined
+                  }
+                  onChange={(time: Date | undefined) => {
+                    handleInputChange({
+                      target: {
+                        name: "waktu_lahir_bayi",
+                        value: time ? time.toTimeString().slice(0, 5) : "",
+                      },
+                    });
+                  }}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {renderFormField(
@@ -551,11 +644,28 @@ export default function SuratCreate() {
                 ],
                 "select",
               )}
-              {renderFormField(
-                "sejak_tanggal_usaha",
-                "Sejak Tanggal Usaha",
-                "date",
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="sejak_tanggal_usaha">
+                  Sejak Tanggal Usaha{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <DateTimePicker
+                  granularity="day"
+                  value={
+                    formData.sejak_tanggal_usaha
+                      ? new Date(formData.sejak_tanggal_usaha)
+                      : undefined
+                  }
+                  onChange={(date: Date | undefined) => {
+                    handleInputChange({
+                      target: {
+                        name: "sejak_tanggal_usaha",
+                        value: date ? date.toISOString().split("T")[0] : "",
+                      },
+                    });
+                  }}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {renderFormField(
@@ -637,11 +747,28 @@ export default function SuratCreate() {
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {renderFormField("nomor_ktp_hilang", "Nomor KTP yang Hilang")}
-              {renderFormField(
-                "tanggal_perkiraan_hilang",
-                "Tanggal Perkiraan Hilang",
-                "date",
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="tanggal_perkiraan_hilang">
+                  Tanggal Perkiraan Hilang{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <DateTimePicker
+                  granularity="day"
+                  value={
+                    formData.tanggal_perkiraan_hilang
+                      ? new Date(formData.tanggal_perkiraan_hilang)
+                      : undefined
+                  }
+                  onChange={(date: Date | undefined) => {
+                    handleInputChange({
+                      target: {
+                        name: "tanggal_perkiraan_hilang",
+                        value: date ? date.toISOString().split("T")[0] : "",
+                      },
+                    });
+                  }}
+                />
+              </div>
             </div>
             {renderFormField(
               "lokasi_perkiraan_hilang",
@@ -662,17 +789,30 @@ export default function SuratCreate() {
                 "text",
                 false,
               )}
-              {renderFormField(
-                "tanggal_laporan_polisi",
-                "Tanggal Laporan Polisi (Jika Ada)",
-                "date",
-                false,
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="tanggal_laporan_polisi">
+                  Tanggal Laporan Polisi (Jika Ada)
+                </Label>
+                <DateTimePicker
+                  granularity="day"
+                  value={
+                    formData.tanggal_laporan_polisi
+                      ? new Date(formData.tanggal_laporan_polisi)
+                      : undefined
+                  }
+                  onChange={(date: Date | undefined) => {
+                    handleInputChange({
+                      target: {
+                        name: "tanggal_laporan_polisi",
+                        value: date ? date.toISOString().split("T")[0] : "",
+                      },
+                    });
+                  }}
+                />
+              </div>
             </div>
           </div>
         );
-      // Add more cases for other surat types here...
-      // e.g. SK_KEHILANGAN_KK, SK_UMUM
       default:
         return (
           <div className="text-muted-foreground py-8 text-center">
@@ -686,107 +826,242 @@ export default function SuratCreate() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  Surat
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Buat Pengajuan Surat</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="mx-auto max-w-6xl space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Formulir Pengajuan Surat
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Lengkapi data di bawah ini untuk mengajukan surat.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <Card className="p-6">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="jenis_surat">
-                      Jenis Surat <span className="text-destructive">*</span>
-                    </Label>
-                    <select
-                      id="jenis_surat"
-                      name="jenis_surat"
-                      value={jenisSurat}
-                      onChange={handleJenisSuratChange}
-                      required
-                      className="bg-background w-full rounded-md border p-2"
-                    >
-                      {jenisSuratOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Dynamic form part */}
-                  {jenisSurat && (
-                    <Card className="border p-6 shadow-sm">
-                      {" "}
-                      {/* Inner card for dynamic fields */}
-                      <h2 className="mb-4 text-xl font-semibold">
-                        Detail untuk{" "}
-                        {jenisSuratOptions.find(
-                          (opt) => opt.value === jenisSurat,
-                        )?.label || jenisSurat}
-                      </h2>
-                      {renderForm()}
-                    </Card>
-                  )}
-
-                  {/* Common field for all letters */}
-                  <div className="space-y-2">
-                    <Label htmlFor="attachment_bukti_pendukung">
-                      Lampiran Bukti Pendukung (Opsional)
-                    </Label>
-                    <Input
-                      id="attachment_bukti_pendukung"
-                      name="attachment_bukti_pendukung"
-                      type="file"
-                      onChange={handleFileChange}
-                      className="bg-background"
-                    />
-                    <p className="text-muted-foreground text-sm">
-                      Unggah file jika ada bukti pendukung yang diperlukan
-                      (misalnya: surat pengantar RT/RW, foto, dll).
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex h-16 items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate("/admin/surat")}
+                    className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <div>
+                    <h1 className="text-xl font-semibold text-gray-900">
+                      Buat Pengajuan Surat
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                      Lengkapi informasi pengajuan surat
                     </p>
                   </div>
-
-                  {jenisSurat && (
-                    <div className="flex justify-end pt-4">
-                      <Button
-                        type="submit"
-                        disabled={submitting}
-                        className="w-full md:w-auto"
-                      >
-                        {submitting ? "Mengirim..." : "Ajukan Surat"}
-                      </Button>
-                    </div>
-                  )}
                 </div>
-              </Card>
-            </form>
+              </div>
+            </div>
           </div>
-        </main>
+
+          <main className="flex-1 overflow-auto p-4 md:p-6">
+            <div className="mx-auto max-w-7xl space-y-8">
+              <div className="mb-8">
+                {/* Progress Steps - New Compact Pills Design */}
+                <div className="rounded-xl bg-white p-6 shadow-sm">
+                  <div className="relative">
+                    {/* Progress Line */}
+                    <div className="absolute top-6 right-0 left-0 -z-10 h-0.5 bg-gray-200">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out"
+                        style={{
+                          width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between">
+                      {steps.map((step) => {
+                        const Icon = step.icon;
+                        const isActive = currentStep === step.id;
+                        const isCompleted = currentStep > step.id;
+
+                        return (
+                          <button
+                            key={step.id}
+                            onClick={() => setCurrentStep(step.id)}
+                            className={`group relative flex flex-col items-center transition-all duration-300 ${
+                              isActive ? "scale-105" : "hover:scale-102"
+                            }`}
+                          >
+                            {/* Icon Circle */}
+                            <div
+                              className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
+                                isActive
+                                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25"
+                                  : isCompleted
+                                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25"
+                                    : "border-2 border-gray-200 bg-white text-gray-400 group-hover:border-gray-300 group-hover:text-gray-600"
+                              }`}
+                            >
+                              {isCompleted ? (
+                                <Check size={20} className="animate-pulse" />
+                              ) : (
+                                <Icon size={20} />
+                              )}
+
+                              {/* Pulse animation for active step */}
+                              {isActive && (
+                                <div className="absolute inset-0 animate-ping rounded-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20" />
+                              )}
+                            </div>
+
+                            {/* Step Title */}
+                            <span
+                              className={`mt-2 text-sm font-medium transition-colors duration-300 ${
+                                isActive
+                                  ? "text-blue-600"
+                                  : isCompleted
+                                    ? "text-green-600"
+                                    : "text-gray-500 group-hover:text-gray-700"
+                              }`}
+                            >
+                              {step.title}
+                            </span>
+
+                            {/* Step Number Badge */}
+                            <div
+                              className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
+                                isActive
+                                  ? "bg-blue-100 text-blue-600"
+                                  : isCompleted
+                                    ? "bg-green-100 text-green-600"
+                                    : "bg-gray-100 text-gray-400"
+                              }`}
+                            >
+                              {step.id}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                <Card className="p-6">
+                  <div className="space-y-6">
+                    {currentStep === 1 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="jenis_surat">
+                          Jenis Surat{" "}
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <select
+                          id="jenis_surat"
+                          name="jenis_surat"
+                          value={jenisSurat}
+                          onChange={(e) => {
+                            setJenisSurat(e.target.value);
+                            setCurrentStep(2);
+                          }}
+                          required
+                          className="bg-background w-full rounded-md border p-2"
+                        >
+                          {jenisSuratOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {currentStep === 2 && jenisSurat && (
+                      <Card className="border p-6 shadow-sm">
+                        <h2 className="mb-4 text-xl font-semibold">
+                          Detail untuk{" "}
+                          {jenisSuratOptions.find(
+                            (opt) => opt.value === jenisSurat,
+                          )?.label || jenisSurat}
+                        </h2>
+                        {renderForm()}
+                      </Card>
+                    )}
+
+                    {/* Common field for all letters */}
+                    {currentStep === 2 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="attachment_bukti_pendukung">
+                          Lampiran Bukti Pendukung (Opsional)
+                        </Label>
+                        <Input
+                          id="attachment_bukti_pendukung"
+                          name="attachment_bukti_pendukung"
+                          type="file"
+                          onChange={handleFileChange}
+                          className="bg-background"
+                        />
+                        <p className="text-muted-foreground text-sm">
+                          Unggah file jika ada bukti pendukung yang diperlukan
+                          (misalnya: surat pengantar RT/RW, foto, dll).
+                        </p>
+                        {uploadError && (
+                          <p className="text-destructive text-sm">
+                            {uploadError}
+                          </p>
+                        )}
+                        {uploadedFiles.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {uploadedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between rounded-lg border p-2"
+                              >
+                                <span className="text-sm">{file.name}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFile(index)}
+                                >
+                                  Hapus
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Navigation Buttons */}
+                    <div className="mt-6 flex justify-between border-t pt-6">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentStep(Math.max(1, currentStep - 1))
+                        }
+                        disabled={currentStep === 1}
+                        className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Sebelumnya
+                      </button>
+                      <div className="flex gap-3">
+                        {currentStep < 2 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCurrentStep(Math.min(2, currentStep + 1))
+                            }
+                            className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700"
+                          >
+                            Selanjutnya
+                          </button>
+                        ) : (
+                          <Button
+                            type="submit"
+                            disabled={isLoading}
+                            className="rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isLoading ? "Mengirim..." : "Ajukan Surat"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </form>
+            </div>
+          </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

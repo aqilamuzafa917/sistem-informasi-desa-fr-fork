@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import {
   AppWindow,
   ChartNoAxesColumnIncreasing,
@@ -127,6 +127,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isActive: currentPath === "/admin/user",
       },
     ],
+    navChatBot: [
+      {
+        title: "Chat Bot",
+        url: "/admin/chatbot",
+        icon: MessageCircleWarning,
+        isActive: currentPath === "/admin/chatbot",
+      },
+    ],
   };
 
   return (
@@ -138,11 +146,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/admin/dashboard">
+              <Link to="/admin/dashboard">
                 <span className="text-sm font-semibold">
                   Admin Desa {desaConfig?.nama_desa}
                 </span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -152,50 +160,50 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {data.navDashboard.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
           {data.navSurat.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
           {data.navProfil.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
           {data.navPenduduk.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
           {data.navArtikel.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -203,30 +211,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {data.navPengaduan.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
           {data.navConfigDesa.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
           {data.navUser.map((data) => (
             <SidebarMenuItem key={data.title}>
               <SidebarMenuButton asChild isActive={data.isActive}>
-                <a href={data.url}>
+                <Link to={data.url}>
                   <data.icon />
                   <span>{data.title}</span>
-                </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          {data.navChatBot.map((data) => (
+            <SidebarMenuItem key={data.title}>
+              <SidebarMenuButton asChild isActive={data.isActive}>
+                <Link to={data.url}>
+                  <data.icon />
+                  <span>{data.title}</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

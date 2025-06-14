@@ -21,7 +21,13 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 import { API_CONFIG } from "../../config/api";
-import { DollarSign, Building2, ArrowUpRight, Plus } from "lucide-react";
+import {
+  DollarSign,
+  Building2,
+  ArrowUpRight,
+  Plus,
+  ChevronLeft,
+} from "lucide-react";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import { Button } from "@/components/ui/button";
 
@@ -383,13 +389,23 @@ export default function BelanjaPages() {
           {/* Header */}
           <div className="border-b border-gray-200 bg-white px-6 py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Belanja Desa
-                </h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Kelola data belanja desa
-                </p>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="rounded-full hover:bg-gray-100"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Belanja Desa
+                  </h1>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Kelola data belanja desa
+                  </p>
+                </div>
               </div>
               <Button
                 onClick={() => navigate("/admin/belanja/tambah")}
