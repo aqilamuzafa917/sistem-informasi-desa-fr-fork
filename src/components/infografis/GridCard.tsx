@@ -14,6 +14,7 @@ interface GridCardProps {
   columns?: 2 | 3 | 4;
   icon: React.ElementType;
   customItemIcon?: (name: string) => React.ElementType;
+  footer?: React.ReactNode;
 }
 
 export const GridCard = ({
@@ -22,6 +23,7 @@ export const GridCard = ({
   columns = 3,
   icon: Icon,
   customItemIcon,
+  footer,
 }: GridCardProps) => (
   <Card className="transition-all duration-500 hover:shadow-2xl">
     <CardHeader>
@@ -46,6 +48,7 @@ export const GridCard = ({
           />
         ))}
       </div>
+      {footer}
     </CardContent>
   </Card>
 );
