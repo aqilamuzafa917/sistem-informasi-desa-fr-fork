@@ -27,6 +27,7 @@ import {
   Landmark,
   Banknote,
   PiggyBank,
+  Plus,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -504,6 +505,13 @@ export default function IDMPages() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Button
+                  onClick={() => navigate("/admin/idm/tambah")}
+                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
+                >
+                  <Plus className="h-5 w-5" />
+                  Tambah IDM
+                </Button>
               </div>
             </div>
           </div>

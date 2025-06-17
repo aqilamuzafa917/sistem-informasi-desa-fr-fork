@@ -192,7 +192,7 @@ export default function SejarahSection({ namaDesa, sejarah }: SejarahProps) {
 
         <Card className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:shadow-slate-700/50">
           <CardContent className="p-6 sm:p-8 md:p-10">
-            <div className="prose prose-slate dark:prose-invert prose-lg prose-headings:font-semibold prose-headings:text-slate-700 dark:prose-headings:text-slate-300 prose-p:text-slate-600 dark:prose-p:text-slate-400 prose-p:leading-relaxed prose-strong:text-slate-700 dark:prose-strong:text-slate-300 prose-bullets:text-blue-600 dark:prose-bullets:text-blue-400 prose-numeric:text-blue-600 dark:prose-numeric:text-blue-400 max-w-none">
+            <div className="prose prose-slate dark:prose-invert prose-lg prose-headings:font-semibold prose-headings:text-slate-700 dark:prose-headings:text-slate-300 prose-p:text-slate-600 dark:prose-p:text-slate-400 prose-p:leading-relaxed prose-strong:text-slate-700 dark:prose-strong:text-slate-300 prose-bullets:text-blue-600 dark:prose-bullets:text-blue-400 prose-numeric:text-blue-600 dark:prose-numeric:text-blue-400 max-w-none max-h-[500px] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 dark:scrollbar-thumb-slate-600 dark:scrollbar-track-slate-800">
               {parseSejarahText(sejarah)}
             </div>
           </CardContent>
