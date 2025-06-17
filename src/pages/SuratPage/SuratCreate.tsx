@@ -101,14 +101,14 @@ export default function SuratCreate() {
         "image/jpeg",
         "image/png",
       ].includes(file.type);
-      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+      const isValidSize = file.size <= 2 * 1024 * 1024; // 2MB
 
       if (!isValidType) {
         setUploadError("Format file harus PDF, JPG, atau PNG");
         return false;
       }
       if (!isValidSize) {
-        setUploadError("Ukuran file maksimal 5MB");
+        setUploadError("Ukuran file maksimal 2MB");
         return false;
       }
       return true;

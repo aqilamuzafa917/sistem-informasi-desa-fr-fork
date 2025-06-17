@@ -574,7 +574,7 @@ export default function PetaFasilitasDesa() {
                   </button>
                   <div className="z-0 h-[50vh] w-full sm:h-[60vh] xl:h-[750px]">
                     <MapContainer
-                      center={[-6.912986707035502, 107.5105222441776]}
+                      center={desaConfig?.center_map}
                       zoom={15.333333}
                       style={{ height: "100%", width: "100%" }}
                       scrollWheelZoom={true}

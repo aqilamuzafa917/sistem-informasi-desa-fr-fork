@@ -1,6 +1,7 @@
 import { MapContainer, TileLayer, Polygon, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useEffect } from "react";
+import { useDesa } from "@/contexts/DesaContext";
 
 interface ProfileMapProps {
   polygon: [number, number][];
@@ -23,6 +24,7 @@ function MapEffect({ polygon }: { polygon: [number, number][] }) {
 }
 
 export default function ProfileMap({ polygon, popupData }: ProfileMapProps) {
+  const { desaConfig } = useDesa();
   const pathOptions = {
     color: "#3b82f6",
     fillColor: "#60a5fa",
@@ -33,7 +35,7 @@ export default function ProfileMap({ polygon, popupData }: ProfileMapProps) {
   return (
     <MapContainer
       style={{ height: "100%", width: "100%" }}
-      center={[-6.91, 107.5]}
+      center={desaConfig?.center_map}
       zoom={13}
       scrollWheelZoom={false}
     >

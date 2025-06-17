@@ -212,12 +212,12 @@ export default function ProfilPages() {
     if (!files || files.length === 0) return;
 
     // Add file validation
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
 
     for (const file of Array.from(files)) {
       if (file.size > maxSize) {
-        toast.error("File terlalu besar. Maksimal ukuran file adalah 5MB", {
+        toast.error("File terlalu besar. Maksimal ukuran file adalah 2MB", {
           duration: 3000,
         });
         return;
@@ -657,7 +657,7 @@ export default function ProfilPages() {
                               </h3>
                               <p className="text-sm text-gray-600">
                                 Pilih satu atau lebih file gambar (.jpg, .png,
-                                .jpeg) maksimal 5MB
+                                .jpeg) maksimal 2MB
                               </p>
                             </div>
 
@@ -750,6 +750,7 @@ export default function ProfilPages() {
                           <PolygonEditor
                             initialPolygon={profil.polygon_desa}
                             onPolygonChange={handlePolygonChange}
+                            scrollWheelZoom={false}
                           />
                         </div>
                       </div>

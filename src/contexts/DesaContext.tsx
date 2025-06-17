@@ -20,6 +20,7 @@ interface DesaConfig {
   website_desa: string;
   email_desa: string;
   telepon_desa: string;
+  center_map?: [number, number];
 }
 
 interface DesaContextType {
