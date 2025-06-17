@@ -46,7 +46,7 @@ interface FormData {
   penulis_artikel: string;
   judul_artikel: string;
   kategori_artikel: string;
-  tanggal_kejadian: string;
+  tanggal_kejadian_artikel: string;
   location_name: string;
   latitude: number | null;
   longitude: number | null;
@@ -121,7 +121,7 @@ export default function ArtikelEdit() {
     penulis_artikel: "",
     judul_artikel: "",
     kategori_artikel: "Berita",
-    tanggal_kejadian: "",
+    tanggal_kejadian_artikel: "",
     location_name: "",
     latitude: null,
     longitude: null,
@@ -179,7 +179,7 @@ export default function ArtikelEdit() {
         penulis_artikel: artikel.penulis_artikel,
         judul_artikel: artikel.judul_artikel,
         kategori_artikel: artikel.kategori_artikel,
-        tanggal_kejadian: artikel.tanggal_kejadian_artikel || "",
+        tanggal_kejadian_artikel: artikel.tanggal_kejadian_artikel || "",
         location_name: artikel.location_name,
         latitude: artikel.latitude,
         longitude: artikel.longitude,
@@ -395,14 +395,14 @@ export default function ArtikelEdit() {
                 </Label>
                 <DateTimePicker
                   value={
-                    formData.tanggal_kejadian
-                      ? new Date(formData.tanggal_kejadian)
+                    formData.tanggal_kejadian_artikel
+                      ? new Date(formData.tanggal_kejadian_artikel)
                       : undefined
                   }
                   onChange={(date) => {
                     setFormData((prev) => ({
                       ...prev,
-                      tanggal_kejadian: date
+                      tanggal_kejadian_artikel: date
                         ? date.toISOString().split("T")[0]
                         : "",
                     }));
@@ -469,6 +469,7 @@ export default function ArtikelEdit() {
                 ]}
                 zoom={15}
                 style={{ height: "100%", width: "100%" }}
+                scrollWheelZoom={false}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

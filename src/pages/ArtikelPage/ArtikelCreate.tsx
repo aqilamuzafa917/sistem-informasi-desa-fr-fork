@@ -14,6 +14,7 @@ import {
 import { Label, Select, Textarea } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import {
   MapContainer,
   TileLayer,
@@ -46,7 +47,7 @@ interface FormData {
   penulis_artikel: string;
   judul_artikel: string;
   kategori_artikel: string;
-  tanggal_kejadian: string;
+  tanggal_kejadian_artikel: string;
   location_name: string;
   latitude: number | null;
   longitude: number | null;
@@ -122,7 +123,7 @@ export default function ArtikelCreate() {
     penulis_artikel: "",
     judul_artikel: "",
     kategori_artikel: "Berita",
-    tanggal_kejadian: "",
+    tanggal_kejadian_artikel: "",
     location_name: "",
     latitude: null,
     longitude: null,
@@ -343,12 +344,20 @@ export default function ArtikelCreate() {
                 >
                   <Calendar size={16} /> Tanggal Kejadian
                 </Label>
-                <Input
-                  id="tanggal_kejadian"
-                  name="tanggal_kejadian"
-                  type="date"
-                  value={formData.tanggal_kejadian}
-                  onChange={handleInputChange}
+                <DateTimePicker
+                  value={
+                    formData.tanggal_kejadian_artikel
+                      ? new Date(formData.tanggal_kejadian_artikel)
+                      : undefined
+                  }
+                  onChange={(date) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      tanggal_kejadian_artikel: date
+                        ? date.toISOString().split("T")[0]
+                        : "",
+                    }));
+                  }}
                 />
               </div>
             </div>

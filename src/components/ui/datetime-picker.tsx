@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,11 @@ export function DateTimePicker({
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP") : <span>Pilih Tanggal</span>}
+          {value ? (
+            format(value, "PPP", { locale: id })
+          ) : (
+            <span>Pilih Tanggal</span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -56,6 +61,7 @@ export function DateTimePicker({
           selected={value}
           onSelect={handleSelect}
           initialFocus
+          locale={id}
         />
       </PopoverContent>
     </Popover>
@@ -73,7 +79,7 @@ export function TimePicker({
   date,
   onChange,
   className,
-  placeholder,
+  placeholder = "Pilih Waktu",
 }: TimePickerProps) {
   const [hours, setHours] = React.useState<string>(
     date ? date.getHours().toString().padStart(2, "0") : "",
@@ -130,6 +136,7 @@ export function TimePicker({
           className="w-12 rounded-md border p-2 text-center"
           maxLength={2}
           placeholder={placeholder ? "00" : undefined}
+          aria-label="Jam"
         />
         <span>:</span>
         <input
@@ -139,6 +146,7 @@ export function TimePicker({
           className="w-12 rounded-md border p-2 text-center"
           maxLength={2}
           placeholder={placeholder ? "00" : undefined}
+          aria-label="Menit"
         />
       </div>
     </div>

@@ -46,15 +46,6 @@ interface IDMVariable {
 }
 
 interface IDMResponse {
-  message: string;
-  data: {
-    IKS: IDMVariable[];
-    IKE: IDMVariable[];
-    IKL: IDMVariable[];
-  };
-}
-
-interface IDMSummary {
   idm: {
     id: number;
     tahun: number;
@@ -68,28 +59,12 @@ interface IDMSummary {
       skorIKS: number;
       skorIKL: number;
     };
+    created_at: string;
+    updated_at: string;
   };
-  variabel_ike: Array<{
-    id: number;
-    tahun: number;
-    kategori: string;
-    nama: string;
-    skor: number;
-  }>;
-  variabel_iks: Array<{
-    id: number;
-    tahun: number;
-    kategori: string;
-    nama: string;
-    skor: number;
-  }>;
-  variabel_ikl: Array<{
-    id: number;
-    tahun: number;
-    kategori: string;
-    nama: string;
-    skor: number;
-  }>;
+  variabel_ike: IDMVariable[];
+  variabel_iks: IDMVariable[];
+  variabel_ikl: IDMVariable[];
 }
 
 interface StatCardProps {
@@ -110,7 +85,7 @@ const StatCard: React.FC<StatCardProps> = ({
     <div className="flex items-center justify-between">
       <div>
         <p className="mb-1 text-sm font-medium text-gray-600">{title}</p>
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <p className="text-3xl font-bold text-gray-900">{value.toFixed(4)}</p>
       </div>
       <div className={`rounded-full p-3 ${color}`}>
         <Icon className="h-6 w-6" />
@@ -119,36 +94,13 @@ const StatCard: React.FC<StatCardProps> = ({
   </div>
 );
 
-// Add dummy data
-const dummyIDMSummary: IDMSummary = {
-  idm: {
-    id: 1,
-    tahun: 2024,
-    skor_idm: 0.75,
-    status_idm: "Maju",
-    target_status: "Mandiri",
-    skor_minimal: 0.815,
-    penambahan: 0.05,
-    komponen: {
-      skorIKE: 0.78,
-      skorIKS: 0.72,
-      skorIKL: 0.75,
-    },
-  },
-  variabel_ike: [],
-  variabel_iks: [],
-  variabel_ikl: [],
-};
-
 export default function IDMPages() {
   const navigate = useNavigate();
-  const [idmData, setIdmData] = useState<IDMResponse["data"] | null>(null);
-  const [idmSummary, setIdmSummary] = useState<IDMSummary | null>(null);
+  const [idmData, setIdmData] = useState<IDMResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear(),
-  );
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState<{ [key: string]: number }>({
     IKS: 1,
     IKE: 1,
@@ -159,6 +111,8 @@ export default function IDMPages() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!selectedYear) return;
+      setIsLoading(true);
       try {
         const token = localStorage.getItem("authToken");
         if (!token) {
@@ -167,52 +121,81 @@ export default function IDMPages() {
           navigate("/");
           return;
         }
-
-        // Use dummy data for now
-        setIdmSummary(dummyIDMSummary);
-        setSelectedYear(dummyIDMSummary.idm.tahun);
-
-        // Fetch IDM variables data
-        const variablesResponse = await axios.get<IDMResponse>(
-          `${API_CONFIG.baseURL}/api/variabel-idm`,
-          {
-            headers: {
-              ...API_CONFIG.headers,
-              Authorization: `Bearer ${token}`,
-            },
-          },
+        const response = await axios.get<IDMResponse>(
+          `${API_CONFIG.baseURL}/api/publik/idm/${selectedYear}`,
+          { headers: { ...API_CONFIG.headers } },
         );
-
-        if (variablesResponse.data) {
-          setIdmData(variablesResponse.data.data);
-        }
-      } catch (err) {
-        console.error("Error fetching IDM data:", err);
-        if (axios.isAxiosError(err)) {
-          if (err.response?.status === 401) {
-            setError("Sesi Anda telah berakhir. Silakan login kembali.");
-            navigate("/");
-          } else if (err.response?.status === 404) {
-            setError("Endpoint API tidak ditemukan (404).");
-          } else {
-            setError("Gagal mengambil data IDM.");
-          }
-        } else {
-          setError("Terjadi kesalahan yang tidak diketahui.");
-        }
+        setIdmData(response.data);
+        setError(null); // Reset error jika data berhasil diambil
+      } catch {
+        setError("Gagal mengambil data IDM. Data Belum Tersedia.");
+        setIdmData(null);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
+  }, [selectedYear, navigate]);
+
+  // Fetch daftar tahun yang tersedia dari API
+  useEffect(() => {
+    const fetchAvailableYears = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          setError("Token tidak ditemukan. Silakan login kembali.");
+          navigate("/");
+          return;
+        }
+
+        // Range tahun yang ingin dicek (dinamis, 2 tahun sebelum dan 2 tahun setelah tahun sekarang)
+        const currentYear = new Date().getFullYear();
+        const minYear = currentYear - 2;
+        const maxYear = currentYear + 2;
+        const yearsToCheck = [];
+        for (let y = minYear; y <= maxYear; y++) {
+          yearsToCheck.push(y);
+        }
+        const foundYears: number[] = [];
+        for (const year of yearsToCheck) {
+          try {
+            const response = await axios.get<IDMResponse>(
+              `${API_CONFIG.baseURL}/api/publik/idm/${year}`,
+              { headers: { ...API_CONFIG.headers } },
+            );
+            if (
+              response.data &&
+              ((response.data.variabel_ike &&
+                response.data.variabel_ike.length > 0) ||
+                (response.data.variabel_iks &&
+                  response.data.variabel_iks.length > 0) ||
+                (response.data.variabel_ikl &&
+                  response.data.variabel_ikl.length > 0))
+            ) {
+              foundYears.push(year);
+            }
+          } catch (e) {
+            console.log("Tahun", year, "tidak ada data atau error:", e);
+            // Abaikan error, lanjut ke tahun berikutnya
+          }
+        }
+        foundYears.sort((a, b) => b - a); // Urutkan dari terbaru
+        setAvailableYears(foundYears);
+        if (foundYears.length > 0) {
+          setSelectedYear(foundYears[0]);
+        }
+      } catch {
+        setError("Gagal mengambil data tahun yang tersedia.");
+      }
+    };
+
+    fetchAvailableYears();
   }, [navigate]);
 
   const filterIDMByKategori = (kategori: string) => {
     if (!idmData) return [];
-    return idmData[kategori as keyof typeof idmData].filter(
-      (item) => item.tahun === selectedYear,
-    );
+    const key = `variabel_${kategori.toLowerCase()}` as keyof typeof idmData;
+    return (idmData[key] as IDMVariable[]) || [];
   };
 
   const getPaginatedData = (data: IDMVariable[], kategori: string) => {
@@ -229,8 +212,17 @@ export default function IDMPages() {
   };
 
   const getTotalScoreByKategori = (kategori: string) => {
-    const data = filterIDMByKategori(kategori);
-    return data.reduce((total, item) => total + item.skor, 0);
+    if (!idmData) return 0;
+    switch (kategori) {
+      case "IKS":
+        return idmData.idm.komponen.skorIKS;
+      case "IKE":
+        return idmData.idm.komponen.skorIKE;
+      case "IKL":
+        return idmData.idm.komponen.skorIKL;
+      default:
+        return 0;
+    }
   };
 
   const renderPagination = (totalItems: number, kategori: string) => {
@@ -352,7 +344,7 @@ export default function IDMPages() {
                         : "text-orange-700"
                   }`}
                 >
-                  {total}
+                  {total.toFixed(4)}
                 </p>
               </div>
             </div>
@@ -391,6 +383,7 @@ export default function IDMPages() {
                 <TableRow>
                   <TableHead>Indikator</TableHead>
                   <TableHead>Skor</TableHead>
+                  <TableHead>Nilai Plus</TableHead>
                   <TableHead>Keterangan</TableHead>
                   <TableHead>Kegiatan</TableHead>
                   <TableHead>Pelaksana</TableHead>
@@ -404,7 +397,12 @@ export default function IDMPages() {
                     </TableCell>
                     <TableCell>
                       <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                        {item.skor}
+                        {Math.round(item.skor)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                        {item.nilai_plus.toFixed(4)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -441,16 +439,6 @@ export default function IDMPages() {
     );
   };
 
-  const availableYears = idmData
-    ? Array.from(
-        new Set(
-          [...idmData.IKS, ...idmData.IKE, ...idmData.IKL].map(
-            (item) => item.tahun,
-          ),
-        ),
-      ).sort((a, b) => b - a)
-    : [];
-
   const kategoris = ["IKS", "IKE", "IKL"];
 
   if (isLoading) {
@@ -484,14 +472,10 @@ export default function IDMPages() {
               </div>
               <div className="flex items-center gap-4">
                 <Select
-                  value={selectedYear.toString()}
+                  value={selectedYear?.toString() || ""}
                   onValueChange={(value) => {
-                    setSelectedYear(parseInt(value));
-                    setCurrentPage({
-                      IKS: 1,
-                      IKE: 1,
-                      IKL: 1,
-                    });
+                    setSelectedYear(value ? parseInt(value) : null);
+                    setCurrentPage({ IKS: 1, IKE: 1, IKL: 1 });
                   }}
                 >
                   <SelectTrigger className="w-[180px]">
@@ -520,25 +504,25 @@ export default function IDMPages() {
             <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-4">
               <StatCard
                 title="Skor IDM"
-                value={idmSummary?.idm.skor_idm || 0}
+                value={idmData?.idm.skor_idm || 0}
                 icon={TrendingUp}
                 color="bg-blue-100 text-blue-600"
               />
               <StatCard
                 title="Skor IKS"
-                value={idmSummary?.idm.komponen.skorIKS || 0}
+                value={idmData?.idm.komponen.skorIKS || 0}
                 icon={Landmark}
                 color="bg-green-100 text-green-600"
               />
               <StatCard
                 title="Skor IKE"
-                value={idmSummary?.idm.komponen.skorIKE || 0}
+                value={idmData?.idm.komponen.skorIKE || 0}
                 icon={Banknote}
                 color="bg-purple-100 text-purple-600"
               />
               <StatCard
                 title="Skor IKL"
-                value={idmSummary?.idm.komponen.skorIKL || 0}
+                value={idmData?.idm.komponen.skorIKL || 0}
                 icon={PiggyBank}
                 color="bg-orange-100 text-orange-600"
               />
