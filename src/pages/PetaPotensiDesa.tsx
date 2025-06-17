@@ -473,7 +473,7 @@ export default function PetaPotensiDesa() {
                   </button>
                   <div className={`z-0 h-[700px] w-full`}>
                     <MapContainer
-                      center={[-6.912986707035502, 107.5105222441776]}
+                      center={desaConfig?.center_map}
                       zoom={15}
                       style={{ height: "100%", width: "100%" }}
                       scrollWheelZoom={true}

@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useDesa } from "@/contexts/DesaContext";
 
 interface PolygonEditorProps {
   initialPolygon: [number, number][];
@@ -14,6 +15,7 @@ export default function PolygonEditor({
   initialPolygon,
   onPolygonChange,
 }: PolygonEditorProps) {
+  const { desaConfig } = useDesa();
   const [polygon, setPolygon] = useState<[number, number][]>(initialPolygon);
   const [isDrawing, setIsDrawing] = useState(false);
   const [tempPoints, setTempPoints] = useState<[number, number][]>([]);
@@ -66,7 +68,7 @@ export default function PolygonEditor({
 
       <div className="h-[400px] w-full overflow-hidden rounded-lg border border-gray-200">
         <MapContainer
-          center={[-6.912941302269908, 107.51096443469147]}
+          center={desaConfig?.center_map}
           zoom={14}
           style={{ height: "100%", width: "100%" }}
         >
