@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Button,
   Table,
@@ -47,6 +47,15 @@ export default function CekStatusSuratPage() {
   const [downloadingPdf, setDownloadingPdf] = useState<number | null>(null);
   const [statusData, setStatusData] = useState<SuratApiResponse[] | null>(null);
   const [error, setError] = useState("");
+
+  // Untuk modal tanggal lahir saat download
+  const [showTanggalLahirModal, setShowTanggalLahirModal] = useState(false);
+  const [selectedSuratForDownload, setSelectedSuratForDownload] = useState<{
+    nik_pemohon: string;
+    id_surat: number;
+  } | null>(null);
+  const [tanggalLahirModal, setTanggalLahirModal] = useState("");
+  const tanggalLahirInputRef = useRef<HTMLInputElement>(null);
 
   // Add usePenduduk hook for NIK search
   const {
@@ -191,35 +200,56 @@ export default function CekStatusSuratPage() {
       .join(" ");
   };
 
-  const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
-    if (downloadingPdf === id_surat) return;
+  // Handler untuk membuka modal download
+  const handleOpenTanggalLahirModal = (
+    nik_pemohon: string,
+    id_surat: number,
+  ) => {
+    setSelectedSuratForDownload({ nik_pemohon, id_surat });
+    setTanggalLahirModal("");
+    setShowTanggalLahirModal(true);
+    setTimeout(() => {
+      tanggalLahirInputRef.current?.focus();
+    }, 100);
+  };
 
+  // Handler untuk proses download dari modal
+  const handleDownloadPdfWithTanggalLahir = async () => {
+    if (!selectedSuratForDownload) return;
+    const { nik_pemohon, id_surat } = selectedSuratForDownload;
+    if (!tanggalLahirModal) {
+      toast.error("Tanggal lahir wajib diisi untuk mengunduh surat.");
+      return;
+    }
     try {
       setDownloadingPdf(id_surat);
       toast.info("Mengunduh surat...", {
         description: "Dokumen akan segera diunduh",
       });
-
-      const pdfUrl = `${API_CONFIG.baseURL}/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
+      const pdfUrl = `${API_CONFIG.baseURL}/api/publik/surat/${nik_pemohon}/${id_surat}/pdf?tanggal_lahir=${encodeURIComponent(tanggalLahirModal)}`;
       const response = await fetch(pdfUrl, {
         headers: {
           ...API_CONFIG.headers,
         },
       });
-
       if (!response.ok) {
         let errorMessage = `Gagal mengunduh PDF. Status: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          if (errorData && errorData.message) {
-            errorMessage = errorData.message;
+        if (response.status === 400) {
+          errorMessage = "Tanggal lahir wajib diisi.";
+        } else if (response.status === 403) {
+          errorMessage = "NIK dan tanggal lahir tidak cocok.";
+        } else {
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } catch {
+            // If response is not JSON or error parsing, use the status-based message
           }
-        } catch {
-          // If response is not JSON or error parsing, use the status-based message
         }
         throw new Error(errorMessage);
       }
-
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -229,11 +259,12 @@ export default function CekStatusSuratPage() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-
       toast.success("Surat berhasil diunduh", {
         description: "Dokumen telah selesai diunduh",
       });
-      setError(""); // Clear previous errors on successful download
+      setError("");
+      setShowTanggalLahirModal(false);
+      setSelectedSuratForDownload(null);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -295,7 +326,7 @@ export default function CekStatusSuratPage() {
                 <label className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Nomor Induk Kependudukan (NIK)
                 </label>
-                <div className="relative">
+                <div className="relative mb-4">
                   <input
                     type="text"
                     className="w-full rounded-lg border-2 border-gray-200 bg-gray-50 p-4 pr-24 text-lg transition-all duration-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400 dark:focus:bg-gray-800 dark:focus:ring-blue-900/20"
@@ -306,18 +337,18 @@ export default function CekStatusSuratPage() {
                     pattern="\d*"
                     required
                   />
-                  <button
-                    type="submit"
-                    className="absolute top-2 right-2 flex h-12 w-20 items-center justify-center rounded-md bg-blue-600 text-white transition-colors duration-200 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      <HiSearch className="h-5 w-5" />
-                    )}
-                  </button>
                 </div>
+                <button
+                  type="submit"
+                  className="absolute top-2 right-2 flex h-12 w-20 items-center justify-center rounded-md bg-blue-600 text-white transition-colors duration-200 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Spinner size="sm" />
+                  ) : (
+                    <HiSearch className="h-5 w-5" />
+                  )}
+                </button>
                 {error && (
                   <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
                     <HiXCircle className="h-4 w-4" />
@@ -486,9 +517,11 @@ export default function CekStatusSuratPage() {
                         <Button
                           size="sm"
                           onClick={() =>
-                            handleDownloadPdf(surat.nik_pemohon, surat.id_surat)
+                            handleOpenTanggalLahirModal(
+                              surat.nik_pemohon,
+                              surat.id_surat,
+                            )
                           }
-                          disabled={downloadingPdf === surat.id_surat}
                           className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
                         >
                           {downloadingPdf === surat.id_surat ? (
@@ -587,12 +620,11 @@ export default function CekStatusSuratPage() {
                             <Button
                               size="sm"
                               onClick={() =>
-                                handleDownloadPdf(
+                                handleOpenTanggalLahirModal(
                                   surat.nik_pemohon,
                                   surat.id_surat,
                                 )
                               }
-                              disabled={downloadingPdf === surat.id_surat}
                               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-900/20"
                             >
                               {downloadingPdf === surat.id_surat ? (
@@ -650,6 +682,119 @@ export default function CekStatusSuratPage() {
               </p>
             </div>
           </Card>
+        )}
+
+        {/* Modal Tanggal Lahir untuk Download PDF - Versi Diperbaiki */}
+        {showTanggalLahirModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500/30 p-4 backdrop-blur-sm">
+            <div className="relative w-full max-w-md transform rounded-2xl bg-white shadow-2xl transition-all dark:bg-gray-800">
+              {/* Header dengan ikon */}
+              <div className="flex items-center gap-3 border-b border-gray-200 p-6 dark:border-gray-700">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <HiDownload className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Konfirmasi Identitas
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Verifikasi untuk mengunduh surat
+                  </p>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6">
+                <div className="mb-4 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                  <div className="flex items-start gap-3">
+                    <HiExclamationCircle className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                        Verifikasi Diperlukan
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-400">
+                        Masukkan tanggal lahir Anda untuk memverifikasi
+                        identitas sebelum mengunduh dokumen.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <HiClock className="h-4 w-4" />
+                      Tanggal Lahir
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        ref={tanggalLahirInputRef}
+                        className="w-full rounded-lg border-2 border-gray-200 bg-gray-50 p-3 text-base transition-all duration-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400 dark:focus:bg-gray-800 dark:focus:ring-blue-900/20"
+                        value={tanggalLahirModal}
+                        onChange={(e) => setTanggalLahirModal(e.target.value)}
+                        required
+                        disabled={
+                          downloadingPdf === selectedSuratForDownload?.id_surat
+                        }
+                        max={new Date().toISOString().split("T")[0]}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer dengan tombol */}
+              <div className="flex gap-3 border-t border-gray-200 p-6 dark:border-gray-700">
+                <button
+                  className="flex-1 rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-600 dark:focus:ring-gray-700"
+                  onClick={() => {
+                    setShowTanggalLahirModal(false);
+                    setSelectedSuratForDownload(null);
+                    setTanggalLahirModal("");
+                  }}
+                  disabled={
+                    downloadingPdf === selectedSuratForDownload?.id_surat
+                  }
+                >
+                  Batal
+                </button>
+                <button
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50 dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700 dark:focus:ring-blue-900/20"
+                  onClick={handleDownloadPdfWithTanggalLahir}
+                  disabled={
+                    downloadingPdf === selectedSuratForDownload?.id_surat ||
+                    !tanggalLahirModal
+                  }
+                >
+                  {downloadingPdf === selectedSuratForDownload?.id_surat ? (
+                    <>
+                      <Spinner size="sm" />
+                      <span>Mengunduh...</span>
+                    </>
+                  ) : (
+                    <>
+                      <HiDownload className="h-4 w-4" />
+                      <span>Download Surat</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Close button */}
+              <button
+                className="absolute top-4 right-4 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                onClick={() => {
+                  setShowTanggalLahirModal(false);
+                  setSelectedSuratForDownload(null);
+                  setTanggalLahirModal("");
+                }}
+                disabled={downloadingPdf === selectedSuratForDownload?.id_surat}
+              >
+                <HiXCircle className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
