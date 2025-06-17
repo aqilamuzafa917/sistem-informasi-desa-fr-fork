@@ -636,7 +636,7 @@ export default function ArtikelPages() {
                       : "Belum ada artikel yang dibuat. Mulai dengan membuat artikel pertama."}
                   </p>
                   <Button
-                    onClick={() => navigate("/artikel/buat")}
+                    onClick={() => navigate("/admin/artikel/buat")}
                     className="mx-auto mt-4 flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
                   >
                     <Plus className="h-5 w-5" />

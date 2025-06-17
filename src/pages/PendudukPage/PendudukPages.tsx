@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { Pagination } from "flowbite-react";
 import {
   Search,
   ChevronUp,
@@ -50,6 +49,24 @@ interface PendudukStatsResponse {
   total_kk: number;
 }
 
+interface PendudukResponse {
+  current_page: number;
+  data: Penduduk[];
+  first_page_url: string;
+  from: number;
+  next_page_url: string | null;
+  path: string;
+  per_page: string;
+  prev_page_url: string | null;
+  to: number;
+}
+
+interface ApiResponse {
+  status: string;
+  data: PendudukResponse;
+  message: string;
+}
+
 export default function PendudukPages() {
   const navigate = useNavigate();
   const [pendudukList, setPendudukList] = useState<Penduduk[]>([]);
@@ -61,14 +78,17 @@ export default function PendudukPages() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 15;
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
 
   // State for stats API
   const [stats, setStats] = useState<PendudukStatsResponse | null>(null);
 
   const [selectedGender, setSelectedGender] = useState<string>("");
+
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
 
   const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return "-";
@@ -110,18 +130,13 @@ export default function PendudukPages() {
           return;
         }
 
-        // Remove pagination parameters since server doesn't support it
         const queryParams = new URLSearchParams();
+        queryParams.append("page", currentPage.toString());
+        queryParams.append("per_page", itemsPerPage.toString());
+        if (searchTerm) queryParams.append("search", searchTerm);
+        if (selectedGender) queryParams.append("gender", selectedGender);
 
-        if (searchTerm) {
-          queryParams.append("search", searchTerm);
-        }
-
-        if (selectedGender) {
-          queryParams.append("gender", selectedGender);
-        }
-
-        const response = await axios.get(
+        const response = await axios.get<ApiResponse>(
           `${API_CONFIG.baseURL}/api/penduduk?${queryParams.toString()}`,
           {
             headers: {
@@ -131,47 +146,30 @@ export default function PendudukPages() {
           },
         );
 
-        const allData = response.data;
+        const responseData = response.data.data;
 
-        if (Array.isArray(allData)) {
-          // Filter data based on search term if it exists
-          let filteredData = allData;
-          if (searchTerm) {
-            const searchLower = searchTerm.toLowerCase();
-            filteredData = allData.filter(
-              (item) =>
-                item.nik.toLowerCase().includes(searchLower) ||
-                item.nama.toLowerCase().includes(searchLower),
-            );
+        if (responseData && Array.isArray(responseData.data)) {
+          setPendudukList(responseData.data);
+          setHasNextPage(!!responseData.next_page_url);
+          setHasPrevPage(!!responseData.prev_page_url);
+          setTotalItems(responseData.to); // hanya estimasi sampai data ke-
+          // Estimasi total halaman jika from dan to tersedia
+          const to = responseData.to || responseData.data.length;
+          const perPage = parseInt(responseData.per_page || "10");
+          // Jika to < perPage, berarti hanya 1 halaman
+          let estimatedTotalPages = 1;
+          if (to && perPage) {
+            estimatedTotalPages = Math.ceil(to / perPage);
           }
-
-          // Filter by gender if selected
-          if (selectedGender) {
-            filteredData = filteredData.filter(
-              (item) => item.jenis_kelamin === selectedGender,
-            );
-          }
-
-          // Calculate total pages
-          const total = filteredData.length;
-          const totalPagesCount = Math.ceil(total / itemsPerPage);
-
-          // Get current page data
-          const startIndex = (currentPage - 1) * itemsPerPage;
-          const endIndex = startIndex + itemsPerPage;
-          const currentPageData = filteredData.slice(startIndex, endIndex);
-
-          setPendudukList(currentPageData);
-          setTotalPages(totalPagesCount);
-          setTotalItems(total);
-        } else {
-          console.error(
-            "Struktur respons API tidak sesuai. Diharapkan array.",
-            allData,
+          setTotalPages(
+            Math.max(estimatedTotalPages, responseData.current_page),
           );
+        } else {
           setPendudukList([]);
-          setTotalPages(0);
+          setHasNextPage(false);
+          setHasPrevPage(false);
           setTotalItems(0);
+          setTotalPages(1);
         }
       } catch (err) {
         console.error("Error fetching penduduk data:", err);
@@ -182,8 +180,10 @@ export default function PendudukPages() {
           setError("Gagal mengambil data penduduk.");
         }
         setPendudukList([]);
-        setTotalPages(0);
+        setHasNextPage(false);
+        setHasPrevPage(false);
         setTotalItems(0);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
@@ -229,13 +229,15 @@ export default function PendudukPages() {
     }
   };
 
-  const onPageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
   const handleGenderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedGender(event.target.value);
     setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page !== currentPage) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -481,18 +483,44 @@ export default function PendudukPages() {
                   </table>
                 </div>
               )}
-              {totalPages > 1 && (
-                <div className="border-t border-gray-200 bg-white px-4 py-3">
-                  <div className="flex justify-end">
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={onPageChange}
-                      showIcons
-                    />
+              <div className="border-t border-gray-200 bg-white px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    Menampilkan {pendudukList.length} data (sampai data ke-
+                    {totalItems})
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={!hasPrevPage || currentPage === 1}
+                      variant="outline"
+                    >
+                      Sebelumnya
+                    </Button>
+                    {/* Pagination number buttons */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <Button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          variant={page === currentPage ? "default" : "outline"}
+                          className={page === currentPage ? "font-bold" : ""}
+                          disabled={page === currentPage}
+                        >
+                          {page}
+                        </Button>
+                      ),
+                    )}
+                    <Button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={!hasNextPage}
+                      variant="outline"
+                    >
+                      Selanjutnya
+                    </Button>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
