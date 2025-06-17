@@ -214,12 +214,20 @@ export default function InfografisPenduduk() {
 
   const dataPekerjaan = React.useMemo(
     () =>
-      Object.entries(stats?.data_pekerjaan || {}).map(([name, jumlah]) => ({
-        name,
-        jumlah,
-      })),
+      Object.entries(stats?.data_pekerjaan || {})
+        .map(([name, jumlah]) => ({
+          name,
+          jumlah,
+        }))
+        .sort((a, b) => b.jumlah - a.jumlah), // Sort by highest value
     [stats],
   );
+
+  const [showAllJobs, setShowAllJobs] = React.useState(false);
+  const displayedJobs = showAllJobs
+    ? dataPekerjaan
+    : dataPekerjaan.slice(0, 12);
+
   const dataStatus = React.useMemo(
     () =>
       stats
@@ -866,10 +874,22 @@ export default function InfografisPenduduk() {
         <div className="space-y-12">
           <GridCard
             title="Data Pekerjaan Penduduk"
-            data={dataPekerjaan}
+            data={displayedJobs}
             columns={3}
             icon={Briefcase}
             customItemIcon={getJobIcon}
+            footer={
+              dataPekerjaan.length > 12 && (
+                <button
+                  onClick={() => setShowAllJobs(!showAllJobs)}
+                  className="mt-4 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-gray-50 hover:text-slate-800"
+                >
+                  {showAllJobs
+                    ? "Tampilkan Lebih Sedikit"
+                    : `Tampilkan ${dataPekerjaan.length - 12} Pekerjaan Lainnya`}
+                </button>
+              )
+            }
           />
           <GridCard
             title="Status Perkawinan Penduduk"

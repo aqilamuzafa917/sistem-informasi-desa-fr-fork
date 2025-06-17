@@ -234,15 +234,15 @@ export default function NavbarDesa() {
       <Navbar
         fluid
         rounded={false}
-        className={`border-b-2 transition-all duration-300 ease-in-out ${
+        className={`border-b-2 px-4 transition-all duration-300 ease-in-out sm:px-6 lg:px-8 ${
           isScrolled
             ? "border-[var(--color-slate-gray)] bg-[var(--color-pure-white)]/95 shadow-lg backdrop-blur-md dark:border-[var(--color-dark-slate)] dark:bg-[var(--color-dark-slate)]/95"
             : "border-transparent bg-transparent"
-        } `}
+        }`}
       >
         <NavbarBrand href="/" className="group">
-          <div className="flex items-center space-x-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--color-fresh-green)] to-[var(--color-cyan-blue)] shadow-lg transition-transform duration-300 group-hover:scale-105">
+          <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--color-fresh-green)] to-[var(--color-cyan-blue)] shadow-lg transition-transform duration-300 group-hover:scale-105 sm:h-12 sm:w-12">
               <svg
                 className="h-7 w-7 text-white"
                 fill="none"
@@ -257,11 +257,11 @@ export default function NavbarDesa() {
                 />
               </svg>
             </div>
-            <div className="flex flex-col items-start">
-              <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-2xl font-bold whitespace-nowrap text-transparent transition-all duration-300 ease-in-out group-hover:from-blue-600 group-hover:to-blue-500 group-hover:text-blue-600 dark:from-white dark:to-gray-200 dark:text-white">
+            <div className="flex min-w-0 flex-1 flex-col items-start">
+              <span className="truncate bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-lg font-bold text-transparent transition-all duration-300 ease-in-out group-hover:from-blue-600 group-hover:to-blue-500 group-hover:text-blue-600 sm:text-xl lg:text-2xl dark:from-white dark:to-gray-200 dark:text-white">
                 {desaConfig?.nama_desa || "Portal Desa"}
               </span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="truncate text-xs text-gray-600 sm:text-sm dark:text-gray-400">
                 {desaConfig?.nama_kabupaten || "Kabupaten"} •{" "}
                 {desaConfig?.nama_provinsi || "Provinsi"}
               </span>
@@ -269,11 +269,11 @@ export default function NavbarDesa() {
           </div>
         </NavbarBrand>
 
-        <div className="flex space-x-3 md:order-2">
+        <div className="flex flex-shrink-0 items-center space-x-2 sm:space-x-3 md:order-2">
           <FlowbiteButton
             href="/admin/dashboard"
             size="sm"
-            className="group relative hidden overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 transition-all duration-300 ease-in-out hover:scale-105 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300/50 active:scale-95 md:flex dark:focus:ring-blue-800/50"
+            className="group relative hidden overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 transition-all duration-300 ease-in-out hover:scale-105 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300/50 active:scale-95 lg:flex dark:focus:ring-blue-800/50"
           >
             <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 group-hover:translate-x-[100%]"></div>
             <svg
@@ -293,13 +293,13 @@ export default function NavbarDesa() {
           </FlowbiteButton>
 
           <NavbarToggle
-            className="rounded-lg p-2 transition-all duration-300 ease-in-out hover:scale-105 focus:ring-4 focus:ring-gray-200 active:scale-95 dark:focus:ring-gray-600"
+            className="rounded-lg p-2 transition-all duration-300 ease-in-out hover:scale-105 focus:ring-4 focus:ring-gray-200 active:scale-95 lg:hidden dark:focus:ring-gray-600"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           />
         </div>
 
         <NavbarCollapse
-          className={`${isMobileMenuOpen ? "block" : "hidden"} md:block`}
+          className={`${isMobileMenuOpen ? "block" : "hidden"} lg:block`}
         >
           {navItems.map((item, index) => (
             <NavbarLink
@@ -322,6 +322,16 @@ export default function NavbarDesa() {
               )}
             </NavbarLink>
           ))}
+
+          {/* Mobile/Tablet Login Button */}
+          <div className="mt-4 border-t border-gray-200 pt-4 lg:hidden dark:border-gray-700">
+            <FlowbiteButton
+              href="/admin/dashboard"
+              className="w-full bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700"
+            >
+              Executive Login
+            </FlowbiteButton>
+          </div>
         </NavbarCollapse>
       </Navbar>
     </div>
