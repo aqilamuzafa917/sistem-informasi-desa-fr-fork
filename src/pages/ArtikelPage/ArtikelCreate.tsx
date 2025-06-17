@@ -29,6 +29,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
 import { toast } from "sonner";
 import { API_CONFIG } from "../../config/api";
+import { useDesa } from "@/contexts/DesaContext";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -116,6 +117,7 @@ const MapWithNoSSR = dynamic(() => Promise.resolve(MapContainer), {
 
 export default function ArtikelCreate() {
   const navigate = useNavigate();
+  const { desaConfig } = useDesa();
   const [formData, setFormData] = useState<FormData>({
     penulis_artikel: "",
     judul_artikel: "",
@@ -134,6 +136,7 @@ export default function ArtikelCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [villagePolygon] = useState<[number, number][]>([]);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   const categories = [
     "Berita",
@@ -166,13 +169,24 @@ export default function ArtikelCreate() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
+      const validFiles: File[] = [];
+      for (const file of newFiles) {
+        if (file.size > 2 * 1024 * 1024) {
+          setImageUploadError("Ukuran file maksimal 2MB");
+          return;
+        }
+        validFiles.push(file);
+      }
+      setImageUploadError(null);
       setFormData((prev) => ({
         ...prev,
         media_artikel: prev.media_artikel
-          ? [...prev.media_artikel, ...newFiles]
-          : newFiles,
+          ? [...prev.media_artikel, ...validFiles]
+          : validFiles,
       }));
-      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+      const newPreviewUrls = validFiles.map((file) =>
+        URL.createObjectURL(file),
+      );
       setPreviewImages((prev) => [...prev, ...newPreviewUrls]);
     }
   };
@@ -391,12 +405,14 @@ export default function ArtikelCreate() {
             </div>
             <div className="h-[300px] w-full">
               <MapWithNoSSR
-                center={[
-                  formData.latitude ?? -6.913331,
-                  formData.longitude ?? 107.511669,
-                ]}
+                center={
+                  formData.latitude && formData.longitude
+                    ? [formData.latitude, formData.longitude]
+                    : desaConfig?.center_map
+                }
                 zoom={15}
                 style={{ height: "100%", width: "100%" }}
+                scrollWheelZoom={false}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -468,6 +484,14 @@ export default function ArtikelCreate() {
                   ))}
                 </div>
               )}
+              {imageUploadError && (
+                <div className="mb-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                  {imageUploadError}
+                </div>
+              )}
+              <p className="mt-2 text-sm text-gray-500">
+                Maksimal 2MB per file, bisa pilih lebih dari satu
+              </p>
             </div>
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
               <h3 className="mb-2 font-medium text-blue-900">Review Data</h3>

@@ -9,11 +9,13 @@ import { useDesa } from "@/contexts/DesaContext";
 interface PolygonEditorProps {
   initialPolygon: [number, number][];
   onPolygonChange: (polygon: [number, number][]) => void;
+  scrollWheelZoom?: boolean;
 }
 
 export default function PolygonEditor({
   initialPolygon,
   onPolygonChange,
+  scrollWheelZoom = false,
 }: PolygonEditorProps) {
   const { desaConfig } = useDesa();
   const [polygon, setPolygon] = useState<[number, number][]>(initialPolygon);
@@ -71,6 +73,7 @@ export default function PolygonEditor({
           center={desaConfig?.center_map}
           zoom={14}
           style={{ height: "100%", width: "100%" }}
+          scrollWheelZoom={scrollWheelZoom}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

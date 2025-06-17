@@ -42,6 +42,7 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [fileUploadError, setFileUploadError] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -58,11 +59,22 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
+      const validFiles: File[] = [];
+      for (const file of newFiles) {
+        if (file.size > 2 * 1024 * 1024) {
+          setFileUploadError("Ukuran file maksimal 2MB");
+          return;
+        }
+        validFiles.push(file);
+      }
+      setFileUploadError(null);
       setFormData((prev) => ({
         ...prev,
-        media: [...prev.media, ...newFiles],
+        media: [...prev.media, ...validFiles],
       }));
-      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+      const newPreviewUrls = validFiles.map((file) =>
+        URL.createObjectURL(file),
+      );
       setPreviewImages((prev) => [...prev, ...newPreviewUrls]);
     }
   };
@@ -191,6 +203,12 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
           <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-100 p-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4" />
             {submitError}
+          </div>
+        )}
+
+        {fileUploadError && (
+          <div className="mb-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+            {fileUploadError}
           </div>
         )}
 

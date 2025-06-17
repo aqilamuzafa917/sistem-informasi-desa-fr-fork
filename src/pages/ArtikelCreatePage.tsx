@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
+import { useDesa } from "@/contexts/DesaContext";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -73,6 +74,7 @@ function LocationMarker({
 }
 
 export default function ArtikelCreatePage() {
+  const { desaConfig } = useDesa();
   const [formData, setFormData] = useState<FormData>({
     penulis_artikel: "",
     judul_artikel: "",
@@ -90,6 +92,7 @@ export default function ArtikelCreatePage() {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   const categories = [
     { value: "Berita", icon: "📰", color: "bg-blue-100 text-blue-800" },
@@ -122,15 +125,24 @@ export default function ArtikelCreatePage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
-
+      const validFiles: File[] = [];
+      for (const file of newFiles) {
+        if (file.size > 2 * 1024 * 1024) {
+          setImageUploadError("Ukuran file maksimal 2MB");
+          return;
+        }
+        validFiles.push(file);
+      }
+      setImageUploadError(null);
       setFormData((prev) => ({
         ...prev,
         media_artikel: prev.media_artikel
-          ? [...prev.media_artikel, ...newFiles]
-          : newFiles,
+          ? [...prev.media_artikel, ...validFiles]
+          : validFiles,
       }));
-
-      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+      const newPreviewUrls = validFiles.map((file) =>
+        URL.createObjectURL(file),
+      );
       setPreviewImages((prev) => [...prev, ...newPreviewUrls]);
     }
   };
@@ -424,12 +436,14 @@ export default function ArtikelCreatePage() {
                 </label>
                 <div className="h-[400px] w-full overflow-hidden rounded-xl">
                   <MapWithNoSSR
-                    center={[
-                      formData.latitude ?? -6.913331,
-                      formData.longitude ?? 107.511669,
-                    ]}
+                    center={
+                      formData.latitude && formData.longitude
+                        ? [formData.latitude, formData.longitude]
+                        : desaConfig?.center_map
+                    }
                     zoom={15}
                     style={{ height: "100%", width: "100%" }}
+                    scrollWheelZoom={false}
                   >
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -545,6 +559,12 @@ export default function ArtikelCreatePage() {
                     </div>
                   </label>
                 </div>
+
+                {imageUploadError && (
+                  <div className="mb-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    {imageUploadError}
+                  </div>
+                )}
 
                 {previewImages.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
