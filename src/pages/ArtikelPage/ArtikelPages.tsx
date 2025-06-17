@@ -20,6 +20,22 @@ import {
   // Edit,
   Trash2,
   AlertCircle,
+  Pencil,
+  Building2,
+  Landmark,
+  GraduationCap,
+  Heart,
+  Briefcase,
+  Leaf,
+  ShoppingBag,
+  Users,
+  Newspaper,
+  Wrench,
+  Music,
+  Palette,
+  Utensils,
+  Bike,
+  LucideIcon,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -82,7 +98,7 @@ interface Artikel {
   //   url: string;
   // }>;
   created_at: string;
-  // updated_at: string; // Not displayed in table
+  updated_at: string; // Not displayed in table
 }
 
 type StatusArtikelFilter = "Semua" | "Diterbitkan" | "Diajukan";
@@ -309,6 +325,31 @@ export default function ArtikelPages() {
         icon: FileText,
       }
     );
+  };
+
+  const getCategoryIcon = (
+    category: string,
+  ): { icon: LucideIcon; color: string } => {
+    const defaultIcon = { icon: Tag, color: "bg-gray-50 text-gray-700" };
+
+    const categoryIcons: Record<string, { icon: LucideIcon; color: string }> = {
+      Pemerintahan: { icon: Building2, color: "bg-blue-50 text-blue-700" },
+      Pembangunan: { icon: Landmark, color: "bg-indigo-50 text-indigo-700" },
+      Pendidikan: { icon: GraduationCap, color: "bg-green-50 text-green-700" },
+      Kesehatan: { icon: Heart, color: "bg-red-50 text-red-700" },
+      Ekonomi: { icon: Briefcase, color: "bg-yellow-50 text-yellow-700" },
+      Pertanian: { icon: Leaf, color: "bg-emerald-50 text-emerald-700" },
+      UMKM: { icon: ShoppingBag, color: "bg-orange-50 text-orange-700" },
+      Sosial: { icon: Users, color: "bg-purple-50 text-purple-700" },
+      Berita: { icon: Newspaper, color: "bg-slate-50 text-slate-700" },
+      Infrastruktur: { icon: Wrench, color: "bg-zinc-50 text-zinc-700" },
+      Kesenian: { icon: Music, color: "bg-pink-50 text-pink-700" },
+      Budaya: { icon: Palette, color: "bg-violet-50 text-violet-700" },
+      Kuliner: { icon: Utensils, color: "bg-amber-50 text-amber-700" },
+      Olahraga: { icon: Bike, color: "bg-cyan-50 text-cyan-700" },
+    };
+
+    return categoryIcons[category] || defaultIcon;
   };
 
   const StatCard: React.FC<StatCardProps> = ({
@@ -625,6 +666,9 @@ export default function ArtikelPages() {
                         <th className="hidden px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase xl:table-cell">
                           Dibuat
                         </th>
+                        <th className="hidden px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase xl:table-cell">
+                          Diperbarui
+                        </th>
                         <th className="hidden px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase 2xl:table-cell">
                           Publikasi
                         </th>
@@ -668,10 +712,19 @@ export default function ArtikelPages() {
                               </div>
                             </td>
                             <td className="hidden px-3 py-2 text-xs lg:table-cell">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-700">
-                                <Tag className="h-3 w-3" />
-                                {artikel.kategori_artikel}
-                              </span>
+                              {(() => {
+                                const { icon: Icon, color } = getCategoryIcon(
+                                  artikel.kategori_artikel,
+                                );
+                                return (
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 rounded-full ${color} px-2 py-0.5 text-xs font-medium`}
+                                  >
+                                    <Icon className="h-3 w-3" />
+                                    {artikel.kategori_artikel}
+                                  </span>
+                                );
+                              })()}
                             </td>
                             <td className="hidden px-3 py-2 text-xs xl:table-cell">
                               <div className="flex items-center gap-2">
@@ -687,6 +740,12 @@ export default function ArtikelPages() {
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 {formatDate(artikel.created_at)}
+                              </div>
+                            </td>
+                            <td className="hidden px-3 py-2 text-xs text-gray-600 xl:table-cell">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(artikel.updated_at)}
                               </div>
                             </td>
                             <td className="hidden px-3 py-2 text-xs text-gray-600 2xl:table-cell">
@@ -715,6 +774,17 @@ export default function ArtikelPages() {
                                 >
                                   <Eye className="h-3 w-3" />
                                   Detail
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    navigate(
+                                      `/admin/artikel/edit/${artikel.id_artikel}`,
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-md bg-yellow-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:outline-none"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                  Edit
                                 </button>
                                 <button
                                   onClick={() =>

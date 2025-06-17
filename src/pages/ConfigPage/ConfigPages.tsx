@@ -27,6 +27,7 @@ interface DesaConfig {
   website_desa: string;
   email_desa: string;
   telepon_desa: string;
+  center_map: [number, number];
 }
 
 export default function ConfigPages() {
@@ -49,6 +50,7 @@ export default function ConfigPages() {
     website_desa: "",
     email_desa: "",
     telepon_desa: "",
+    center_map: [-6.912986707035502, 107.5105222441776],
   });
 
   const fetchConfig = async () => {
@@ -345,6 +347,50 @@ export default function ConfigPages() {
                             value={config.telepon_desa}
                             onChange={(e) =>
                               handleInputChange("telepon_desa", e.target.value)
+                            }
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Konfigurasi Peta</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="latitude">Latitude</Label>
+                          <Input
+                            id="latitude"
+                            type="number"
+                            step="any"
+                            value={config.center_map[0]}
+                            onChange={(e) =>
+                              setConfig((prev) => ({
+                                ...prev,
+                                center_map: [
+                                  parseFloat(e.target.value),
+                                  prev.center_map[1],
+                                ],
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="longitude">Longitude</Label>
+                          <Input
+                            id="longitude"
+                            type="number"
+                            step="any"
+                            value={config.center_map[1]}
+                            onChange={(e) =>
+                              setConfig((prev) => ({
+                                ...prev,
+                                center_map: [
+                                  prev.center_map[0],
+                                  parseFloat(e.target.value),
+                                ],
+                              }))
                             }
                           />
                         </div>

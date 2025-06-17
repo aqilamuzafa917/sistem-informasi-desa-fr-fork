@@ -46,6 +46,8 @@ import UserCreate from "./pages/UserPage/UserCreate";
 import ChatbotLogPages from "./pages/ChatBotPage/ChabotLogPages";
 import IDMPages from "./pages/InfografisPage/IdmPages";
 import PetaFasilitasPages from "./pages/PetaPage/PetaFasilitasPages";
+import IDMCreate from "./pages/InfografisPage/IdmCreate";
+import ArtikelEdit from "./pages/ArtikelPage/ArtikelEdit";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -109,6 +111,10 @@ export default function App() {
             path="/admin/artikel/:id"
             element={<VerifikasiArtikelPage />}
           />
+          <Route
+            path="/admin/artikel/edit/:id"
+            element={<ArtikelEdit />}
+          />
           <Route path="/admin/pendapatan" element={<PendapatanPages />} />
           <Route
             path="/admin/pendapatan/detail"
@@ -126,10 +132,8 @@ export default function App() {
             path="/admin/penduduk/:nik"
             element={<DetailPendudukPages />}
           />
-          <Route
-            path="/admin/idm"
-            element={<IDMPages />}
-          />
+          <Route path="/admin/idm" element={<IDMPages />} />
+          <Route path="/admin/idm/tambah" element={<IDMCreate />} />
           <Route path="/admin/petafasilitas" element={<PetaFasilitasPages />} />
           <Route path="/admin/penduduk/tambah" element={<PendudukCreate />} />
           <Route path="/admin/datakk" element={<DataKKPages />} />

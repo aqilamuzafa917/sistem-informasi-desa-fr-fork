@@ -24,6 +24,17 @@ export function DateTimePicker({
   onChange,
   className,
 }: DateTimePickerProps) {
+  const handleSelect = (date: Date | undefined) => {
+    if (date) {
+      // Set time to noon to avoid timezone issues
+      const normalizedDate = new Date(date);
+      normalizedDate.setHours(12, 0, 0, 0);
+      onChange?.(normalizedDate);
+    } else {
+      onChange?.(undefined);
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -43,7 +54,7 @@ export function DateTimePicker({
         <Calendar
           mode="single"
           selected={value}
-          onSelect={onChange}
+          onSelect={handleSelect}
           initialFocus
         />
       </PopoverContent>
@@ -55,20 +66,29 @@ interface TimePickerProps {
   date?: Date;
   onChange?: (date: Date | undefined) => void;
   className?: string;
+  placeholder?: string;
 }
 
-export function TimePicker({ date, onChange, className }: TimePickerProps) {
+export function TimePicker({
+  date,
+  onChange,
+  className,
+  placeholder,
+}: TimePickerProps) {
   const [hours, setHours] = React.useState<string>(
-    date ? date.getHours().toString().padStart(2, "0") : "00",
+    date ? date.getHours().toString().padStart(2, "0") : "",
   );
   const [minutes, setMinutes] = React.useState<string>(
-    date ? date.getMinutes().toString().padStart(2, "0") : "00",
+    date ? date.getMinutes().toString().padStart(2, "0") : "",
   );
 
   React.useEffect(() => {
     if (date) {
       setHours(date.getHours().toString().padStart(2, "0"));
       setMinutes(date.getMinutes().toString().padStart(2, "0"));
+    } else {
+      setHours("");
+      setMinutes("");
     }
   }, [date]);
 
@@ -89,12 +109,15 @@ export function TimePicker({ date, onChange, className }: TimePickerProps) {
   };
 
   const updateTime = (h: string, m: string) => {
-    if (h !== "" && m !== "") {
-      const newDate = new Date();
-      newDate.setHours(parseInt(h));
-      newDate.setMinutes(parseInt(m));
-      onChange?.(newDate);
+    if (h === "" || m === "") {
+      onChange?.(undefined);
+      return;
     }
+
+    const newDate = new Date();
+    newDate.setHours(parseInt(h));
+    newDate.setMinutes(parseInt(m));
+    onChange?.(newDate);
   };
 
   return (
@@ -106,7 +129,7 @@ export function TimePicker({ date, onChange, className }: TimePickerProps) {
           onChange={handleHoursChange}
           className="w-12 rounded-md border p-2 text-center"
           maxLength={2}
-          placeholder="00"
+          placeholder={placeholder ? "00" : undefined}
         />
         <span>:</span>
         <input
@@ -115,7 +138,7 @@ export function TimePicker({ date, onChange, className }: TimePickerProps) {
           onChange={handleMinutesChange}
           className="w-12 rounded-md border p-2 text-center"
           maxLength={2}
-          placeholder="00"
+          placeholder={placeholder ? "00" : undefined}
         />
       </div>
     </div>

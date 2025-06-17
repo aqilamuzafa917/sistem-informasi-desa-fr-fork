@@ -489,11 +489,7 @@ export default function SuratCreate() {
                   Waktu Kematian <span className="text-destructive">*</span>
                 </Label>
                 <TimePicker
-                  date={
-                    formData.waktu_kematian
-                      ? new Date(`2000-01-01T${formData.waktu_kematian}`)
-                      : undefined
-                  }
+                  date={undefined}
                   onChange={(time: Date | undefined) => {
                     handleInputChange({
                       target: {
@@ -502,6 +498,7 @@ export default function SuratCreate() {
                       },
                     });
                   }}
+                  placeholder="Pilih waktu kematian"
                 />
               </div>
               {renderFormField("tempat_kematian", "Tempat Kematian")}
@@ -591,11 +588,7 @@ export default function SuratCreate() {
                   Waktu Lahir Bayi <span className="text-destructive">*</span>
                 </Label>
                 <TimePicker
-                  date={
-                    formData.waktu_lahir_bayi
-                      ? new Date(`2000-01-01T${formData.waktu_lahir_bayi}`)
-                      : undefined
-                  }
+                  date={undefined}
                   onChange={(time: Date | undefined) => {
                     handleInputChange({
                       target: {
@@ -604,6 +597,7 @@ export default function SuratCreate() {
                       },
                     });
                   }}
+                  placeholder="Pilih waktu lahir"
                 />
               </div>
             </div>

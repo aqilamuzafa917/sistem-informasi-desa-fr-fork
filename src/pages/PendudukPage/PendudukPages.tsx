@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Pagination } from "flowbite-react";
 import {
@@ -62,7 +62,8 @@ export default function PendudukPages() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 15;
 
   // State for stats API
   const [stats, setStats] = useState<PendudukStatsResponse | null>(null);
@@ -71,11 +72,7 @@ export default function PendudukPages() {
 
   const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return "-";
-    // Assuming dateString is in "DD-MM-YYYY" format as per example, needs parsing
-    // If API returns "YYYY-MM-DDTHH:mm:ss.sssZ" then new Date(dateString) is fine
-    // For "DD-MM-YYYY", we need to parse it manually or use a library
     if (dateString.includes("T")) {
-      // ISO format like "2025-05-13T09:45:20.000000Z"
       const date = new Date(dateString);
       return date.toLocaleDateString("id-ID", {
         day: "2-digit",
@@ -83,7 +80,6 @@ export default function PendudukPages() {
         year: "numeric",
       });
     } else if (dateString.match(/^\d{2}-\d{2}-\d{4}$/)) {
-      // DD-MM-YYYY format
       const parts = dateString.split("-");
       if (parts.length === 3) {
         const date = new Date(
@@ -98,7 +94,7 @@ export default function PendudukPages() {
         });
       }
     }
-    return dateString; // Fallback if format is unexpected
+    return dateString;
   }, []);
 
   useEffect(() => {
@@ -113,8 +109,20 @@ export default function PendudukPages() {
           navigate("/");
           return;
         }
+
+        // Remove pagination parameters since server doesn't support it
+        const queryParams = new URLSearchParams();
+
+        if (searchTerm) {
+          queryParams.append("search", searchTerm);
+        }
+
+        if (selectedGender) {
+          queryParams.append("gender", selectedGender);
+        }
+
         const response = await axios.get(
-          `${API_CONFIG.baseURL}/api/penduduk?page=${currentPage}&per_page=${itemsPerPage}`,
+          `${API_CONFIG.baseURL}/api/penduduk?${queryParams.toString()}`,
           {
             headers: {
               ...API_CONFIG.headers,
@@ -122,28 +130,48 @@ export default function PendudukPages() {
             },
           },
         );
-        const pendudukItems = response.data;
 
-        if (Array.isArray(pendudukItems)) {
-          setPendudukList(pendudukItems);
-          // Preliminary totalPages calculation if stats are not yet loaded.
-          // This will be refined by the dedicated useEffect for totalPages once stats are available.
-          if (!stats) {
-            if (pendudukItems.length === 0 && currentPage > 1) {
-              setTotalPages(currentPage - 1);
-            } else if (pendudukItems.length < itemsPerPage) {
-              setTotalPages(currentPage);
-            } else {
-              setTotalPages(currentPage + 1);
-            }
+        const allData = response.data;
+
+        if (Array.isArray(allData)) {
+          // Filter data based on search term if it exists
+          let filteredData = allData;
+          if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            filteredData = allData.filter(
+              (item) =>
+                item.nik.toLowerCase().includes(searchLower) ||
+                item.nama.toLowerCase().includes(searchLower),
+            );
           }
+
+          // Filter by gender if selected
+          if (selectedGender) {
+            filteredData = filteredData.filter(
+              (item) => item.jenis_kelamin === selectedGender,
+            );
+          }
+
+          // Calculate total pages
+          const total = filteredData.length;
+          const totalPagesCount = Math.ceil(total / itemsPerPage);
+
+          // Get current page data
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const currentPageData = filteredData.slice(startIndex, endIndex);
+
+          setPendudukList(currentPageData);
+          setTotalPages(totalPagesCount);
+          setTotalItems(total);
         } else {
           console.error(
-            "Expected an array of penduduk items, but received:",
-            pendudukItems,
+            "Struktur respons API tidak sesuai. Diharapkan array.",
+            allData,
           );
           setPendudukList([]);
           setTotalPages(0);
+          setTotalItems(0);
         }
       } catch (err) {
         console.error("Error fetching penduduk data:", err);
@@ -155,31 +183,21 @@ export default function PendudukPages() {
         }
         setPendudukList([]);
         setTotalPages(0);
+        setTotalItems(0);
       } finally {
         setLoading(false);
       }
     };
     fetchPendudukData();
-  }, [navigate, currentPage, itemsPerPage]); // Removed searchTerm from dependencies
-
-  // useEffect for calculating totalPages, primarily based on stats
-  useEffect(() => {
-    if (stats && stats.total_penduduk > 0) {
-      setTotalPages(Math.ceil(stats.total_penduduk / itemsPerPage));
-    } else if (stats && stats.total_penduduk === 0) {
-      setTotalPages(0);
-    }
-    // If stats is null, the preliminary calculation in fetchPendudukData is used until stats load.
-  }, [stats, itemsPerPage]);
+  }, [navigate, currentPage, itemsPerPage, searchTerm, selectedGender]);
 
   useEffect(() => {
     const fetchPendudukStats = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        if (!token) {
-          return;
-        }
-        const response = await axios.get(
+        if (!token) return;
+
+        const response = await axios.get<PendudukStatsResponse>(
           `${API_CONFIG.baseURL}/api/penduduk/stats`,
           {
             headers: {
@@ -188,11 +206,7 @@ export default function PendudukPages() {
             },
           },
         );
-        if (response.data) {
-          setStats(response.data);
-        } else {
-          setStats(null);
-        }
+        setStats(response.data);
       } catch (err) {
         console.error("Error fetching penduduk stats:", err);
         setStats(null);
@@ -203,7 +217,7 @@ export default function PendudukPages() {
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-    setCurrentPage(1); // Reset to first page on search
+    setCurrentPage(1);
   };
 
   const handleSort = (field: keyof Penduduk) => {
@@ -214,42 +228,6 @@ export default function PendudukPages() {
       setSortDirection("asc");
     }
   };
-
-  const sortedPendudukList = useMemo(() => {
-    // Apply client-side filtering first
-    const filteredList = pendudukList.filter((penduduk) => {
-      const matchesSearch =
-        !searchTerm ||
-        penduduk.nik.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        penduduk.nama.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGender =
-        !selectedGender || penduduk.jenis_kelamin === selectedGender;
-      return matchesSearch && matchesGender;
-    });
-    // Then sort the filtered list
-    const listToSort = [...filteredList];
-    if (!sortField) return listToSort;
-    listToSort.sort((a, b) => {
-      let valA = a[sortField] as string | number;
-      let valB = b[sortField] as string | number;
-      if (sortField === "tanggal_lahir") {
-        const dateA = new Date(a.tanggal_lahir.split("-").reverse().join("-"));
-        const dateB = new Date(b.tanggal_lahir.split("-").reverse().join("-"));
-        valA = dateA.getTime();
-        valB = dateB.getTime();
-      } else if (sortField === "created_at" || sortField === "updated_at") {
-        valA = new Date(a[sortField]!).getTime();
-        valB = new Date(b[sortField]!).getTime();
-      } else if (typeof valA === "string" && typeof valB === "string") {
-        valA = valA.toLowerCase();
-        valB = valB.toLowerCase();
-      }
-      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-    return listToSort;
-  }, [pendudukList, sortField, sortDirection, searchTerm, selectedGender]);
 
   const onPageChange = (page: number) => {
     setCurrentPage(page);
@@ -269,7 +247,9 @@ export default function PendudukPages() {
           <div className="border-b border-gray-200 bg-white px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Data Penduduk</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Data Penduduk
+                </h1>
                 <p className="mt-1 text-sm text-gray-600">
                   Kelola data Penduduk desa
                 </p>
@@ -361,8 +341,7 @@ export default function PendudukPages() {
                   </div>
                 </div>
                 <div className="text-sm text-gray-500">
-                  Menampilkan {sortedPendudukList.length} dari{" "}
-                  {pendudukList.length} data
+                  Menampilkan {pendudukList.length} dari {totalItems} data
                 </div>
               </div>
             </div>
@@ -379,7 +358,7 @@ export default function PendudukPages() {
                   </h3>
                   <p className="mt-1 text-sm text-gray-500">{error}</p>
                 </div>
-              ) : sortedPendudukList.length === 0 ? (
+              ) : pendudukList.length === 0 ? (
                 <div className="py-12 text-center">
                   <Users className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">
@@ -446,7 +425,7 @@ export default function PendudukPages() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {sortedPendudukList.map((penduduk) => (
+                      {pendudukList.map((penduduk) => (
                         <tr
                           key={penduduk.nik}
                           className="transition-colors hover:bg-gray-50"
@@ -504,12 +483,14 @@ export default function PendudukPages() {
               )}
               {totalPages > 1 && (
                 <div className="border-t border-gray-200 bg-white px-4 py-3">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={onPageChange}
-                    showIcons
-                  />
+                  <div className="flex justify-end">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={onPageChange}
+                      showIcons
+                    />
+                  </div>
                 </div>
               )}
             </div>
