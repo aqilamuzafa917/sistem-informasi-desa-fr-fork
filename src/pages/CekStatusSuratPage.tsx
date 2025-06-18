@@ -326,10 +326,10 @@ export default function CekStatusSuratPage() {
                 <label className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Nomor Induk Kependudukan (NIK)
                 </label>
-                <div className="relative mb-4">
+                <div className="relative mb-4 flex flex-row items-center gap-2">
                   <input
                     type="text"
-                    className="w-full rounded-lg border-2 border-gray-200 bg-gray-50 p-4 pr-24 text-lg transition-all duration-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400 dark:focus:bg-gray-800 dark:focus:ring-blue-900/20"
+                    className="flex-1 rounded-lg border-2 border-gray-200 bg-gray-50 p-4 text-lg transition-all duration-200 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400 dark:focus:bg-gray-800 dark:focus:ring-blue-900/20"
                     placeholder="Masukkan 16 digit NIK Anda"
                     value={nik}
                     onChange={handleInputChange}
@@ -337,18 +337,22 @@ export default function CekStatusSuratPage() {
                     pattern="\d*"
                     required
                   />
+                  {/* Tombol Cari */}
+                  <Button
+                    type="submit"
+                    disabled={
+                      nik.length !== 16 ||
+                      isLoading ||
+                      loadingPemohon ||
+                      !!errorPemohon ||
+                      !pendudukPemohon?.nama
+                    }
+                    className="bg-blue-600 px-6 py-2 text-base font-semibold text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  >
+                    <HiSearch className="mr-2 h-5 w-5" />
+                    Cari
+                  </Button>
                 </div>
-                <button
-                  type="submit"
-                  className="absolute top-2 right-2 flex h-12 w-20 items-center justify-center rounded-md bg-blue-600 text-white transition-colors duration-200 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <HiSearch className="h-5 w-5" />
-                  )}
-                </button>
                 {error && (
                   <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
                     <HiXCircle className="h-4 w-4" />

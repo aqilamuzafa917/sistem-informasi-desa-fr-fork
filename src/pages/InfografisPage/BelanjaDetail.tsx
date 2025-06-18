@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Table,
   TableBody,
@@ -417,7 +414,15 @@ export default function BelanjaDetail() {
           <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
-                <div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="mr-2"
+                    onClick={() => navigate(-1)}
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
                   <h1 className="text-xl font-semibold text-gray-900">
                     Detail Belanja Desa
                   </h1>

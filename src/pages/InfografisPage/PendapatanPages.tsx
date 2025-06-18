@@ -392,7 +392,9 @@ export default function PendapatanPages() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Pendapatan Desa
+                  Pendapatan Desa Tahun{" "}
+                  {historicalData[historicalData.length - 1]?.year &&
+                    `${historicalData[historicalData.length - 1]?.year}`}
                 </h1>
                 <p className="mt-1 text-sm text-gray-600">
                   Kelola data pendapatan desa
@@ -627,9 +629,13 @@ export default function PendapatanPages() {
                             <YAxis
                               stroke="#6b7280"
                               fontSize={12}
-                              tickFormatter={(value) =>
-                                `${(value / 1e9).toFixed(1)}M`
-                              }
+                              tickFormatter={(value) => {
+                                if (value >= 1e9)
+                                  return `Rp ${Math.round(value / 1e9)} M`;
+                                if (value >= 1e6)
+                                  return `Rp ${Math.round(value / 1e6)} Jt`;
+                                return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`;
+                              }}
                               tick={{ fill: "#6b7280" }}
                             />
                             <Tooltip content={<CustomTooltip />} />
@@ -664,7 +670,7 @@ export default function PendapatanPages() {
 
                       {/* Enhanced Summary Cards */}
                       <div className="mt-6 grid grid-cols-1 gap-4">
-                        {historicalData.map((item, index) => {
+                        {[...historicalData].reverse().map((item, index) => {
                           const total = item.asli + item.transfer + item.lain;
 
                           return (
@@ -697,12 +703,12 @@ export default function PendapatanPages() {
                       <div>
                         <CardTitle className="text-2xl font-bold text-gray-900">
                           Tabel Detail Pendapatan Tahun{" "}
-                          {historicalData[0]?.year}
+                          {historicalData[historicalData.length - 1]?.year}
                         </CardTitle>
                         <p className="mt-2 text-gray-600">
                           Rincian pendapatan desa tahun{" "}
-                          {historicalData[0]?.year} dengan breakdown setiap
-                          jenis pendapatan
+                          {historicalData[historicalData.length - 1]?.year}{" "}
+                          dengan breakdown setiap jenis pendapatan
                         </p>
                       </div>
                       <Button
@@ -732,7 +738,8 @@ export default function PendapatanPages() {
                         <tbody>
                           {historicalData.length > 0 &&
                             (() => {
-                              const latestData = historicalData[0];
+                              const latestData =
+                                historicalData[historicalData.length - 1];
                               const total =
                                 latestData.asli +
                                 latestData.transfer +

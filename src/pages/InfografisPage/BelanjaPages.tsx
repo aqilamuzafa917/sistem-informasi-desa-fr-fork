@@ -21,13 +21,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 import { API_CONFIG } from "../../config/api";
-import {
-  DollarSign,
-  Building2,
-  ArrowUpRight,
-  Plus,
-  ChevronLeft,
-} from "lucide-react";
+import { DollarSign, Building2, ArrowUpRight, Plus } from "lucide-react";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import { Button } from "@/components/ui/button";
 
@@ -381,6 +375,9 @@ export default function BelanjaPages() {
     },
   ];
 
+  // Urutkan data dari tahun terlama ke terbaru untuk bar chart dan summary card
+  const historicalDataAsc = [...historicalData].sort((a, b) => a.year - b.year);
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -390,17 +387,10 @@ export default function BelanjaPages() {
           <div className="border-b border-gray-200 bg-white px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(-1)}
-                  className="rounded-full hover:bg-gray-100"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    Belanja Desa
+                    Belanja Desa Tahun{" "}
+                    {historicalData[0]?.year && `${historicalData[0]?.year}`}
                   </h1>
                   <p className="mt-1 text-sm text-gray-600">
                     Kelola data belanja desa
@@ -563,7 +553,7 @@ export default function BelanjaPages() {
                       <div className="h-96">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
-                            data={historicalData}
+                            data={historicalDataAsc}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                           >
                             <defs>
@@ -636,9 +626,13 @@ export default function BelanjaPages() {
                             <YAxis
                               stroke="#6b7280"
                               fontSize={12}
-                              tickFormatter={(value) =>
-                                `${(value / 1e9).toFixed(1)}M`
-                              }
+                              tickFormatter={(value) => {
+                                if (value >= 1e9)
+                                  return `Rp ${Math.round(value / 1e9)} M`;
+                                if (value >= 1e6)
+                                  return `Rp ${Math.round(value / 1e6)} Jt`;
+                                return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`;
+                              }}
                               tick={{ fill: "#6b7280" }}
                             />
                             <Tooltip content={<CustomTooltip />} />
@@ -673,7 +667,7 @@ export default function BelanjaPages() {
 
                       {/* Enhanced Summary Cards */}
                       <div className="mt-6 grid grid-cols-1 gap-4">
-                        {historicalData.map((item, index) => {
+                        {[...historicalDataAsc].reverse().map((item, index) => {
                           const total =
                             item.barang + item.modal + item.takTerduga;
 

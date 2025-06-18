@@ -143,7 +143,6 @@ export default function ArtikelPages() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalArtikelCount, setTotalArtikelCount] = useState(0);
   const itemsPerPage = 10;
 
   // State for stats API
@@ -160,6 +159,7 @@ export default function ArtikelPages() {
     });
   }, []);
 
+  // Fetch all artikel data once on mount
   useEffect(() => {
     const fetchArtikelData = async () => {
       setLoading(true);
@@ -171,81 +171,33 @@ export default function ArtikelPages() {
           setLoading(false);
           return;
         }
-
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          per_page: itemsPerPage.toString(),
-        });
-
-        if (statusFilter !== "Semua") {
-          // Map client-side "Diterbitkan" to API's "diterbitkan" or "disetujui" if API needs it.
-          // Assuming API understands "diterbitkan", "diajukan", "ditolak" directly.
-          if (statusFilter === "Diterbitkan") {
-            params.append("status", "diterbitkan"); // Or 'disetujui' if API uses it, check backend API spec
-          } else {
-            params.append("status", statusFilter.toLowerCase());
-          }
-        }
-
-        if (jenisArtikelFilter) {
-          params.append("jenis_artikel", jenisArtikelFilter);
-        }
-
-        if (searchQuery) {
-          params.append("search", searchQuery); // Assuming API has a generic search parameter
-        }
-
-        const response = await axios.get(
-          `${API_CONFIG.baseURL}/api/artikel?${params.toString()}`,
-          {
-            headers: {
-              ...API_CONFIG.headers,
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await axios.get(`${API_CONFIG.baseURL}/api/artikel`, {
+          headers: {
+            ...API_CONFIG.headers,
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
         const responseData = response.data?.data;
-        if (responseData) {
-          const articles = responseData.data;
-          setArtikelList(Array.isArray(articles) ? articles : []);
-
-          // Set totalArtikelCount from responseData.total if it's a valid number
-          if (typeof responseData.total === "number") {
-            setTotalArtikelCount(responseData.total);
-          } else {
-            // If total is not provided by API or invalid, default to 0.
-            setTotalArtikelCount(0);
-          }
-        } else {
-          setArtikelList([]);
-          setTotalArtikelCount(0); // Reset total count
-        }
+        setArtikelList(
+          Array.isArray(responseData) ? responseData : responseData?.data || [],
+        );
       } catch (err) {
         console.error("Error fetching artikel data:", err);
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          setError("Sesi Anda telah berakhir. Silakan login kembali.");
-        } else {
-          setError("Gagal mengambil data artikel.");
-        }
+        setError("Gagal mengambil data artikel.");
         setArtikelList([]); // Clear data on error
-        setTotalArtikelCount(0); // Reset total count on error
       } finally {
         setLoading(false);
       }
     };
     fetchArtikelData();
-  }, [navigate, currentPage, statusFilter, jenisArtikelFilter, searchQuery]);
+  }, []); // Only on mount
 
-  // useEffect for fetching stats
+  // useEffect for fetching stats (tetap pakai API stats)
   useEffect(() => {
     const fetchArtikelStats = async () => {
-      // setStatsLoading(true); // Optional: if you want a separate loading state
-      // setStatsError(null);
       try {
         const token = localStorage.getItem("authToken");
         if (!token) {
-          // setStatsError("Token tidak ditemukan untuk statistik."); // Optional
-          // setStatsLoading(false);
           return;
         }
         const response = await axios.get(
@@ -261,37 +213,53 @@ export default function ArtikelPages() {
           setArtikelDiajukanCount(response.data.data.diajukan || 0);
           setArtikelDiterbitkanCount(response.data.data.disetujui || 0);
         } else {
-          // setStatsError("Gagal mengambil data statistik artikel."); // Optional
-          setArtikelDiajukanCount(0); // Reset on unexpected response
+          setArtikelDiajukanCount(0);
           setArtikelDiterbitkanCount(0);
         }
-      } catch (err) {
-        console.error("Error fetching artikel stats:", err);
-        // setStatsError("Gagal mengambil data statistik artikel karena kesalahan jaringan atau server."); // Optional
-        setArtikelDiajukanCount(0); // Reset on error
+      } catch {
+        setArtikelDiajukanCount(0);
         setArtikelDiterbitkanCount(0);
-        // Handle specific errors like 401 if needed, similar to the other fetch
-      } finally {
-        // setStatsLoading(false); // Optional
       }
     };
     fetchArtikelStats();
-  }, [navigate]); // Dependency: navigate, if auth redirection is needed based on stats call in future
-
-  const handleStatusFilterClick = (status: StatusArtikelFilter) => {
-    setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page on filter change
-  };
+  }, [navigate]);
 
   // Reset page when search query or jenisArtikelFilter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, jenisArtikelFilter]);
+  }, [searchQuery, jenisArtikelFilter, statusFilter]);
 
+  // Client-side filtering, searching, and pagination
+  const filteredArtikelList = artikelList.filter((artikel) => {
+    // Status
+    const statusMatch =
+      statusFilter === "Semua" ||
+      artikel.status_artikel.toLowerCase() === statusFilter.toLowerCase() ||
+      (statusFilter === "Diterbitkan" &&
+        (artikel.status_artikel.toLowerCase() === "diterbitkan" ||
+          artikel.status_artikel.toLowerCase() === "disetujui")) ||
+      (statusFilter === "Diajukan" &&
+        artikel.status_artikel.toLowerCase() === "diajukan");
+    // Jenis
+    const jenisMatch =
+      !jenisArtikelFilter || artikel.jenis_artikel === jenisArtikelFilter;
+    // Search
+    const searchMatch =
+      !searchQuery ||
+      artikel.judul_artikel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      artikel.kategori_artikel
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      artikel.penulis_artikel.toLowerCase().includes(searchQuery.toLowerCase());
+    return statusMatch && jenisMatch && searchMatch;
+  });
+
+  const totalArtikelCount = filteredArtikelList.length;
   const totalPages = Math.ceil(totalArtikelCount / itemsPerPage);
-
-  // artikelList is now directly the paginated and filtered data from API
-  const paginatedArtikelList = artikelList; // Use artikelList directly
+  const paginatedArtikelList = filteredArtikelList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   const getStatusInfo = (status: string): StatusInfo => {
     const lowerStatus = status?.toLowerCase();
@@ -460,8 +428,6 @@ export default function ArtikelPages() {
                             (artikel) => artikel.id_artikel !== id,
                           ),
                         );
-                        // Update total count
-                        setTotalArtikelCount((prev) => prev - 1);
                         resolve("Artikel berhasil dihapus");
                       })
                       .catch((error) => {
@@ -557,11 +523,10 @@ export default function ArtikelPages() {
                     <FilterButton
                       key={status.value}
                       active={statusFilter === status.value}
-                      onClick={() =>
-                        handleStatusFilterClick(
-                          status.value as StatusArtikelFilter,
-                        )
-                      }
+                      onClick={() => {
+                        setStatusFilter(status.value as StatusArtikelFilter);
+                        setCurrentPage(1);
+                      }}
                       count={count}
                     >
                       <status.icon className="h-4 w-4" />
