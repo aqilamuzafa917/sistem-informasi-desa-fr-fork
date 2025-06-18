@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   MapPin,
-  Calendar,
+  Calendar as CalendarIcon,
   User,
   FileText,
   Camera,
@@ -29,7 +29,12 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
 import { toast } from "sonner";
 import { API_CONFIG } from "../../config/api";
-import { DateTimePicker } from "@/components/ui/datetime-picker";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -113,6 +118,126 @@ function MapComponent({
 const MapWithNoSSR = dynamic(() => Promise.resolve(MapContainer), {
   ssr: false,
 });
+
+// DateInputPicker component for tanggal_kejadian_artikel
+function formatDateToInput(date: Date | undefined) {
+  if (!date) return "";
+  // Format: DD/MM/YYYY
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function parseInputToDate(value: string): Date | undefined {
+  // Accepts DD/MM/YYYY
+  if (!value) return undefined;
+  const [day, month, year] = value.split("/");
+  if (!day || !month || !year) return undefined;
+  const date = new Date(`${year}-${month}-${day}`);
+  return isNaN(date.getTime()) ? undefined : date;
+}
+
+function isValidDate(date: Date | undefined) {
+  return !!date && !isNaN(date.getTime());
+}
+
+function DateInputPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [date, setDate] = React.useState<Date | undefined>(
+    parseInputToDate(value),
+  );
+  const [month, setMonth] = React.useState<Date | undefined>(date);
+  const [inputValue, setInputValue] = React.useState(value);
+
+  React.useEffect(() => {
+    setInputValue(value);
+    setDate(parseInputToDate(value));
+    setMonth(parseInputToDate(value));
+  }, [value]);
+
+  return (
+    <div className="relative flex gap-2">
+      <Input
+        id="tanggal_kejadian_artikel"
+        name="tanggal_kejadian_artikel"
+        value={inputValue}
+        placeholder="DD/MM/YYYY"
+        className="bg-background pr-10"
+        onChange={(e) => {
+          let val = e.target.value.replace(/-/g, "/"); // Ganti - jadi /
+          // Jika user mengetik YYYY/MM/DD, ubah ke DD/MM/YYYY
+          if (/^\d{4}\/\d{2}\/\d{2}$/.test(val)) {
+            const [y, m, d] = val.split("/");
+            val = `${d}/${m}/${y}`;
+          }
+          setInputValue(val);
+          const d = parseInputToDate(val);
+          if (isValidDate(d)) {
+            setDate(d);
+            setMonth(d);
+            onChange(formatDateToInput(d));
+          } else {
+            onChange("");
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            id="date-picker"
+            variant="ghost"
+            className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+            tabIndex={-1}
+            type="button"
+          >
+            <CalendarIcon size={16} />
+            <span className="sr-only">Select date</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto overflow-hidden p-0"
+          align="end"
+          alignOffset={-8}
+          sideOffset={10}
+        >
+          <Calendar
+            mode="single"
+            selected={date}
+            captionLayout="dropdown"
+            month={month}
+            onMonthChange={setMonth}
+            onSelect={(d: Date | undefined) => {
+              setDate(d);
+              setInputValue(formatDateToInput(d));
+              if (isValidDate(d)) {
+                onChange(formatDateToInput(d));
+              } else {
+                onChange("");
+              }
+              setOpen(false);
+            }}
+            disabled={(d) => d > new Date() || d < new Date("1900-01-01")}
+            fromYear={1900}
+            toYear={new Date().getFullYear()}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export default function ArtikelEdit() {
   const navigate = useNavigate();
@@ -277,7 +402,20 @@ export default function ArtikelEdit() {
 
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== "media_artikel" && value !== null) {
-          formDataToSend.append(key, value.toString());
+          if (key === "tanggal_kejadian_artikel" && value) {
+            // Convert DD/MM/YYYY to ISO 8601 (YYYY-MM-DDT00:00:00.000000Z)
+            const [day, month, year] = value.split("/");
+            if (day && month && year) {
+              const isoDate =
+                `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}` +
+                "T00:00:00.000000Z";
+              formDataToSend.append(key, isoDate);
+            } else {
+              formDataToSend.append(key, value.toString());
+            }
+          } else {
+            formDataToSend.append(key, value.toString());
+          }
         }
       });
 
@@ -388,23 +526,17 @@ export default function ArtikelEdit() {
               </div>
               <div className="space-y-2">
                 <Label
-                  htmlFor="tanggal_kejadian"
+                  htmlFor="tanggal_kejadian_artikel"
                   className="flex items-center gap-2 text-sm font-medium"
                 >
-                  <Calendar size={16} /> Tanggal Kejadian
+                  <CalendarIcon size={16} /> Tanggal Kejadian
                 </Label>
-                <DateTimePicker
-                  value={
-                    formData.tanggal_kejadian_artikel
-                      ? new Date(formData.tanggal_kejadian_artikel)
-                      : undefined
-                  }
-                  onChange={(date) => {
+                <DateInputPicker
+                  value={formData.tanggal_kejadian_artikel}
+                  onChange={(val) => {
                     setFormData((prev) => ({
                       ...prev,
-                      tanggal_kejadian_artikel: date
-                        ? date.toISOString().split("T")[0]
-                        : "",
+                      tanggal_kejadian_artikel: val,
                     }));
                   }}
                 />

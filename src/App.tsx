@@ -9,7 +9,6 @@ import ArtikelPages from "./pages/ArtikelPage/ArtikelPages";
 import PendapatanPages from "./pages/InfografisPage/PendapatanPages";
 import BelanjaPages from "./pages/InfografisPage/BelanjaPages";
 import PendudukPages from "./pages/PendudukPage/PendudukPages";
-import DataKKPages from "./pages/PendudukPage/KkPages";
 import PengaduanPages from "./pages/PengaduanPage/PenganduanPages";
 import ProfilPages from "./pages/ProfilPage/ProfilPages";
 import SuratPages from "./pages/SuratPage/SuratPages";
@@ -48,6 +47,8 @@ import IDMPages from "./pages/InfografisPage/IdmPages";
 import PetaFasilitasPages from "./pages/PetaPage/PetaFasilitasPages";
 import IDMCreate from "./pages/InfografisPage/IdmCreate";
 import ArtikelEdit from "./pages/ArtikelPage/ArtikelEdit";
+import PendudukEdit from "./pages/PendudukPage/PendudukEdit";
+import PetaFasilitasDetail from "./pages/PetaPage/PetaFasilitasDetail";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -111,10 +112,7 @@ export default function App() {
             path="/admin/artikel/:id"
             element={<VerifikasiArtikelPage />}
           />
-          <Route
-            path="/admin/artikel/edit/:id"
-            element={<ArtikelEdit />}
-          />
+          <Route path="/admin/artikel/edit/:id" element={<ArtikelEdit />} />
           <Route path="/admin/pendapatan" element={<PendapatanPages />} />
           <Route
             path="/admin/pendapatan/detail"
@@ -132,11 +130,15 @@ export default function App() {
             path="/admin/penduduk/:nik"
             element={<DetailPendudukPages />}
           />
+          <Route path="/admin/penduduk/tambah" element={<PendudukCreate />} />
+          <Route path="/admin/penduduk/edit/:nik" element={<PendudukEdit />} />
           <Route path="/admin/idm" element={<IDMPages />} />
           <Route path="/admin/idm/tambah" element={<IDMCreate />} />
           <Route path="/admin/petafasilitas" element={<PetaFasilitasPages />} />
-          <Route path="/admin/penduduk/tambah" element={<PendudukCreate />} />
-          <Route path="/admin/datakk" element={<DataKKPages />} />
+          <Route
+            path="/admin/fasilitas/:id"
+            element={<PetaFasilitasDetail />}
+          />
           <Route path="/admin/pengaduan" element={<PengaduanPages />} />
           <Route
             path="/admin/pengaduan/:id"

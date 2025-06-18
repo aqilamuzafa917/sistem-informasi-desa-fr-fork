@@ -446,7 +446,7 @@ export default function ProfilPages() {
             <div className="mx-auto max-w-6xl">
               {/* Informasi Umum */}
               {activeSection === "umum" && (
-                <div className="animate-in fade-in slide-in-from-bottom space-y-8 duration-500">
+                <div className="space-y-8">
                   <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/70 shadow-xl backdrop-blur-sm">
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
                       <div className="flex items-center gap-3">
@@ -494,7 +494,7 @@ export default function ProfilPages() {
 
               {/* Visi & Misi */}
               {activeSection === "visi-misi" && (
-                <div className="animate-in fade-in slide-in-from-bottom space-y-8 duration-500">
+                <div className="space-y-8">
                   <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/70 shadow-xl backdrop-blur-sm">
                     <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6">
                       <div className="flex items-center gap-3">
@@ -544,7 +544,7 @@ export default function ProfilPages() {
 
               {/* Lokasi & Wilayah */}
               {activeSection === "lokasi" && (
-                <div className="animate-in fade-in slide-in-from-bottom space-y-8 duration-500">
+                <div className="space-y-8">
                   <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/70 shadow-xl backdrop-blur-sm">
                     <div className="bg-gradient-to-r from-orange-600 to-red-600 p-6">
                       <div className="flex items-center gap-3">
@@ -626,7 +626,7 @@ export default function ProfilPages() {
 
               {/* Struktur Organisasi */}
               {activeSection === "struktur" && (
-                <div className="animate-in fade-in slide-in-from-bottom space-y-8 duration-500">
+                <div className="space-y-8">
                   <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/70 shadow-xl backdrop-blur-sm">
                     <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
                       <div className="flex items-center gap-3">
@@ -727,7 +727,7 @@ export default function ProfilPages() {
 
               {/* Peta Desa */}
               {activeSection === "peta" && (
-                <div className="animate-in fade-in slide-in-from-bottom space-y-8 duration-500">
+                <div className="space-y-8">
                   <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/70 shadow-xl backdrop-blur-sm">
                     <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-6">
                       <div className="flex items-center gap-3">
