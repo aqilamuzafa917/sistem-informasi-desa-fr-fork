@@ -148,12 +148,11 @@ export default function IDMPages() {
           return;
         }
 
-        // Range tahun yang ingin dicek (dinamis, 2 tahun sebelum dan 2 tahun setelah tahun sekarang)
+        // Range tahun yang ingin dicek (dinamis, 2 tahun sebelum tahun sekarang)
         const currentYear = new Date().getFullYear();
         const minYear = currentYear - 2;
-        const maxYear = currentYear + 2;
         const yearsToCheck = [];
-        for (let y = minYear; y <= maxYear; y++) {
+        for (let y = minYear; y <= currentYear; y++) {
           yearsToCheck.push(y);
         }
         const foundYears: number[] = [];
