@@ -304,7 +304,9 @@ export default function ArtikelEdit() {
         penulis_artikel: artikel.penulis_artikel,
         judul_artikel: artikel.judul_artikel,
         kategori_artikel: artikel.kategori_artikel,
-        tanggal_kejadian_artikel: artikel.tanggal_kejadian_artikel || "",
+        tanggal_kejadian_artikel: artikel.tanggal_kejadian_artikel
+          ? formatDateToInput(new Date(artikel.tanggal_kejadian_artikel))
+          : "",
         location_name: artikel.location_name,
         latitude: artikel.latitude,
         longitude: artikel.longitude,

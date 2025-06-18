@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   PlusCircle,
   MapPin,
-  Calendar,
   User,
   FileText,
   Camera,
@@ -11,6 +10,7 @@ import {
   ArrowLeft,
   Globe,
   Tag,
+  CalendarIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,27 @@ import NavbarDesa from "@/components/NavbarDesa";
 import FooterDesa from "@/components/FooterDesa";
 import { API_CONFIG } from "../config/api";
 import { useDesa } from "@/contexts/DesaContext";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import {
+  Form as RHFForm,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Calendar as RHFCalendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { id } from "date-fns/locale";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -41,7 +62,7 @@ interface FormData {
   penulis_artikel: string;
   judul_artikel: string;
   kategori_artikel: string;
-  tanggal_kejadian: string;
+  tanggal_kejadian_artikel: string;
   location_name: string;
   latitude: number | null;
   longitude: number | null;
@@ -73,13 +94,20 @@ function LocationMarker({
   return position === null ? null : <Marker position={position} />;
 }
 
+// Tambahkan zod schema untuk tanggal kejadian
+const DateSchema = z.object({
+  tanggal_kejadian: z.date({
+    required_error: "Tanggal kejadian diperlukan.",
+  }),
+});
+
 export default function ArtikelCreatePage() {
   const { desaConfig } = useDesa();
   const [formData, setFormData] = useState<FormData>({
     penulis_artikel: "",
     judul_artikel: "",
     kategori_artikel: "Berita",
-    tanggal_kejadian: "",
+    tanggal_kejadian_artikel: "",
     location_name: "",
     latitude: null,
     longitude: null,
@@ -93,6 +121,7 @@ export default function ArtikelCreatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 
   const categories = [
     { value: "Berita", icon: "📰", color: "bg-blue-100 text-blue-800" },
@@ -171,6 +200,28 @@ export default function ArtikelCreatePage() {
       latitude: lat,
       longitude: lng,
     }));
+  };
+
+  // Tambahkan form react-hook-form untuk tanggal kejadian
+  const dateForm = useForm<z.infer<typeof DateSchema>>({
+    resolver: zodResolver(DateSchema),
+    defaultValues: {
+      tanggal_kejadian: formData.tanggal_kejadian_artikel
+        ? new Date(formData.tanggal_kejadian_artikel)
+        : undefined,
+    },
+  });
+
+  // Sinkronisasi perubahan tanggal ke formData utama
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setFormData((prev) => ({
+        ...prev,
+        tanggal_kejadian_artikel: format(date, "yyyy-MM-dd"),
+      }));
+      dateForm.setValue("tanggal_kejadian", date, { shouldValidate: true });
+      setDatePopoverOpen(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -416,16 +467,62 @@ export default function ArtikelCreatePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-                    <Calendar className="h-4 w-4" />
-                    <span>Tanggal Kejadian</span>
-                  </label>
-                  <Input
-                    name="tanggal_kejadian"
-                    type="date"
-                    value={String(formData.tanggal_kejadian)}
-                    onChange={handleInputChange}
-                  />
+                  <RHFForm {...dateForm}>
+                    <FormField
+                      control={dateForm.control}
+                      name="tanggal_kejadian"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Tanggal Kejadian</FormLabel>
+                          <Popover
+                            open={datePopoverOpen}
+                            onOpenChange={setDatePopoverOpen}
+                          >
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground",
+                                  )}
+                                  type="button"
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP", { locale: id })
+                                  ) : (
+                                    <span>Pilih tanggal</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <RHFCalendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={handleDateChange}
+                                disabled={(date) =>
+                                  date > new Date() ||
+                                  date < new Date("1900-01-01")
+                                }
+                                captionLayout="dropdown"
+                                locale={id}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormDescription>
+                            Pilih tanggal kejadian peristiwa (dalam Bahasa
+                            Indonesia).
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </RHFForm>
                 </div>
               </div>
 

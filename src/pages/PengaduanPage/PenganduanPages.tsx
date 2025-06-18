@@ -403,7 +403,7 @@ export default function PengaduanPages() {
                         >
                           <div className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
-                            Tanggal Pengaduan
+                            Tanggal Aduan
                             {sortField === "created_at" &&
                               (sortDirection === "asc" ? (
                                 <ChevronUp className="h-3.5 w-3.5" />

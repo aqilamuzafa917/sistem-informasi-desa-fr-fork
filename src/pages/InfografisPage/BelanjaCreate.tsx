@@ -125,7 +125,7 @@ export default function BelanjaCreate() {
 
       if (response.data.status === "success") {
         toast.success("Data belanja berhasil ditambahkan");
-        navigate("/belanja");
+        navigate("/admin/belanja/detail");
       } else {
         toast.error("Gagal menambahkan data belanja");
       }
