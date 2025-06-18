@@ -144,7 +144,7 @@ export default function ConfigPages() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-6">
-                  <div className="grid gap-6">
+                  <div className="-mt-4 grid gap-6">
                     <Card>
                       <CardHeader>
                         <CardTitle>Informasi Umum Desa</CardTitle>

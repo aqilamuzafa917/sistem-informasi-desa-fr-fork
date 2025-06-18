@@ -1,9 +1,17 @@
 // import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { API_CONFIG } from "@/config/api";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import {
+  formatCurrency,
+  formatCurrencyWithSign,
+  getStatusColor,
+} from "@/utils/formatters";
+import {
+  QuickStatsSkeleton,
+  StatCardSkeleton,
+  SectionHeaderSkeleton,
+} from "@/components/ui/skeleton";
 import {
   FileText,
   AlertCircle,
@@ -12,8 +20,17 @@ import {
   Receipt,
   Wallet,
   TrendingUp,
+  BarChart3,
+  Users,
+  Calendar,
+  Info,
+  ArrowUp,
+  ArrowDown,
+  Sparkles,
+  Activity,
+  Building,
+  MapPin,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 
 interface StatCardProps {
   title: string;
@@ -22,6 +39,9 @@ interface StatCardProps {
   color: string;
   trend?: boolean;
   subtitle?: string;
+  change?: string;
+  changeType?: "positive" | "negative" | "neutral";
+  textColor?: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -30,16 +50,248 @@ const StatCard: React.FC<StatCardProps> = ({
   icon: Icon,
   color,
   subtitle,
+  change,
+  changeType,
+  textColor,
 }) => (
-  <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="mb-1 text-sm font-medium text-gray-600">{title}</p>
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
-        {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
+  <div className="group relative overflow-hidden rounded-3xl border border-white/20 bg-gradient-to-br from-white/80 to-white/40 p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:border-white/40 hover:shadow-2xl">
+    {/* Animated background gradient */}
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+    {/* Floating particles effect */}
+    <div className="absolute top-2 right-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+      <Sparkles className="h-4 w-4 animate-pulse text-blue-500/30" />
+    </div>
+
+    <div className="relative z-10 flex items-start justify-between">
+      <div className="flex-1">
+        <div className="mb-4 flex items-center gap-3">
+          <div
+            className={`rounded-2xl p-3 ${color} shadow-lg transition-transform duration-300 group-hover:scale-110`}
+          >
+            <Icon className="h-6 w-6" />
+          </div>
+          <p className="text-sm font-semibold tracking-wide text-gray-700 uppercase">
+            {title}
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <p
+            className={`text-3xl leading-none font-black tracking-tight ${textColor || "text-gray-900"}`}
+          >
+            {value}
+          </p>
+
+          {subtitle && (
+            <p className="flex items-center gap-2 text-xs font-medium text-gray-500">
+              <Calendar className="h-3 w-3" />
+              {subtitle}
+            </p>
+          )}
+
+          {change && (
+            <div className="flex items-center gap-2">
+              {changeType === "positive" && (
+                <ArrowUp className="h-3 w-3 text-emerald-500" />
+              )}
+              {changeType === "negative" && (
+                <ArrowDown className="h-3 w-3 text-red-500" />
+              )}
+              <p
+                className={`text-xs font-bold ${
+                  changeType === "positive"
+                    ? "text-emerald-600"
+                    : changeType === "negative"
+                      ? "text-red-600"
+                      : "text-gray-600"
+                }`}
+              >
+                {change}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-      <div className={`rounded-full p-3 ${color}`}>
-        <Icon className="h-6 w-6" />
+    </div>
+
+    {/* Animated border */}
+    <div
+      className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      style={{
+        padding: "1px",
+        background:
+          "linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.3), transparent)",
+      }}
+    />
+  </div>
+);
+
+const SectionHeader: React.FC<{
+  title: string;
+  description: string;
+  icon: React.ElementType;
+}> = ({ title, description, icon: Icon }) => (
+  <div className="mb-8 flex items-center justify-between">
+    <div className="flex items-center gap-4">
+      <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 p-4 shadow-lg">
+        <Icon className="h-7 w-7 text-white" />
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+          {title}
+        </h2>
+        <p className="text-sm font-medium text-gray-600">{description}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const QuickStats: React.FC<{
+  stats: {
+    surat: { total: number; diajukan: number };
+    artikel: { total: number; diajukan: number };
+    pengaduan: { total: number; diajukan: number };
+    keuangan: {
+      pendapatan: number;
+      belanja: number;
+      saldo: number;
+      tahun: number;
+    };
+    idm: {
+      skor: number;
+      status: string;
+      target: string;
+      skorMinimal: number;
+      tahun: number;
+      komponen: { skorIKE: number; skorIKS: number; skorIKL: number };
+    };
+  };
+}> = ({ stats }) => (
+  <div className="relative mb-12 overflow-hidden rounded-3xl border border-white/30 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 shadow-2xl backdrop-blur-xl">
+    {/* Animated background patterns */}
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10" />
+    <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-gradient-to-br from-blue-500/5 to-transparent blur-3xl" />
+    <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-gradient-to-tr from-purple-500/5 to-transparent blur-3xl" />
+
+    <div className="relative z-10">
+      <div className="mb-6 flex items-center gap-4">
+        <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 p-3 shadow-lg">
+          <Activity className="h-6 w-6 text-white" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-gray-900">Ringkasan Cepat</h3>
+          <p className="text-sm font-medium text-gray-600">
+            Overview statistik utama desa
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg">
+            <Clock className="h-6 w-6 text-white" />
+          </div>
+          <p className="mb-1 text-3xl font-black text-yellow-600">
+            {stats.surat.diajukan}
+          </p>
+          <p className="text-xs font-semibold tracking-wide text-gray-600 uppercase">
+            Surat Diajukan
+          </p>
+        </div>
+
+        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+            <FileText className="h-6 w-6 text-white" />
+          </div>
+          <p className="mb-1 text-3xl font-black text-indigo-600">
+            {stats.artikel.diajukan}
+          </p>
+          <p className="text-xs font-semibold tracking-wide text-gray-600 uppercase">
+            Artikel Diajukan
+          </p>
+        </div>
+
+        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 shadow-lg">
+            <AlertCircle className="h-6 w-6 text-white" />
+          </div>
+          <p className="mb-1 text-3xl font-black text-orange-600">
+            {stats.pengaduan.diajukan}
+          </p>
+          <p className="text-xs font-semibold tracking-wide text-gray-600 uppercase">
+            Pengaduan Diajukan
+          </p>
+        </div>
+
+        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+            <TrendingUp className="h-6 w-6 text-white" />
+          </div>
+          <p className="mb-1 text-3xl font-black text-emerald-600">
+            {stats.idm.skor}
+          </p>
+          <p className="text-xs font-semibold tracking-wide text-gray-600 uppercase">
+            Skor IDM
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const LoadingSpinner = () => (
+  <div className="space-y-12">
+    {/* Quick Stats Skeleton */}
+    <QuickStatsSkeleton />
+
+    {/* Administrative Services Skeleton */}
+    <div>
+      <SectionHeaderSkeleton />
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <StatCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+
+    {/* Content Management Skeleton */}
+    <div>
+      <SectionHeaderSkeleton />
+      <div className="grid gap-8 md:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <StatCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+
+    {/* Financial Overview Skeleton */}
+    <div>
+      <SectionHeaderSkeleton />
+      <div className="grid gap-8 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <StatCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+
+    {/* IDM Skeleton */}
+    <div>
+      <SectionHeaderSkeleton />
+      <div className="space-y-8">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+        <div>
+          <div className="mb-6 h-8 w-64 animate-pulse rounded bg-gray-200" />
+          <div className="grid gap-8 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -47,442 +299,329 @@ const StatCard: React.FC<StatCardProps> = ({
 
 export default function DashboardPage() {
   // const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    surat: {
-      total: 0,
-      diajukan: 0,
-    },
-    artikel: {
-      total: 0,
-      diajukan: 0,
-    },
-    pengaduan: {
-      total: 0,
-      diajukan: 0,
-    },
-    keuangan: {
-      pendapatan: 0,
-      belanja: 0,
-      saldo: 0,
-      tahun: 0,
-    },
+  const { data: stats, isLoading, error, refetch } = useDashboardStats();
+
+  // Default stats for loading state
+  const defaultStats = {
+    surat: { total: 0, diajukan: 0 },
+    artikel: { total: 0, diajukan: 0 },
+    pengaduan: { total: 0, diajukan: 0 },
+    keuangan: { pendapatan: 0, belanja: 0, saldo: 0, tahun: 0 },
     idm: {
       skor: 0,
       status: "",
       target: "",
       skorMinimal: 0,
       tahun: 0,
-      komponen: {
-        skorIKE: 0,
-        skorIKS: 0,
-        skorIKL: 0,
-      },
+      komponen: { skorIKE: 0, skorIKS: 0, skorIKL: 0 },
     },
-  });
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) throw new Error("Token tidak ditemukan");
-
-        // Define inline interfaces for API responses
-        interface SuratResponseData {
-          id_surat: number;
-          status_surat: string;
-        }
-        interface ArtikelListResponseData {
-          id_artikel: number;
-          status_artikel: string;
-        }
-        interface PengaduanResponseData {
-          id: string;
-          status: string;
-        }
-        interface DetailPendapatan {
-          "Pendapatan Asli Desa": string;
-          "Pendapatan Transfer": string | number;
-          "Pendapatan Lain-lain": string | number;
-        }
-        interface DetailBelanja {
-          "Belanja Barang/Jasa": string;
-          "Belanja Modal": string | number;
-          "Belanja Tak Terduga": string | number;
-        }
-        interface APBDesaResponseData {
-          tahun_anggaran: number;
-          total_pendapatan: string;
-          total_belanja: string;
-          saldo_sisa: string;
-          detail_pendapatan: DetailPendapatan;
-          detail_belanja: DetailBelanja;
-        }
-        interface IDMResponseData {
-          id: number;
-          tahun: number;
-          skor_idm: number;
-          status_idm: string;
-          target_status: string;
-          skor_minimal: number;
-          penambahan: number;
-          komponen: {
-            skorIKE: number;
-            skorIKS: number;
-            skorIKL: number;
-          };
-          created_at: string;
-          updated_at: string;
-        }
-
-        // Fetch Surat Stats
-        const suratResponse = await axios.get<{ data: SuratResponseData[] }>(
-          `${API_CONFIG.baseURL}/api/surat`,
-          {
-            headers: {
-              ...API_CONFIG.headers,
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        // Fetch Artikel Data (for total) and Artikel Stats (for diajukan)
-        const artikelListResponse = await axios.get<{
-          data: { data: ArtikelListResponseData[]; total: number };
-        }>(`${API_CONFIG.baseURL}/api/artikel`, {
-          headers: {
-            ...API_CONFIG.headers,
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const artikelStatsResponse = await axios.get<{
-          data: { diajukan: number };
-        }>(`${API_CONFIG.baseURL}/api/artikel/stats`, {
-          headers: {
-            ...API_CONFIG.headers,
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        // Fetch Pengaduan Stats
-        const pengaduanResponse = await axios.get<
-          { data: PengaduanResponseData[] } | PengaduanResponseData[]
-        >(`${API_CONFIG.baseURL}/api/pengaduan`, {
-          headers: {
-            ...API_CONFIG.headers,
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        // Fetch Keuangan Stats
-        const keuanganResponse = await axios.get<{
-          data: APBDesaResponseData[];
-        }>(`${API_CONFIG.baseURL}/api/publik/apbdesa/multi-tahun`, {
-          headers: {
-            ...API_CONFIG.headers,
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        // Fetch IDM Stats
-        const idmResponse = await axios.get<IDMResponseData[]>(
-          `${API_CONFIG.baseURL}/api/publik/idm-stats`,
-          {
-            headers: {
-              ...API_CONFIG.headers,
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        // Process Surat Stats
-        const suratData = suratResponse.data?.data || [];
-        const totalSurat = suratData.length;
-        const suratDiajukan = suratData.filter(
-          (surat: SuratResponseData) => surat.status_surat === "Diajukan",
-        ).length;
-
-        // Process Artikel Stats
-        const totalArtikel = artikelListResponse.data?.data?.total || 0; // From list endpoint
-        const artikelDiajukan = artikelStatsResponse.data?.data?.diajukan || 0; // From stats endpoint
-
-        // Process Pengaduan Stats
-        const rawPengaduanData = pengaduanResponse.data;
-        const pengaduanData: PengaduanResponseData[] = Array.isArray(
-          rawPengaduanData,
-        )
-          ? rawPengaduanData
-          : rawPengaduanData?.data || [];
-        const totalPengaduan = pengaduanData.length;
-        const pengaduanDiajukan = pengaduanData.filter(
-          (pengaduan: PengaduanResponseData) => pengaduan.status === "Diajukan",
-        ).length;
-
-        // Process Keuangan Stats
-        const keuanganData: APBDesaResponseData[] =
-          keuanganResponse.data?.data || [];
-        if (!Array.isArray(keuanganData) || keuanganData.length === 0) {
-          throw new Error("Data keuangan tidak ditemukan");
-        }
-
-        const latestYearData = keuanganData.sort(
-          (a: APBDesaResponseData, b: APBDesaResponseData) =>
-            b.tahun_anggaran - a.tahun_anggaran,
-        )[0];
-        if (!latestYearData) {
-          throw new Error("Data keuangan tahun terbaru tidak ditemukan");
-        }
-
-        // Process IDM Stats
-        const idmData: IDMResponseData[] = idmResponse.data || [];
-        if (!Array.isArray(idmData) || idmData.length === 0) {
-          throw new Error("Data IDM tidak ditemukan");
-        }
-
-        const latestIdmData = idmData.sort(
-          (a: IDMResponseData, b: IDMResponseData) => b.tahun - a.tahun,
-        )[0];
-        if (!latestIdmData) {
-          throw new Error("Data IDM tahun terbaru tidak ditemukan");
-        }
-
-        setStats({
-          surat: {
-            total: totalSurat,
-            diajukan: suratDiajukan,
-          },
-          artikel: {
-            total: totalArtikel,
-            diajukan: artikelDiajukan,
-          },
-          pengaduan: {
-            total: totalPengaduan,
-            diajukan: pengaduanDiajukan,
-          },
-          keuangan: {
-            pendapatan: parseFloat(latestYearData.total_pendapatan || "0"),
-            belanja: parseFloat(latestYearData.total_belanja || "0"),
-            saldo: parseFloat(latestYearData.saldo_sisa || "0"),
-            tahun: latestYearData.tahun_anggaran,
-          },
-          idm: {
-            skor: parseFloat(latestIdmData.skor_idm.toFixed(4)),
-            status: latestIdmData.status_idm,
-            target: latestIdmData.target_status,
-            skorMinimal: parseFloat(latestIdmData.skor_minimal.toFixed(4)),
-            tahun: latestIdmData.tahun,
-            komponen: {
-              skorIKE: parseFloat(latestIdmData.komponen.skorIKE.toFixed(4)),
-              skorIKS: parseFloat(latestIdmData.komponen.skorIKS.toFixed(4)),
-              skorIKL: parseFloat(latestIdmData.komponen.skorIKL.toFixed(4)),
-            },
-          },
-        });
-      } catch (err) {
-        console.error("Error fetching dashboard stats:", err);
-        setError("Gagal mengambil data dashboard");
-        // Set default values when there's an error
-        setStats({
-          surat: { total: 0, diajukan: 0 },
-          artikel: { total: 0, diajukan: 0 },
-          pengaduan: { total: 0, diajukan: 0 },
-          keuangan: { pendapatan: 0, belanja: 0, saldo: 0, tahun: 0 },
-          idm: {
-            skor: 0,
-            status: "",
-            target: "",
-            skorMinimal: 0,
-            tahun: 0,
-            komponen: { skorIKE: 0, skorIKS: 0, skorIKL: 0 },
-          },
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  const formatCurrency = (amount: number) =>
-    `Rp ${new Intl.NumberFormat("id-ID").format(amount)}`;
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "mandiri":
-        return "bg-green-100 text-green-600";
-      case "maju":
-        return "bg-blue-100 text-blue-600";
-      case "berkembang":
-        return "bg-yellow-100 text-yellow-600";
-      case "tertinggal":
-        return "bg-red-100 text-red-600";
-      case "sangat tertinggal":
-        return "bg-gray-100 text-gray-600";
-      default:
-        return "bg-gray-100 text-gray-600";
-    }
   };
+
+  const currentStats = stats || defaultStats;
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-          {/* Header */}
-          <div className="border-b border-gray-200 bg-white px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Dashboard Desa
-                </h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Pantau statistik dan informasi desa
-                </p>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+          {/* Enhanced Header */}
+          <div className="relative border-b border-white/30 bg-gradient-to-r from-white/90 via-white/80 to-white/70 backdrop-blur-xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5" />
+            <div className="relative px-8 py-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 p-4 shadow-2xl">
+                    <Building className="h-10 w-10 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-black tracking-tight text-gray-900">
+                      Dashboard Desa
+                    </h1>
+                    <p className="mt-1 flex items-center gap-2 text-lg font-medium text-gray-600">
+                      <MapPin className="h-4 w-4" />
+                      Monitoring dan statistik sistem informasi desa
+                    </p>
+                  </div>
+                </div>
+                {error && (
+                  <button
+                    onClick={() => refetch()}
+                    className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                  >
+                    Muat Ulang
+                  </button>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            {loading ? (
-              <div className="flex h-64 items-center justify-center">
-                <Spinner size="xl" text="Memuat data..." />
-              </div>
+
+          <div className="p-8">
+            {isLoading ? (
+              <LoadingSpinner />
             ) : error ? (
-              <div className="py-12 text-center">
-                <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  Error
+              <div className="rounded-3xl border border-red-200/50 bg-gradient-to-br from-red-50 to-pink-50 p-16 text-center shadow-xl">
+                <AlertCircle className="mx-auto mb-6 h-20 w-20 text-red-400" />
+                <h3 className="mb-4 text-2xl font-bold text-red-900">
+                  Terjadi Kesalahan
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">{error}</p>
+                <p className="text-lg text-red-700">
+                  {error instanceof Error
+                    ? error.message
+                    : "Gagal mengambil data dashboard"}
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="mt-6 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                >
+                  Coba Lagi
+                </button>
               </div>
             ) : (
-              <div className="mt-4 space-y-6">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                  {/* Surat Stats */}
-                  <StatCard
-                    title="Total Surat"
-                    value={stats.surat.total}
-                    icon={FileText}
-                    color="bg-blue-100 text-blue-600"
-                  />
-                  <StatCard
-                    title="Surat Diajukan"
-                    value={stats.surat.diajukan}
-                    icon={Clock}
-                    color="bg-yellow-100 text-yellow-600"
-                  />
+              <div className="space-y-12">
+                {/* Quick Stats Overview */}
+                <QuickStats stats={currentStats} />
 
-                  {/* Artikel Stats */}
-                  <StatCard
-                    title="Total Artikel"
-                    value={stats.artikel.total}
-                    icon={FileText}
-                    color="bg-purple-100 text-purple-600"
+                {/* Administrative Services */}
+                <div>
+                  <SectionHeader
+                    title="Layanan Administratif"
+                    description="Statistik surat dan pengaduan masyarakat"
+                    icon={Users}
                   />
-                  <StatCard
-                    title="Artikel Diajukan"
-                    value={stats.artikel.diajukan}
-                    icon={Clock}
-                    color="bg-yellow-100 text-yellow-600"
-                  />
-
-                  {/* Pengaduan Stats */}
-                  <StatCard
-                    title="Total Pengaduan"
-                    value={stats.pengaduan.total}
-                    icon={AlertCircle}
-                    color="bg-red-100 text-red-600"
-                  />
-                  <StatCard
-                    title="Pengaduan Diajukan"
-                    value={stats.pengaduan.diajukan}
-                    icon={Clock}
-                    color="bg-yellow-100 text-yellow-600"
-                  />
+                  <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                    <StatCard
+                      title="Total Surat"
+                      value={currentStats.surat.total}
+                      icon={FileText}
+                      color="bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-600"
+                      change={
+                        currentStats.surat.diajukan > 0
+                          ? `${currentStats.surat.diajukan} menunggu`
+                          : "Semua terproses"
+                      }
+                      changeType={
+                        currentStats.surat.diajukan > 0 ? "neutral" : "positive"
+                      }
+                    />
+                    <StatCard
+                      title="Surat Diajukan"
+                      value={currentStats.surat.diajukan}
+                      icon={Clock}
+                      color="bg-gradient-to-br from-yellow-100 to-amber-100 text-yellow-600"
+                      change={`${((currentStats.surat.diajukan / Math.max(currentStats.surat.total, 1)) * 100).toFixed(1)}% dari total`}
+                      changeType="neutral"
+                    />
+                    <StatCard
+                      title="Total Pengaduan"
+                      value={currentStats.pengaduan.total}
+                      icon={AlertCircle}
+                      color="bg-gradient-to-br from-red-100 to-pink-100 text-red-600"
+                      change={
+                        currentStats.pengaduan.diajukan > 0
+                          ? `${currentStats.pengaduan.diajukan} diajukan`
+                          : "Semua ditangani"
+                      }
+                      changeType={
+                        currentStats.pengaduan.diajukan > 0
+                          ? "negative"
+                          : "positive"
+                      }
+                    />
+                    <StatCard
+                      title="Pengaduan Diajukan"
+                      value={currentStats.pengaduan.diajukan}
+                      icon={Clock}
+                      color="bg-gradient-to-br from-orange-100 to-red-100 text-orange-600"
+                      change={`${((currentStats.pengaduan.diajukan / Math.max(currentStats.pengaduan.total, 1)) * 100).toFixed(1)}% dari total`}
+                      changeType="neutral"
+                    />
+                  </div>
                 </div>
 
-                {/* Keuangan Stats in one row */}
-                <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">
-                  <StatCard
-                    title="Total Pendapatan"
-                    value={formatCurrency(stats.keuangan.pendapatan)}
+                {/* Content Management */}
+                <div>
+                  <SectionHeader
+                    title="Manajemen Konten"
+                    description="Statistik artikel dan publikasi"
+                    icon={FileText}
+                  />
+                  <div className="grid gap-8 md:grid-cols-2">
+                    <StatCard
+                      title="Total Artikel"
+                      value={currentStats.artikel.total}
+                      icon={FileText}
+                      color="bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-600"
+                      change={
+                        currentStats.artikel.diajukan > 0
+                          ? `${currentStats.artikel.diajukan} dalam review`
+                          : "Semua dipublikasi"
+                      }
+                      changeType={
+                        currentStats.artikel.diajukan > 0
+                          ? "neutral"
+                          : "positive"
+                      }
+                    />
+                    <StatCard
+                      title="Artikel Diajukan"
+                      value={currentStats.artikel.diajukan}
+                      icon={Clock}
+                      color="bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600"
+                      change={`${((currentStats.artikel.diajukan / Math.max(currentStats.artikel.total, 1)) * 100).toFixed(1)}% dari total`}
+                      changeType="neutral"
+                    />
+                  </div>
+                </div>
+
+                {/* Financial Overview */}
+                <div>
+                  <SectionHeader
+                    title="Ringkasan Keuangan"
+                    description="Laporan APBDesa dan anggaran"
                     icon={DollarSign}
-                    color="bg-green-100 text-green-600"
-                    subtitle={`Tahun ${stats.keuangan.tahun}`}
                   />
-                  <StatCard
-                    title="Total Belanja"
-                    value={formatCurrency(stats.keuangan.belanja)}
-                    icon={Receipt}
-                    color="bg-orange-100 text-orange-600"
-                    subtitle={`Tahun ${stats.keuangan.tahun}`}
-                  />
-                  <StatCard
-                    title="Saldo Sisa"
-                    value={formatCurrency(stats.keuangan.saldo)}
-                    icon={Wallet}
-                    color="bg-blue-100 text-blue-600"
-                    subtitle={`Tahun ${stats.keuangan.tahun}`}
-                  />
+                  <div className="grid gap-8 md:grid-cols-3">
+                    <StatCard
+                      title="Total Pendapatan"
+                      value={
+                        formatCurrency(currentStats.keuangan.pendapatan).text
+                      }
+                      icon={DollarSign}
+                      color={
+                        formatCurrency(currentStats.keuangan.pendapatan)
+                          .isNegative
+                          ? "bg-gradient-to-br from-red-100 to-pink-100 text-red-600"
+                          : "bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-600"
+                      }
+                      subtitle={`Tahun Anggaran ${currentStats.keuangan.tahun}`}
+                      textColor={
+                        formatCurrency(currentStats.keuangan.pendapatan)
+                          .isNegative
+                          ? "text-red-600"
+                          : formatCurrency(currentStats.keuangan.pendapatan)
+                                .isPositive
+                            ? "text-emerald-600"
+                            : undefined
+                      }
+                    />
+                    <StatCard
+                      title="Total Belanja"
+                      value={formatCurrency(currentStats.keuangan.belanja).text}
+                      icon={Receipt}
+                      color={
+                        formatCurrency(currentStats.keuangan.belanja).isNegative
+                          ? "bg-gradient-to-br from-red-100 to-pink-100 text-red-600"
+                          : "bg-gradient-to-br from-orange-100 to-red-100 text-orange-600"
+                      }
+                      subtitle={`Tahun Anggaran ${currentStats.keuangan.tahun}`}
+                      change={`${((currentStats.keuangan.belanja / Math.max(currentStats.keuangan.pendapatan, 1)) * 100).toFixed(1)}% dari pendapatan`}
+                      changeType="neutral"
+                      textColor="text-red-600"
+                    />
+                    <StatCard
+                      title="Saldo Akhir"
+                      value={
+                        formatCurrencyWithSign(currentStats.keuangan.saldo).text
+                      }
+                      icon={Wallet}
+                      color={
+                        formatCurrencyWithSign(currentStats.keuangan.saldo)
+                          .isNegative
+                          ? "bg-gradient-to-br from-red-100 to-pink-100 text-red-600"
+                          : "bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-600"
+                      }
+                      subtitle={`Tahun Anggaran ${currentStats.keuangan.tahun}`}
+                      change={
+                        currentStats.keuangan.saldo > 0 ? "Surplus" : "Defisit"
+                      }
+                      changeType={
+                        currentStats.keuangan.saldo > 0
+                          ? "positive"
+                          : "negative"
+                      }
+                      textColor={
+                        formatCurrencyWithSign(currentStats.keuangan.saldo)
+                          .isNegative
+                          ? "text-red-600"
+                          : formatCurrencyWithSign(currentStats.keuangan.saldo)
+                                .isPositive
+                            ? "text-emerald-600"
+                            : undefined
+                      }
+                    />
+                  </div>
                 </div>
 
-                {/* IDM Stats */}
-                <div className="grid gap-6 md:grid-cols-4 lg:grid-cols-4">
-                  <StatCard
-                    title="Skor IDM"
-                    value={stats.idm.skor}
+                {/* Village Development Index */}
+                <div>
+                  <SectionHeader
+                    title="Indeks Desa Membangun (IDM)"
+                    description="Penilaian tingkat perkembangan desa"
                     icon={TrendingUp}
-                    color={getStatusColor(stats.idm.status)}
-                    subtitle={`Tahun ${stats.idm.tahun}`}
                   />
-                  <StatCard
-                    title="Status IDM"
-                    value={stats.idm.status}
-                    icon={TrendingUp}
-                    color={getStatusColor(stats.idm.status)}
-                    subtitle={`Tahun ${stats.idm.tahun}`}
-                  />
-                  <StatCard
-                    title="Target Status"
-                    value={stats.idm.target}
-                    icon={TrendingUp}
-                    color={getStatusColor(stats.idm.target)}
-                    subtitle={`Tahun ${stats.idm.tahun}`}
-                  />
-                  <StatCard
-                    title="Skor Minimal"
-                    value={stats.idm.skorMinimal}
-                    icon={TrendingUp}
-                    color="bg-gray-100 text-gray-600"
-                    subtitle={`Tahun ${stats.idm.tahun}`}
-                  />
-                </div>
+                  <div className="space-y-8">
+                    {/* Main IDM Stats */}
+                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                      <StatCard
+                        title="Skor IDM"
+                        value={currentStats.idm.skor}
+                        icon={TrendingUp}
+                        color={getStatusColor(currentStats.idm.status)}
+                        subtitle={`Evaluasi ${currentStats.idm.tahun}`}
+                      />
+                      <StatCard
+                        title="Status Saat Ini"
+                        value={currentStats.idm.status}
+                        icon={BarChart3}
+                        color={getStatusColor(currentStats.idm.status)}
+                        subtitle={`Evaluasi ${currentStats.idm.tahun}`}
+                      />
+                      <StatCard
+                        title="Target Status"
+                        value={currentStats.idm.target}
+                        icon={TrendingUp}
+                        color={getStatusColor(currentStats.idm.target)}
+                        subtitle="Target pencapaian"
+                      />
+                      <StatCard
+                        title="Skor Minimal"
+                        value={currentStats.idm.skorMinimal}
+                        icon={Info}
+                        color="bg-gradient-to-br from-gray-100 to-slate-100 text-gray-600"
+                        subtitle="Standar minimum"
+                      />
+                    </div>
 
-                {/* IDM Komponen Details */}
-                <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">
-                  <StatCard
-                    title="Skor IKE"
-                    value={stats.idm.komponen.skorIKE}
-                    icon={TrendingUp}
-                    color="bg-indigo-100 text-indigo-600"
-                    subtitle="Indeks Ketahanan Ekonomi"
-                  />
-                  <StatCard
-                    title="Skor IKS"
-                    value={stats.idm.komponen.skorIKS}
-                    icon={TrendingUp}
-                    color="bg-purple-100 text-purple-600"
-                    subtitle="Indeks Ketahanan Sosial"
-                  />
-                  <StatCard
-                    title="Skor IKL"
-                    value={stats.idm.komponen.skorIKL}
-                    icon={TrendingUp}
-                    color="bg-teal-100 text-teal-600"
-                    subtitle="Indeks Ketahanan Lingkungan"
-                  />
+                    {/* IDM Components */}
+                    <div>
+                      <h3 className="mb-6 text-2xl font-bold text-gray-900">
+                        Komponen Penilaian IDM
+                      </h3>
+                      <div className="grid gap-8 md:grid-cols-3">
+                        <StatCard
+                          title="Indeks Ketahanan Ekonomi"
+                          value={currentStats.idm.komponen.skorIKE}
+                          icon={DollarSign}
+                          color="bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-600"
+                          subtitle="Aspek ekonomi desa"
+                        />
+                        <StatCard
+                          title="Indeks Ketahanan Sosial"
+                          value={currentStats.idm.komponen.skorIKS}
+                          icon={Users}
+                          color="bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-600"
+                          subtitle="Aspek sosial budaya"
+                        />
+                        <StatCard
+                          title="Indeks Ketahanan Lingkungan"
+                          value={currentStats.idm.komponen.skorIKL}
+                          icon={TrendingUp}
+                          color="bg-gradient-to-br from-teal-100 to-cyan-100 text-teal-600"
+                          subtitle="Aspek lingkungan"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
