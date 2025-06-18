@@ -1,11 +1,55 @@
 import * as React from "react";
 import { BarChart3 } from "lucide-react";
+import axios from "axios";
+import { API_CONFIG } from "@/config/api";
 
 interface IdmSectionProps {
   loading?: boolean;
 }
 
+type IDMStats = {
+  id: number;
+  tahun: number;
+  skor_idm: number;
+  status_idm: string;
+  target_status: string;
+  skor_minimal: number;
+  penambahan: number;
+  komponen: {
+    skorIKE: number;
+    skorIKS: number;
+    skorIKL: number;
+  };
+  created_at: string;
+  updated_at: string;
+};
+
 export function IdmSection({ loading = false }: IdmSectionProps) {
+  const [currentYearStats, setCurrentYearStats] =
+    React.useState<IDMStats | null>(null);
+
+  React.useEffect(() => {
+    axios
+      .get(`${API_CONFIG.baseURL}/api/publik/idm-stats`, {
+        headers: API_CONFIG.headers,
+      })
+      .then((res) => {
+        // Set initial selected year to the most recent year
+        if (res.data.length > 0) {
+          const mostRecentYear = Math.max(
+            ...res.data.map((stat: IDMStats) => stat.tahun),
+          );
+          const currentStats = res.data.find(
+            (stat: IDMStats) => stat.tahun === mostRecentYear,
+          );
+          setCurrentYearStats(currentStats);
+        }
+      })
+      .catch((err) => {
+        console.error("Gagal memuat data statistik IDM:", err);
+      });
+  }, []);
+
   return (
     <div>
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
@@ -18,7 +62,9 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                 {loading ? (
                   <span className="inline-block h-6 w-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></span>
                 ) : (
-                  <span className="text-blue-600 dark:text-blue-400">2024</span>
+                  <span className="text-blue-600 dark:text-blue-400">
+                    {currentYearStats?.tahun || "-"}
+                  </span>
                 )}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -45,7 +91,7 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
                     ) : (
                       <p className="text-2xl font-bold text-blue-600 sm:text-3xl dark:text-blue-400">
-                        0.7925
+                        {currentYearStats?.skor_idm.toFixed(4) || "-"}
                       </p>
                     )}
                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -69,7 +115,7 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
                     ) : (
                       <p className="text-2xl font-bold text-green-600 sm:text-3xl dark:text-green-400">
-                        Maju
+                        {currentYearStats?.status_idm || "-"}
                       </p>
                     )}
                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -97,7 +143,7 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
                     ) : (
                       <p className="text-2xl font-bold text-purple-600 sm:text-3xl dark:text-purple-400">
-                        0.8234
+                        {currentYearStats?.komponen.skorIKS.toFixed(4) || "-"}
                       </p>
                     )}
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -106,7 +152,9 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       ) : (
                         <div
                           className="h-full rounded-full bg-purple-600 dark:bg-purple-400"
-                          style={{ width: "82.34%" }}
+                          style={{
+                            width: `${(currentYearStats?.komponen.skorIKS || 0) * 100}%`,
+                          }}
                         ></div>
                       )}
                     </div>
@@ -132,7 +180,7 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
                     ) : (
                       <p className="text-2xl font-bold text-orange-600 sm:text-3xl dark:text-orange-400">
-                        0.7654
+                        {currentYearStats?.komponen.skorIKE.toFixed(4) || "-"}
                       </p>
                     )}
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -141,7 +189,9 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       ) : (
                         <div
                           className="h-full rounded-full bg-orange-600 dark:bg-orange-400"
-                          style={{ width: "76.54%" }}
+                          style={{
+                            width: `${(currentYearStats?.komponen.skorIKE || 0) * 100}%`,
+                          }}
                         ></div>
                       )}
                     </div>
@@ -167,7 +217,7 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
                     ) : (
                       <p className="text-2xl font-bold text-teal-600 sm:text-3xl dark:text-teal-400">
-                        0.7890
+                        {currentYearStats?.komponen.skorIKL.toFixed(4) || "-"}
                       </p>
                     )}
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -176,7 +226,9 @@ export function IdmSection({ loading = false }: IdmSectionProps) {
                       ) : (
                         <div
                           className="h-full rounded-full bg-teal-600 dark:bg-teal-400"
-                          style={{ width: "78.90%" }}
+                          style={{
+                            width: `${(currentYearStats?.komponen.skorIKL || 0) * 100}%`,
+                          }}
                         ></div>
                       )}
                     </div>
