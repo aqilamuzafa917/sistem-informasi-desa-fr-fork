@@ -17,6 +17,7 @@ import {
   Trash2,
   AlertCircle,
   Eye,
+  Edit,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -27,17 +28,18 @@ interface NewPOIFeature {
     coordinates: [string | number, string | number];
   };
   properties: {
+    id: number;
     name: string;
     kategori?: string;
     alamat?: string;
     tags?: string[];
-    artikel_id?: string | null;
+    artikel_id?: number | null;
     status_artikel?: string | null;
   };
 }
 
 interface POI {
-  id: string;
+  id: number;
   name: string;
   amenity: string;
   latitude: number;
@@ -45,7 +47,7 @@ interface POI {
   address: string;
   created_at: string;
   updated_at: string;
-  artikel_id?: string | null;
+  artikel_id?: number | null;
   status_artikel?: string | null;
 }
 
@@ -176,10 +178,7 @@ export default function PetaFasilitasPages() {
             data[kategori].features.forEach((feature: NewPOIFeature) => {
               const [lng, lat] = parseCoords(feature.geometry.coordinates);
               allFeatures.push({
-                id: `${lng}-${lat}-${feature.properties.name}`.replace(
-                  /[^a-zA-Z0-9-]/g,
-                  "-",
-                ),
+                id: feature.properties.id,
                 name: feature.properties.name,
                 amenity: kategori, // gunakan nama kategori dari API
                 latitude: lat,
@@ -187,6 +186,8 @@ export default function PetaFasilitasPages() {
                 address: feature.properties.alamat || "",
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
+                artikel_id: feature.properties.artikel_id || null,
+                status_artikel: feature.properties.status_artikel || null,
               });
             });
           },
@@ -272,7 +273,7 @@ export default function PetaFasilitasPages() {
     setCurrentPage(1); // Reset to first page when filters change
   }, [searchQuery, amenityFilter, poiList]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     toast.custom(
       (t) => (
         <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg">
@@ -302,7 +303,7 @@ export default function PetaFasilitasPages() {
                 }
                 toast.promise(
                   new Promise<string>((resolve, reject) => {
-                    setDeleteLoading(id);
+                    setDeleteLoading(id.toString());
                     axios
                       .delete(`${API_CONFIG.baseURL}/api/map/poi/${id}`, {
                         headers: {
@@ -499,6 +500,9 @@ export default function PetaFasilitasPages() {
                           Koordinat
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Artikel ID
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                           Aksi
                         </th>
                       </tr>
@@ -525,11 +529,16 @@ export default function PetaFasilitasPages() {
                             <td className="px-3 py-2 text-xs text-gray-900">
                               {poi.name}
                             </td>
-                            <td className="px-3 py-2 text-xs text-gray-600">
-                              {poi.address}
+                            <td className="max-w-xs px-3 py-2 text-xs text-gray-600">
+                              <div className="line-clamp-2 overflow-hidden">
+                                {poi.address}
+                              </div>
                             </td>
                             <td className="px-3 py-2 text-xs text-gray-600">
                               {poi.latitude}, {poi.longitude}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {poi.artikel_id || "-"}
                             </td>
                             <td className="px-3 py-2 text-xs font-medium whitespace-nowrap">
                               <div className="flex items-center gap-1.5">
@@ -543,11 +552,20 @@ export default function PetaFasilitasPages() {
                                   Detail
                                 </button>
                                 <button
+                                  onClick={() =>
+                                    navigate(`/admin/fasilitas/edit/${poi.id}`)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-md bg-yellow-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:outline-none"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                  Edit
+                                </button>
+                                <button
                                   onClick={() => handleDelete(poi.id)}
-                                  disabled={deleteLoading === poi.id}
+                                  disabled={deleteLoading === poi.id.toString()}
                                   className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
                                 >
-                                  {deleteLoading === poi.id ? (
+                                  {deleteLoading === poi.id.toString() ? (
                                     <Spinner size="sm" className="h-3 w-3" />
                                   ) : (
                                     <Trash2 className="h-3 w-3" />

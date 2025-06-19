@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,17 @@ import {
   Plus,
   X,
   ChevronLeft,
-  Wheat,
-  Factory,
-  Mountain,
+  Building,
+  School,
+  Church,
+  Hospital,
+  MapPin,
   Save,
   AlertCircle,
   Tag,
   Navigation,
+  Loader2,
 } from "lucide-react";
-import { PiFarm } from "react-icons/pi";
 import dynamic from "next/dynamic";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -51,30 +53,30 @@ if (typeof window !== "undefined") {
 
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 
-const potensiCategoryOptions = [
+const amenityOptions = [
   {
-    value: "pertanian",
-    label: "Pertanian",
-    icon: Wheat,
-    color: "bg-green-100 text-green-800 border-green-200",
+    value: "sekolah",
+    label: "Sekolah",
+    icon: School,
+    color: "bg-blue-100 text-blue-700 border-blue-200",
   },
   {
-    value: "peternakan",
-    label: "Peternakan",
-    icon: PiFarm,
-    color: "bg-blue-100 text-blue-800 border-blue-200",
+    value: "tempat_ibadah",
+    label: "Tempat Ibadah",
+    icon: Church,
+    color: "bg-purple-100 text-purple-700 border-purple-200",
   },
   {
-    value: "industri",
-    label: "Industri",
-    icon: Factory,
-    color: "bg-red-100 text-red-800 border-red-200",
+    value: "kesehatan",
+    label: "Kesehatan",
+    icon: Hospital,
+    color: "bg-red-100 text-red-700 border-red-200",
   },
   {
-    value: "wisata",
-    label: "Wisata",
-    icon: Mountain,
-    color: "bg-orange-100 text-orange-800 border-orange-200",
+    value: "fasilitas_lainnya",
+    label: "Fasilitas Lainnya",
+    icon: Building,
+    color: "bg-gray-100 text-gray-700 border-gray-200",
   },
 ];
 
@@ -103,13 +105,30 @@ function MapComponent({
   return position ? <Marker position={position} /> : null;
 }
 
-export default function PetaPotensiCreate() {
+interface POIFeature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [string | number, string | number];
+  };
+  properties: {
+    id: number;
+    name: string;
+    kategori?: string;
+    alamat?: string;
+    tags?: string[];
+    artikel_id?: number;
+  };
+}
+
+export default function PetaFasilitasEdit() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { desaConfig } = useDesa();
   const [form, setForm] = useState({
     nama: "",
-    kategori: "pertanian",
-    alamat: "",
+    kategori: "sekolah",
+    address: "",
     tags: [] as string[],
     lat: null as number | null,
     lon: null as number | null,
@@ -117,6 +136,7 @@ export default function PetaPotensiCreate() {
     artikel_id: null as number | null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [artikelOptions, setArtikelOptions] = useState<
     { id: number; judul: string }[]
@@ -154,7 +174,7 @@ export default function PetaPotensiCreate() {
       !form.kategori ||
       !form.lat ||
       !form.lon ||
-      !form.alamat
+      !form.address.trim()
     ) {
       toast.error("Nama, kategori, alamat, dan koordinat wajib diisi");
       return;
@@ -171,28 +191,28 @@ export default function PetaPotensiCreate() {
         kategori: form.kategori,
         lat: form.lat,
         lon: form.lon,
-        alamat: form.alamat,
+        alamat: form.address,
         tags: form.tags,
         ...(form.artikel_id ? { artikel_id: form.artikel_id } : {}),
       };
-      await axios.post(`${API_CONFIG.baseURL}/api/map/poi`, payload, {
+      await axios.put(`${API_CONFIG.baseURL}/api/map/poi/${id}`, payload, {
         headers: {
           ...API_CONFIG.headers,
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-      toast.success("Potensi berhasil ditambahkan");
+      toast.success("Fasilitas berhasil diperbarui");
       setTimeout(() => {
-        window.location.href = "/admin/potensi";
+        window.location.href = "/admin/fasilitas";
       }, 1200);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        toast.error("Gagal menambah potensi", {
+        toast.error("Gagal memperbarui fasilitas", {
           description: err.response?.data?.message || err.message,
         });
       } else {
-        toast.error("Gagal menambah potensi", {
+        toast.error("Gagal memperbarui fasilitas", {
           description: err instanceof Error ? err.message : String(err),
         });
       }
@@ -201,11 +221,84 @@ export default function PetaPotensiCreate() {
     }
   };
 
-  const selectedCategory = potensiCategoryOptions.find(
+  const selectedAmenity = amenityOptions.find(
     (opt) => opt.value === form.kategori,
   );
   const isFormValid = form.nama && form.kategori && form.lat && form.lon;
 
+  // Fetch existing POI data
+  useEffect(() => {
+    const fetchPOIData = async () => {
+      if (!id) return;
+
+      try {
+        const token = localStorage.getItem("authToken");
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/publik/map/poi/all`,
+          {
+            headers: {
+              ...API_CONFIG.headers,
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          },
+        );
+
+        const data = response.data;
+        let foundPOI: POIFeature | null = null;
+
+        // Helper to safely get coordinates as numbers
+        const parseCoords = (coords: [string | number, string | number]) => [
+          typeof coords[0] === "string" ? parseFloat(coords[0]) : coords[0],
+          typeof coords[1] === "string" ? parseFloat(coords[1]) : coords[1],
+        ];
+
+        // Search through all categories
+        ["sekolah", "tempat_ibadah", "kesehatan", "fasilitas_lainnya"].forEach(
+          (category) => {
+            const categoryData = data[category];
+            if (categoryData && Array.isArray(categoryData.features)) {
+              const features = categoryData.features as POIFeature[];
+              const found = features.find(
+                (feature: POIFeature) =>
+                  feature.properties.id.toString() === id,
+              );
+              if (found) {
+                foundPOI = found;
+              }
+            }
+          },
+        );
+
+        if (foundPOI) {
+          const poi = foundPOI as POIFeature;
+          const [lng, lat] = parseCoords(poi.geometry.coordinates);
+          setForm({
+            nama: poi.properties.name,
+            kategori: poi.properties.kategori || "sekolah",
+            address: poi.properties.alamat || "",
+            tags: poi.properties.tags || [],
+            lat: lat,
+            lon: lng,
+            tagInput: "",
+            artikel_id: poi.properties.artikel_id || null,
+          });
+        } else {
+          toast.error("Data fasilitas tidak ditemukan");
+          navigate("/admin/fasilitas");
+        }
+      } catch (error) {
+        console.error("Error fetching POI data:", error);
+        toast.error("Gagal mengambil data fasilitas");
+        navigate("/admin/fasilitas");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPOIData();
+  }, [id, navigate]);
+
+  // Fetch artikel options
   useEffect(() => {
     type ArtikelResponse = {
       id_artikel: number;
@@ -245,18 +338,34 @@ export default function PetaPotensiCreate() {
       });
   }, []);
 
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/20">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="text-gray-600">Memuat data fasilitas...</span>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/20">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/20">
           <div className="sticky top-0 z-10 border-b border-white/60 bg-white/80 backdrop-blur-lg">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center gap-4">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate("/admin/potensi")}
+                  onClick={() => navigate("/admin/fasilitas")}
                   className="h-10 w-10 rounded-xl p-0 hover:bg-gray-100/80"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -264,10 +373,10 @@ export default function PetaPotensiCreate() {
                 <div className="flex items-center gap-3">
                   <div>
                     <h1 className="text-xl font-semibold text-gray-900">
-                      Tambah Potensi Desa
+                      Edit Fasilitas Desa
                     </h1>
                     <p className="text-sm text-gray-500">
-                      Lengkapi informasi potensi untuk pemetaan desa
+                      Perbarui informasi fasilitas untuk pemetaan desa
                     </p>
                   </div>
                 </div>
@@ -279,7 +388,7 @@ export default function PetaPotensiCreate() {
               <Card className="border-0 shadow-sm ring-1 ring-gray-200/50">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Wheat className="h-5 w-5 text-green-600" />
+                    <Building className="h-5 w-5 text-blue-600" />
                     Informasi Dasar
                   </CardTitle>
                 </CardHeader>
@@ -290,7 +399,7 @@ export default function PetaPotensiCreate() {
                         htmlFor="nama"
                         className="text-sm font-medium text-gray-700"
                       >
-                        Nama Potensi *
+                        Nama Fasilitas *
                       </Label>
                       <Input
                         id="nama"
@@ -299,10 +408,10 @@ export default function PetaPotensiCreate() {
                         onChange={handleInputChange}
                         onFocus={() => setFocusedField("nama")}
                         onBlur={() => setFocusedField(null)}
-                        placeholder="Masukkan nama potensi"
+                        placeholder="Masukkan nama fasilitas"
                         className={`transition-all duration-200 ${
                           focusedField === "nama"
-                            ? "border-green-300 ring-2 ring-green-500/20"
+                            ? "border-blue-300 ring-2 ring-blue-500/20"
                             : ""
                         }`}
                         required
@@ -322,17 +431,17 @@ export default function PetaPotensiCreate() {
                           name="kategori"
                           value={form.kategori}
                           onChange={handleInputChange}
-                          className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm transition-all duration-200 hover:border-gray-400 focus:border-green-300 focus:ring-2 focus:ring-green-500/20 focus:outline-none"
+                          className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm transition-all duration-200 hover:border-gray-400 focus:border-blue-300 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                         >
-                          {potensiCategoryOptions.map((opt) => (
+                          {amenityOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>
                               {opt.label}
                             </option>
                           ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                          {selectedCategory && (
-                            <selectedCategory.icon className="h-4 w-4 text-gray-400" />
+                          {selectedAmenity && (
+                            <selectedAmenity.icon className="h-4 w-4 text-gray-400" />
                           )}
                         </div>
                       </div>
@@ -341,25 +450,26 @@ export default function PetaPotensiCreate() {
 
                   <div className="space-y-2">
                     <Label
-                      htmlFor="alamat"
+                      htmlFor="address"
                       className="text-sm font-medium text-gray-700"
                     >
-                      Alamat (Opsional)
+                      Alamat *
                     </Label>
                     <Textarea
-                      id="alamat"
-                      name="alamat"
-                      value={form.alamat}
+                      id="address"
+                      name="address"
+                      value={form.address}
                       onChange={handleInputChange}
-                      onFocus={() => setFocusedField("alamat")}
+                      onFocus={() => setFocusedField("address")}
                       onBlur={() => setFocusedField(null)}
-                      placeholder="Masukkan alamat lengkap potensi"
+                      placeholder="Masukkan alamat lengkap fasilitas"
                       rows={3}
                       className={`resize-none transition-all duration-200 ${
-                        focusedField === "alamat"
-                          ? "border-green-300 ring-2 ring-green-500/20"
+                        focusedField === "address"
+                          ? "border-blue-300 ring-2 ring-blue-500/20"
                           : ""
                       }`}
+                      required
                     />
                   </div>
 
@@ -373,7 +483,7 @@ export default function PetaPotensiCreate() {
                     {isLoadingArtikel ? (
                       <div className="h-10 w-full animate-pulse rounded-md bg-gray-100" />
                     ) : (
-                      <div className="relative">
+                      <div className="flex gap-2">
                         <Select
                           value={form.artikel_id ? String(form.artikel_id) : ""}
                           onValueChange={(val) =>
@@ -383,7 +493,7 @@ export default function PetaPotensiCreate() {
                             }))
                           }
                         >
-                          <SelectTrigger className="w-full pr-10">
+                          <SelectTrigger className="flex-1">
                             <SelectValue placeholder="Pilih artikel (opsional)" />
                           </SelectTrigger>
                           <SelectContent>
@@ -397,14 +507,14 @@ export default function PetaPotensiCreate() {
                         {form.artikel_id && (
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() =>
                               setForm((prev) => ({ ...prev, artikel_id: null }))
                             }
-                            className="absolute top-1/2 right-2 h-6 w-6 -translate-y-1/2 rounded-full p-0 hover:bg-gray-100"
+                            className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -426,14 +536,14 @@ export default function PetaPotensiCreate() {
                       {form.tags.map((tag) => (
                         <Badge
                           key={tag}
-                          className="flex items-center gap-1.5 border border-green-200 bg-green-50 text-green-700 transition-colors hover:bg-green-100"
+                          className="flex items-center gap-1.5 border border-blue-200 bg-blue-50 text-blue-700 transition-colors hover:bg-blue-100"
                         >
                           <Tag className="h-3 w-3" />
                           {tag}
                           <button
                             type="button"
                             onClick={() => handleRemoveTag(tag)}
-                            className="ml-1 rounded-full p-0.5 transition-colors hover:bg-green-200"
+                            className="ml-1 rounded-full p-0.5 transition-colors hover:bg-blue-200"
                           >
                             <X size={12} />
                           </button>
@@ -477,7 +587,7 @@ export default function PetaPotensiCreate() {
               <Card className="border-0 shadow-sm ring-1 ring-gray-200/50">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Navigation className="h-5 w-5 text-orange-600" />
+                    <MapPin className="h-5 w-5 text-red-600" />
                     Lokasi & Koordinat
                   </CardTitle>
                 </CardHeader>
@@ -541,7 +651,7 @@ export default function PetaPotensiCreate() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-1 text-xs text-green-600">
-                          <Navigation className="h-3 w-3" />
+                          <MapPin className="h-3 w-3" />
                           Lokasi telah dipilih
                         </div>
                       )}
@@ -579,7 +689,7 @@ export default function PetaPotensiCreate() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/admin/potensi")}
+                  onClick={() => navigate("/admin/fasilitas")}
                   disabled={isSubmitting}
                   className="min-w-24"
                 >
@@ -588,7 +698,7 @@ export default function PetaPotensiCreate() {
                 <Button
                   type="submit"
                   disabled={isSubmitting || !isFormValid}
-                  className="min-w-32 bg-gradient-to-r from-green-600 to-green-700 shadow-sm hover:from-green-700 hover:to-green-800"
+                  className="min-w-32 bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm hover:from-blue-700 hover:to-blue-800"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
@@ -598,7 +708,7 @@ export default function PetaPotensiCreate() {
                   ) : (
                     <div className="flex items-center gap-2">
                       <Save className="h-4 w-4" />
-                      Simpan Potensi
+                      Simpan Perubahan
                     </div>
                   )}
                 </Button>

@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "../../config/api";
+import { toast } from "sonner";
 import {
   Plus,
   Search,
@@ -12,7 +13,9 @@ import {
   Factory,
   Mountain,
   Eye,
+  Edit,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
 import { PiFarm } from "react-icons/pi";
 import { Spinner } from "@/components/ui/spinner";
@@ -137,6 +140,7 @@ export default function PetaPotensiPages() {
               (feature: {
                 geometry: { type: string; coordinates: [number, number] };
                 properties: {
+                  id: number;
                   name: string;
                   alamat?: string;
                   artikel_id?: string | number | null;
@@ -157,10 +161,7 @@ export default function PetaPotensiPages() {
                     number,
                   ];
                   features.push({
-                    id: `${coords[0]}-${coords[1]}-${feature.properties.name}`.replace(
-                      /[^a-zA-Z0-9-]/g,
-                      "-",
-                    ),
+                    id: String(feature.properties.id),
                     name: feature.properties.name,
                     category: kategori,
                     latitude: coords[1],
@@ -232,21 +233,79 @@ export default function PetaPotensiPages() {
     potensiList.filter((p) => p.category === key).length;
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus potensi ini?"))
-      return;
-    setDeleteLoading(id);
-    try {
-      await axios.delete(`${API_CONFIG.baseURL}/api/map/potensi/${id}`, {
-        headers: API_CONFIG.headers,
-      });
-      setPotensiList((prev) => prev.filter((p) => p.id !== id));
-      setFilteredPotensiList((prev) => prev.filter((p) => p.id !== id));
-      setTotalPotensiCount((prev) => prev - 1);
-    } catch {
-      alert("Gagal menghapus potensi. Silakan coba lagi.");
-    } finally {
-      setDeleteLoading(null);
-    }
+    toast.custom(
+      (t) => (
+        <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <div>
+              <h3 className="font-medium text-gray-900">Konfirmasi Hapus</h3>
+              <p className="text-sm text-gray-500">
+                Apakah Anda yakin ingin menghapus potensi ini?
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => toast.dismiss(t)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Batal
+            </button>
+            <button
+              onClick={async () => {
+                toast.dismiss(t);
+                const token = localStorage.getItem("authToken");
+                if (!token) {
+                  toast.error("Token tidak ditemukan. Silakan login kembali.");
+                  return;
+                }
+                toast.promise(
+                  new Promise<string>((resolve, reject) => {
+                    setDeleteLoading(id);
+                    axios
+                      .delete(`${API_CONFIG.baseURL}/api/map/poi/${id}`, {
+                        headers: {
+                          ...API_CONFIG.headers,
+                          Authorization: `Bearer ${token}`,
+                        },
+                      })
+                      .then(() => {
+                        setPotensiList((prev) =>
+                          prev.filter((p) => p.id !== id),
+                        );
+                        setFilteredPotensiList((prev) =>
+                          prev.filter((p) => p.id !== id),
+                        );
+                        setTotalPotensiCount((prev) => prev - 1);
+                        resolve("Potensi berhasil dihapus");
+                      })
+                      .catch((error) => {
+                        console.error("Error deleting potensi:", error);
+                        reject("Gagal menghapus potensi. Silakan coba lagi.");
+                      })
+                      .finally(() => {
+                        setDeleteLoading(null);
+                      });
+                  }),
+                  {
+                    loading: "Menghapus potensi...",
+                    success: (message: string) => message,
+                    error: (message: string) => message,
+                  },
+                );
+              }}
+              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+            >
+              Hapus
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: Infinity,
+      },
+    );
   };
 
   return (
@@ -365,6 +424,9 @@ export default function PetaPotensiPages() {
                           Koordinat
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                          Artikel ID
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                           Aksi
                         </th>
                       </tr>
@@ -395,11 +457,14 @@ export default function PetaPotensiPages() {
                             <td className="px-3 py-2 text-xs text-gray-900">
                               {potensi.name}
                             </td>
-                            <td className="px-3 py-2 text-xs text-gray-600">
+                            <td className="line-clamp-2 max-w-xs px-3 py-2 text-xs text-gray-600">
                               {potensi.address}
                             </td>
                             <td className="px-3 py-2 text-xs text-gray-600">
                               {potensi.latitude}, {potensi.longitude}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {potensi.artikel_id || "-"}
                             </td>
                             <td className="px-3 py-2 text-xs font-medium whitespace-nowrap">
                               <div className="flex items-center gap-1.5">
@@ -411,6 +476,17 @@ export default function PetaPotensiPages() {
                                 >
                                   <Eye className="h-3 w-3" />
                                   Detail
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    navigate(
+                                      `/admin/potensi/edit/${potensi.id}`,
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-md bg-yellow-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:outline-none"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                  Edit
                                 </button>
                                 <button
                                   onClick={() => handleDelete(potensi.id)}

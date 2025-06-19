@@ -54,6 +54,8 @@ import PetaFasilitasCreate from "./pages/PetaPage/PetaFasilitasCreate";
 import PetaPotensiPages from "./pages/PetaPage/PetaPotensiPages";
 import PetaPotensiDetail from "./pages/PetaPage/PetaPotensiDetail";
 import PetaPotensiCreate from "./pages/PetaPage/PetaPotensiCreate";
+import PetaFasilitasEdit from "./pages/PetaPage/PetaFasilitasEdit";
+import PetaPotensiEdit from "./pages/PetaPage/PetaPotensiEdit";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -145,12 +147,14 @@ export default function App() {
             element={<PetaFasilitasDetail />}
           />
           <Route path="/admin/fasilitas/tambah" element={<PetaFasilitasCreate />} />
+          <Route path="/admin/fasilitas/edit/:id" element={<PetaFasilitasEdit />} />
           <Route path="/admin/potensi" element={<PetaPotensiPages />} />
           <Route
             path="/admin/potensi/:id"
             element={<PetaPotensiDetail />}
           />
           <Route path="/admin/potensi/tambah" element={<PetaPotensiCreate />} />
+          <Route path="/admin/potensi/edit/:id" element={<PetaPotensiEdit />} />
           <Route path="/admin/pengaduan" element={<PengaduanPages />} />
           <Route
             path="/admin/pengaduan/:id"
