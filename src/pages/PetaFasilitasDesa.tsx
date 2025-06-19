@@ -42,10 +42,19 @@ interface POIFeature {
   };
 }
 
-interface POIResponse {
-  type: "FeatureCollection";
-  features: POIFeature[];
-}
+// Type for features from /api/publik/map/poi/all
+type ApiPOIFeature = {
+  type: string;
+  geometry: {
+    type: string;
+    coordinates: [string | number, string | number];
+  };
+  properties: {
+    name: string;
+    kategori: string;
+    tags?: string[];
+  };
+};
 
 const categoryConfig = [
   {
@@ -229,40 +238,104 @@ export default function PetaFasilitasDesa() {
     const fetchAllPoiData = async () => {
       try {
         setIsLoadingPoi(true);
-        // Set flag ke true DI AWAL untuk mencegah pemanggilan ganda
         fetchStatusRef.current.poi = true;
 
-        // Fetch data from different endpoints
-        const fetchPromises = [
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=school`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=place_of_worship`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=hospital`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=clinic`,
-            { headers: API_CONFIG.headers },
-          ),
-          // Fetch all POI for "lainnya" category
-          axios.get<POIResponse>(`${API_CONFIG.baseURL}/api/publik/map/poi`, {
+        // Fetch dari kedua sumber secara paralel
+        const [
+          allResponse,
+          schoolRes,
+          worshipRes,
+          hospitalRes,
+          clinicRes,
+          lainnyaRes,
+        ] = await Promise.all([
+          axios.get(`${API_CONFIG.baseURL}/api/publik/map/poi/all`, {
             headers: API_CONFIG.headers,
           }),
+          axios.get(`${API_CONFIG.baseURL}/api/publik/map/poi?amenity=school`, {
+            headers: API_CONFIG.headers,
+          }),
+          axios.get(
+            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=place_of_worship`,
+            {
+              headers: API_CONFIG.headers,
+            },
+          ),
+          axios.get(
+            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=hospital`,
+            {
+              headers: API_CONFIG.headers,
+            },
+          ),
+          axios.get(`${API_CONFIG.baseURL}/api/publik/map/poi?amenity=clinic`, {
+            headers: API_CONFIG.headers,
+          }),
+          axios.get(`${API_CONFIG.baseURL}/api/publik/map/poi`, {
+            headers: API_CONFIG.headers,
+          }),
+        ]);
+
+        // Mapping dari /all
+        const categoryMap = {
+          sekolah: { key: "sekolah", amenity: "school" },
+          tempat_ibadah: { key: "ibadah", amenity: "place_of_worship" },
+          kesehatan: { key: "kesehatan", amenity: "hospital" },
+          fasilitas_lainnya: { key: "lainnya", amenity: "other" },
+        };
+
+        let features: POIFeature[] = [];
+        Object.entries(categoryMap).forEach(([apiKey, { key, amenity }]) => {
+          if (
+            allResponse.data[apiKey] &&
+            Array.isArray(allResponse.data[apiKey].features)
+          ) {
+            features = features.concat(
+              allResponse.data[apiKey].features.map(
+                (feature: ApiPOIFeature) => {
+                  const coords = feature.geometry.coordinates.map(Number) as [
+                    number,
+                    number,
+                  ];
+                  return {
+                    type: "Feature",
+                    geometry: {
+                      type: "Point",
+                      coordinates: [coords[0], coords[1]],
+                    },
+                    properties: {
+                      name: feature.properties.name,
+                      tags: {
+                        "addr:street":
+                          Array.isArray(feature.properties.tags) &&
+                          feature.properties.tags.length > 0
+                            ? feature.properties.tags[0]
+                            : "",
+                        amenity: amenity,
+                        building: key,
+                        name: feature.properties.name,
+                      },
+                    },
+                  };
+                },
+              ),
+            );
+          }
+        });
+
+        // Mapping dari endpoint lama
+        const oldFeatures: POIFeature[] = [
+          ...schoolRes.data.features,
+          ...worshipRes.data.features,
+          ...hospitalRes.data.features,
+          ...clinicRes.data.features,
+          ...lainnyaRes.data.features,
         ];
 
-        const responses = await Promise.all(fetchPromises);
-        const allFeatures = responses.flatMap(
-          (response) => response.data.features,
-        );
+        // Gabungkan kedua sumber
+        const allCombined = [...features, ...oldFeatures];
 
-        // Remove duplicates based on coordinates and name
-        const uniqueFeatures = allFeatures.reduce(
+        // Hilangkan duplikat berdasarkan koordinat dan nama
+        const uniqueFeatures = allCombined.reduce(
           (acc: POIFeature[], current) => {
             const existingIndex = acc.findIndex(
               (item) =>
@@ -272,11 +345,9 @@ export default function PetaFasilitasDesa() {
                   current.geometry.coordinates[1] &&
                 item.properties.name === current.properties.name,
             );
-
             if (existingIndex === -1) {
               acc.push(current);
             }
-
             return acc;
           },
           [],
@@ -285,7 +356,6 @@ export default function PetaFasilitasDesa() {
         setAllPoiData(uniqueFeatures);
       } catch (error) {
         console.error("Error fetching POI data:", error);
-        // Jika gagal, set flag kembali ke false agar bisa dicoba lagi nanti
         fetchStatusRef.current.poi = false;
       } finally {
         setIsLoadingPoi(false);
@@ -293,7 +363,7 @@ export default function PetaFasilitasDesa() {
     };
 
     fetchAllPoiData();
-  }, []); // Empty dependency array since we only want to run once
+  }, []);
 
   // Fetch polygon data
   React.useEffect(() => {
