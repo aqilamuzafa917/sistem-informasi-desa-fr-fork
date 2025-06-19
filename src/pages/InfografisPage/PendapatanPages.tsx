@@ -629,6 +629,7 @@ export default function PendapatanPages() {
                             <YAxis
                               stroke="#6b7280"
                               fontSize={12}
+                              width={80}
                               tickFormatter={(value) => {
                                 if (value >= 1e9)
                                   return `Rp ${Math.round(value / 1e9)} M`;
