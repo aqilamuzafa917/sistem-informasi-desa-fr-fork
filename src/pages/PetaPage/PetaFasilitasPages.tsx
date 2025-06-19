@@ -13,7 +13,6 @@ import {
   School,
   Church,
   Hospital,
-  Stethoscope,
   Building,
   Trash2,
   AlertCircle,
@@ -21,27 +20,20 @@ import {
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
-interface POIFeature {
+interface NewPOIFeature {
   type: "Feature";
   geometry: {
     type: "Point";
-    coordinates: [number, number];
+    coordinates: [string | number, string | number];
   };
   properties: {
     name: string;
-    tags: {
-      "addr:housenumber"?: string;
-      "addr:street": string;
-      amenity: string;
-      building: string;
-      name: string;
-    };
+    kategori?: string;
+    alamat?: string;
+    tags?: string[];
+    artikel_id?: string | null;
+    status_artikel?: string | null;
   };
-}
-
-interface POIResponse {
-  type: "FeatureCollection";
-  features: POIFeature[];
 }
 
 interface POI {
@@ -53,6 +45,8 @@ interface POI {
   address: string;
   created_at: string;
   updated_at: string;
+  artikel_id?: string | null;
+  status_artikel?: string | null;
 }
 
 const amenityOptions = [
@@ -71,18 +65,11 @@ const amenityOptions = [
     activeButtonColor: "bg-purple-600",
   },
   {
-    value: "hospital",
-    label: "Rumah Sakit",
+    value: "kesehatan",
+    label: "Kesehatan",
     icon: Hospital,
     color: "bg-red-100 text-red-800",
     activeButtonColor: "bg-red-600",
-  },
-  {
-    value: "clinic",
-    label: "Klinik",
-    icon: Stethoscope,
-    color: "bg-green-100 text-green-800",
-    activeButtonColor: "bg-green-600",
   },
   {
     value: "other",
@@ -164,78 +151,80 @@ export default function PetaFasilitasPages() {
       setLoading(true);
       setError(null);
       try {
-        // Fetch data from different endpoints
-        const fetchPromises = [
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=school`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=place_of_worship`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=hospital`,
-            { headers: API_CONFIG.headers },
-          ),
-          axios.get<POIResponse>(
-            `${API_CONFIG.baseURL}/api/publik/map/poi?amenity=clinic`,
-            { headers: API_CONFIG.headers },
-          ),
-          // Fetch all POI for "lainnya" category
-          axios.get<POIResponse>(`${API_CONFIG.baseURL}/api/publik/map/poi`, {
+        // Fetch from the new API endpoint
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/publik/map/poi/all`,
+          {
             headers: API_CONFIG.headers,
-          }),
+          },
+        );
+        const data = response.data;
+
+        // Helper to safely get coordinates as numbers
+        const parseCoords = (coords: [string | number, string | number]) => [
+          typeof coords[0] === "string" ? parseFloat(coords[0]) : coords[0],
+          typeof coords[1] === "string" ? parseFloat(coords[1]) : coords[1],
         ];
 
-        const responses = await Promise.all(fetchPromises);
-        const allFeatures = responses.flatMap(
-          (response) => response.data.features,
-        );
+        const allFeatures: POI[] = [];
 
-        // Remove duplicates based on coordinates and name
-        const uniqueFeatures = allFeatures.reduce(
-          (acc: POIFeature[], current) => {
-            const existingIndex = acc.findIndex(
-              (item) =>
-                item.geometry.coordinates[0] ===
-                  current.geometry.coordinates[0] &&
-                item.geometry.coordinates[1] ===
-                  current.geometry.coordinates[1] &&
-                item.properties.name === current.properties.name,
-            );
+        // Hapus filter artikel_id/status_artikel, tampilkan semua data
+        ["sekolah", "tempat_ibadah", "kesehatan", "fasilitas_lainnya"].forEach(
+          (kategori) => {
+            if (!data[kategori]?.features) return;
 
-            if (existingIndex === -1) {
-              acc.push(current);
-            }
-
-            return acc;
+            data[kategori].features.forEach((feature: NewPOIFeature) => {
+              const [lng, lat] = parseCoords(feature.geometry.coordinates);
+              allFeatures.push({
+                id: `${lng}-${lat}-${feature.properties.name}`.replace(
+                  /[^a-zA-Z0-9-]/g,
+                  "-",
+                ),
+                name: feature.properties.name,
+                amenity: kategori, // gunakan nama kategori dari API
+                latitude: lat,
+                longitude: lng,
+                address: feature.properties.alamat || "",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            });
           },
-          [],
         );
 
-        // Transform POIFeature to POI format
-        const transformedPois = uniqueFeatures.map((feature) => ({
-          id: `${feature.geometry.coordinates[0]}-${feature.geometry.coordinates[1]}-${feature.properties.name}`.replace(
-            /[^a-zA-Z0-9-]/g,
-            "-",
-          ),
-          name: feature.properties.name,
-          amenity: feature.properties.tags.amenity,
-          latitude: feature.geometry.coordinates[1],
-          longitude: feature.geometry.coordinates[0],
-          address: `${feature.properties.tags["addr:street"]}${
-            feature.properties.tags["addr:housenumber"]
-              ? ` No. ${feature.properties.tags["addr:housenumber"]}`
-              : ""
-          }`,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }));
-
-        setPoiList(transformedPois);
-        setFilteredPoiList(transformedPois);
-        setTotalPoiCount(transformedPois.length);
+        // Hapus filter artikel_id/status_artikel, tampilkan semua data
+        setPoiList(
+          allFeatures.map((item) => ({
+            ...item,
+            // Mapping kategori dari API ke amenityOptions
+            amenity:
+              item.amenity === "sekolah"
+                ? "school"
+                : item.amenity === "tempat_ibadah"
+                  ? "place_of_worship"
+                  : item.amenity === "kesehatan"
+                    ? "kesehatan"
+                    : item.amenity === "fasilitas_lainnya"
+                      ? "other"
+                      : item.amenity,
+          })),
+        );
+        setFilteredPoiList(
+          allFeatures.map((item) => ({
+            ...item,
+            amenity:
+              item.amenity === "sekolah"
+                ? "school"
+                : item.amenity === "tempat_ibadah"
+                  ? "place_of_worship"
+                  : item.amenity === "kesehatan"
+                    ? "kesehatan"
+                    : item.amenity === "fasilitas_lainnya"
+                      ? "other"
+                      : item.amenity,
+          })),
+        );
+        setTotalPoiCount(allFeatures.length);
       } catch (err) {
         console.error("Error fetching POI data:", err);
         if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -260,12 +249,7 @@ export default function PetaFasilitasPages() {
 
     // Apply amenity filter
     if (amenityFilter === "other") {
-      const specificAmenities = [
-        "school",
-        "place_of_worship",
-        "hospital",
-        "clinic",
-      ];
+      const specificAmenities = ["school", "place_of_worship", "kesehatan"];
       filtered = filtered.filter(
         (poi) => !specificAmenities.includes(poi.amenity),
       );
@@ -309,18 +293,23 @@ export default function PetaFasilitasPages() {
               Batal
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 toast.dismiss(t);
+                const token = localStorage.getItem("authToken");
+                if (!token) {
+                  toast.error("Token tidak ditemukan. Silakan login kembali.");
+                  return;
+                }
                 toast.promise(
                   new Promise<string>((resolve, reject) => {
                     setDeleteLoading(id);
                     axios
-                      .delete(
-                        `${API_CONFIG.baseURL}/api/publik/map/poi/${id}`,
-                        {
-                          headers: API_CONFIG.headers,
+                      .delete(`${API_CONFIG.baseURL}/api/map/poi/${id}`, {
+                        headers: {
+                          ...API_CONFIG.headers,
+                          Authorization: `Bearer ${token}`,
                         },
-                      )
+                      })
                       .then(() => {
                         setPoiList((prevList) =>
                           prevList.filter((poi) => poi.id !== id),
@@ -373,15 +362,11 @@ export default function PetaFasilitasPages() {
   const totalWorship = poiList.filter(
     (poi) => poi.amenity === "place_of_worship",
   ).length;
-  const totalHospitals = poiList.filter(
-    (poi) => poi.amenity === "hospital",
+  const totalKesehatan = poiList.filter(
+    (poi) => poi.amenity === "kesehatan",
   ).length;
-  const totalClinics = poiList.filter((poi) => poi.amenity === "clinic").length;
   const totalOthers = poiList.filter(
-    (poi) =>
-      !["school", "place_of_worship", "hospital", "clinic"].includes(
-        poi.amenity,
-      ),
+    (poi) => !["school", "place_of_worship", "kesehatan"].includes(poi.amenity),
   ).length;
 
   return (
@@ -401,7 +386,7 @@ export default function PetaFasilitasPages() {
                 </p>
               </div>
               <Button
-                onClick={() => navigate("/admin/fasilitas/buat")}
+                onClick={() => navigate("/admin/fasilitas/tambah")}
                 className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
               >
                 <Plus className="h-5 w-5" />
@@ -431,9 +416,7 @@ export default function PetaFasilitasPages() {
                         ? totalSchools
                         : option.value === "place_of_worship"
                           ? totalWorship
-                          : option.value === "hospital"
-                            ? totalHospitals
-                            : totalClinics;
+                          : totalKesehatan;
                   return (
                     <FilterButton
                       key={option.value}
@@ -488,7 +471,7 @@ export default function PetaFasilitasPages() {
                       : "Belum ada fasilitas yang ditambahkan. Mulai dengan menambahkan fasilitas pertama."}
                   </p>
                   <Button
-                    onClick={() => navigate("/admin/fasilitas/buat")}
+                    onClick={() => navigate("/admin/fasilitas/tambah")}
                     className="mx-auto mt-4 flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
                   >
                     <Plus className="h-5 w-5" />

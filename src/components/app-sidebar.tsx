@@ -97,17 +97,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Peta Desa",
         url: "#",
         icon: Map,
-        isActive: ["/petafasilitas", "/petapotensi"].includes(currentPath),
+        isActive: ["/fasilitas", "/potensi"].includes(currentPath),
         items: [
           {
             title: "Peta Fasilitas",
-            url: "/admin/petafasilitas",
-            isActive: currentPath === "/admin/petafasilitas",
+            url: "/admin/fasilitas",
+            isActive: currentPath === "/admin/fasilitas",
           },
           {
             title: "Peta Potensi",
-            url: "/admin/petapotensi",
-            isActive: currentPath === "/admin/petapotensi",
+            url: "/admin/potensi",
+            isActive: currentPath === "/admin/potensi",
           },
         ],
       },
