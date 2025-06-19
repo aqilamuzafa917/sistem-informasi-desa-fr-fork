@@ -154,40 +154,33 @@ export default function PendudukPages() {
   const endIndex = startIndex + itemsPerPage;
   const currentPageData = filteredAndSortedData.slice(startIndex, endIndex);
 
-  // Generate pagination numbers (max 5 pages)
-  const getPaginationNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages) {
-      // Show all pages if total is 5 or less
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+  // Helper to generate pagination with ellipsis (like in ChabotLogPages)
+  function getPaginationArray(currentPage: number, totalPages: number) {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-      // Show 5 pages with ellipsis
       if (currentPage <= 3) {
-        // Show first 5 pages
-        for (let i = 1; i <= 5; i++) {
-          pages.push(i);
-        }
+        pages.push(1, 2, 3, "...", totalPages);
       } else if (currentPage >= totalPages - 2) {
-        // Show last 5 pages
-        for (let i = totalPages - 4; i <= totalPages; i++) {
-          pages.push(i);
-        }
+        pages.push(1, "...", totalPages - 2, totalPages - 1, totalPages);
       } else {
-        // Show 2 pages before and 2 pages after current page
-        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-          pages.push(i);
-        }
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages,
+        );
       }
     }
-
     return pages;
-  };
+  }
 
-  const paginationNumbers = getPaginationNumbers();
+  // Remove old paginationNumbers and use new helper
+  const paginationArray = getPaginationArray(currentPage, totalPages);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -628,39 +621,60 @@ export default function PendudukPages() {
                 </div>
               )}
               {!loading && !error && currentPageData.length > 0 && (
-                <div className="border-t border-gray-200 bg-white px-4 py-3">
+                <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-500">
-                      Menampilkan {startIndex + 1}-
+                    <div className="text-sm text-slate-600">
+                      Menampilkan {startIndex + 1} -{" "}
                       {Math.min(endIndex, totalItems)} dari {totalItems} data
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
+                    <div className="flex items-center space-x-2">
+                      <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        variant="outline"
+                        className="flex items-center space-x-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Sebelumnya
-                      </Button>
-                      {/* Pagination number buttons */}
-                      {paginationNumbers.map((page) => (
-                        <Button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          variant={page === currentPage ? "default" : "outline"}
-                          className={page === currentPage ? "font-bold" : ""}
-                          disabled={page === currentPage}
-                        >
-                          {page}
-                        </Button>
-                      ))}
-                      <Button
+                        <ChevronUp
+                          style={{ transform: "rotate(-90deg)" }}
+                          size={16}
+                        />
+                        <span>Sebelumnya</span>
+                      </button>
+                      <div className="flex items-center space-x-1">
+                        {paginationArray.map((page, idx) =>
+                          typeof page === "number" ? (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              disabled={page === currentPage}
+                              className={`rounded-lg px-3 py-2 text-sm transition-colors duration-150 ${
+                                page === currentPage
+                                  ? "bg-blue-600 text-white"
+                                  : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                              } ${page === currentPage ? "font-bold" : ""}`}
+                            >
+                              {page}
+                            </button>
+                          ) : (
+                            <span
+                              key={idx}
+                              className="px-2 text-slate-400 select-none"
+                            >
+                              ...
+                            </span>
+                          ),
+                        )}
+                      </div>
+                      <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        variant="outline"
+                        className="flex items-center space-x-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Selanjutnya
-                      </Button>
+                        <span>Selanjutnya</span>
+                        <ChevronUp
+                          style={{ transform: "rotate(90deg)" }}
+                          size={16}
+                        />
+                      </button>
                     </div>
                   </div>
                 </div>

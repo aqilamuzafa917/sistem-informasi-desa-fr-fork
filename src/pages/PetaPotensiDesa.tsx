@@ -216,8 +216,10 @@ const getMarkerIcon = (amenity: string) => {
 
 export default function PetaPotensiDesa() {
   const { desaConfig, loading } = useDesa();
-  const [allPotensiData] = React.useState<PotensiFeature[]>(dummyPotensiData);
-  const [isLoadingPotensi] = React.useState(false);
+  const [allPotensiData, setAllPotensiData] = React.useState<PotensiFeature[]>(
+    [],
+  );
+  const [isLoadingPotensi, setIsLoadingPotensi] = React.useState(true);
   const [polygonData, setPolygonData] = React.useState<[number, number][]>([]);
   const [isLoadingPolygon, setIsLoadingPolygon] = React.useState(true);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -312,6 +314,105 @@ export default function PetaPotensiDesa() {
     };
 
     fetchPolygonData();
+  }, []);
+
+  // Fetch potensi data from API
+  React.useEffect(() => {
+    const fetchPotensiData = async () => {
+      setIsLoadingPotensi(true);
+      try {
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/publik/map/poi/all`,
+          { headers: API_CONFIG.headers },
+        );
+        const data = response.data;
+        // Only use relevant categories
+        const relevantCategories = [
+          "pertanian",
+          "peternakan",
+          "industri",
+          "wisata",
+        ];
+        let features: PotensiFeature[] = [];
+        // Define a type for the API feature
+        type ApiFeature = {
+          type: string;
+          geometry: {
+            type: string;
+            coordinates: [string | number, string | number];
+          };
+          properties: {
+            name: string;
+            kategori: string;
+            tags?: string[];
+          };
+        };
+        relevantCategories.forEach((cat) => {
+          if (data[cat] && Array.isArray(data[cat].features)) {
+            features = features.concat(
+              data[cat].features
+                .map((feature: unknown) => {
+                  // Type guard for API feature
+                  if (
+                    typeof feature === "object" &&
+                    feature !== null &&
+                    (feature as ApiFeature).geometry &&
+                    (feature as ApiFeature).geometry.type === "Point" &&
+                    Array.isArray(
+                      (feature as ApiFeature).geometry.coordinates,
+                    ) &&
+                    typeof (feature as ApiFeature).properties?.name === "string"
+                  ) {
+                    const apiFeature = feature as ApiFeature;
+                    const coords = apiFeature.geometry.coordinates.map(
+                      Number,
+                    ) as [number, number];
+                    return {
+                      type: "Feature",
+                      geometry: {
+                        type: "Point",
+                        coordinates: [coords[0], coords[1]],
+                      },
+                      properties: {
+                        name: apiFeature.properties.name,
+                        tags: {
+                          "addr:street":
+                            Array.isArray(apiFeature.properties.tags) &&
+                            apiFeature.properties.tags.length > 0
+                              ? apiFeature.properties.tags[0]
+                              : "",
+                          amenity:
+                            cat === "pertanian"
+                              ? "farm"
+                              : cat === "peternakan"
+                                ? "farmyard"
+                                : cat === "industri"
+                                  ? "industrial"
+                                  : cat === "wisata"
+                                    ? "tourism"
+                                    : "other",
+                          building: cat,
+                          name: apiFeature.properties.name,
+                        },
+                      },
+                    };
+                  }
+                  // fallback: skip if not valid
+                  return null;
+                })
+                .filter(Boolean) as PotensiFeature[],
+            );
+          }
+        });
+        setAllPotensiData(features);
+      } catch {
+        // Fallback to dummy data if API fails
+        setAllPotensiData(dummyPotensiData);
+      } finally {
+        setIsLoadingPotensi(false);
+      }
+    };
+    fetchPotensiData();
   }, []);
 
   // Fix untuk icon Leaflet di React

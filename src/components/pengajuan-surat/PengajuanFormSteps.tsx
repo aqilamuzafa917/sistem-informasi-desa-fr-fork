@@ -874,7 +874,17 @@ const PengajuanFormSteps: React.FC<PengajuanFormStepsProps> = ({
                   <button
                     key={type.value}
                     type="button"
-                    onClick={() => setJenisSurat(type.value)}
+                    onClick={() => {
+                      setJenisSurat(type.value);
+                      setTimeout(() => {
+                        document
+                          .getElementById("lanjutkan-button")
+                          ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                      }, 100);
+                    }}
                     className={`rounded-xl border-2 p-6 transition-all duration-200 hover:shadow-lg ${
                       jenisSurat === type.value
                         ? "border-blue-500 bg-blue-50 shadow-md"
@@ -904,6 +914,7 @@ const PengajuanFormSteps: React.FC<PengajuanFormStepsProps> = ({
             {jenisSurat && (
               <div className="mt-8 flex justify-end">
                 <button
+                  id="lanjutkan-button"
                   type="button"
                   onClick={() => setCurrentStep(2)}
                   className="rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
@@ -978,23 +989,6 @@ const PengajuanFormSteps: React.FC<PengajuanFormStepsProps> = ({
                 handleFileChange={handleFileChange}
                 removeFile={removeFile}
               />
-            </div>
-
-            <div className="mt-8 flex justify-between">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                className="rounded-lg bg-gray-200 px-8 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-300"
-              >
-                Kembali
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentStep(3)}
-                className="rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
-              >
-                Review Data
-              </button>
             </div>
           </div>
         )}

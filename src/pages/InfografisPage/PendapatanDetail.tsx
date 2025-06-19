@@ -29,7 +29,10 @@ import {
   Landmark,
   Banknote,
   PiggyBank,
+  Download,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Pendapatan {
   id_pendapatan: number;
@@ -71,6 +74,9 @@ export default function PendapatanDetail() {
     "Pendapatan Transfer": 1,
     "Pendapatan Lain-lain": 1,
   });
+  const [downloading, setDownloading] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const isCurrentYear = selectedYear === currentYear;
 
   const ITEMS_PER_PAGE = 5;
 
@@ -396,6 +402,42 @@ export default function PendapatanDetail() {
     "Pendapatan Lain-lain",
   ];
 
+  // Download PDF handler
+  const handleDownloadPDF = async () => {
+    if (!selectedYear || downloading || isCurrentYear) return;
+    try {
+      setDownloading(true);
+      toast.info("Mengunduh PDF APB Desa...", {
+        description: "Dokumen akan segera diunduh",
+      });
+      const response = await axios.get(
+        `${API_CONFIG.baseURL}/api/publik/apb-desa/pdf/${selectedYear}`,
+        {
+          headers: API_CONFIG.headers,
+          responseType: "blob",
+        },
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `APBDesa-${selectedYear}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("PDF berhasil diunduh", {
+        description: "Dokumen APB Desa berhasil diunduh",
+      });
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Gagal mengunduh PDF", {
+        description: "Silakan coba lagi beberapa saat",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -441,6 +483,22 @@ export default function PendapatanDetail() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={downloading || isCurrentYear}
+                    className="flex items-center gap-1 rounded-lg bg-blue-500 px-4 py-2 font-medium text-white shadow-lg transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    title={
+                      isCurrentYear
+                        ? "PDF tidak tersedia untuk tahun berjalan"
+                        : "Download PDF APB Desa"
+                    }
+                  >
+                    {downloading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                  </button>
                   <Button
                     className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-lg transition-colors hover:bg-blue-700 hover:shadow-xl"
                     onClick={() => navigate("/admin/pendapatan/tambah")}
