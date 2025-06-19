@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "@/config/api";
+import { useUser } from "@/contexts/UserContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("admin1@desa.com");
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const { fetchUser } = useUser();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,8 +51,18 @@ export default function LoginPage() {
 
       setSuccess(true);
 
-      // Simpan token & redirect after success animation
+      // Simpan token & fetch user data immediately
       localStorage.setItem("authToken", data.token);
+
+      // Fetch user data immediately after login
+      try {
+        await fetchUser();
+        console.log("User data fetched successfully after login");
+      } catch (fetchError) {
+        console.error("Error fetching user data after login:", fetchError);
+        // Don't block the login process if user fetch fails
+      }
+
       setTimeout(() => {
         navigate("/admin/dashboard");
       }, 1000);

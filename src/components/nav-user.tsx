@@ -1,13 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  ChevronsUpDown,
-  LogOut,
-  User,
-} from "lucide-react";
-import axios from "axios";
-import { API_CONFIG } from "@/config/api";
+import { ChevronsUpDown, LogOut, User, AlertCircle } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -25,51 +18,24 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
-  const [user, setUser] = useState({
-    name: "",
-    email: "",
-  });
-  const [loading, setLoading] = useState(true);
+  const { user, loading, error, logout } = useUser();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      try {
-        const response = await axios.get(`${API_CONFIG.baseURL}/api/user`, {
-          headers: {
-            ...API_CONFIG.headers,
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const userData = response.data;
-        console.log(userData);
-        setUser({
-          name: userData.name,
-          email: userData.email,
-        });
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        // Opsional: Handle error seperti redirect ke login jika token tidak valid
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
+  console.log(
+    "NavUser render - user:",
+    user,
+    "loading:",
+    loading,
+    "error:",
+    error,
+  );
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
+    logout();
     navigate("/login");
   };
 
@@ -84,6 +50,48 @@ export function NavUser() {
               <div className="h-2 w-32 animate-pulse rounded bg-gray-200"></div>
             </div>
           </div>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
+
+  // Only show error if there's an actual API error (not just no token)
+  if (error && error !== "No authentication token found") {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            size="lg"
+            className="text-red-600 hover:bg-red-50"
+            onClick={() => window.location.reload()}
+          >
+            <AlertCircle className="h-4 w-4" />
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">Error loading user</span>
+              <span className="truncate text-xs text-red-500">{error}</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
+
+  if (!user) {
+    console.log("No user data available");
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            size="lg"
+            className="text-gray-500"
+            onClick={() => navigate("/login")}
+          >
+            <User className="h-4 w-4" />
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">Not logged in</span>
+              <span className="truncate text-xs">Click to login</span>
+            </div>
+          </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
     );

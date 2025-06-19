@@ -140,6 +140,7 @@ function SidebarProvider({
           }
           className={cn(
             "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full transition-colors duration-300",
+            "pl-[var(--sidebar-width)]",
             className,
           )}
           {...props}
@@ -170,7 +171,7 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-          "from-sidebar via-sidebar/95 to-sidebar/90 border-sidebar-border/40 text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col border-r bg-gradient-to-br shadow-lg backdrop-blur-xl",
+          "from-sidebar via-sidebar/95 to-sidebar/90 border-sidebar-border/40 text-sidebar-foreground fixed inset-y-0 left-0 z-10 flex h-screen min-h-screen w-(--sidebar-width) flex-col border-r bg-gradient-to-br shadow-lg backdrop-blur-xl",
           className,
         )}
         {...props}

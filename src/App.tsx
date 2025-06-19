@@ -49,13 +49,14 @@ import IDMCreate from "./pages/InfografisPage/IdmCreate";
 import ArtikelEdit from "./pages/ArtikelPage/ArtikelEdit";
 import PendudukEdit from "./pages/PendudukPage/PendudukEdit";
 import PetaFasilitasDetail from "./pages/PetaPage/PetaFasilitasDetail";
+import { UserProvider } from "./contexts/UserContext";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
 
 export default function App() {
   return (
-    <>
+    <UserProvider>
       <Toaster position="top-right" richColors duration={5000} />
       <DynamicTitle />
       <DynamicFavicon />
@@ -152,6 +153,6 @@ export default function App() {
       </Routes>
 
       <Chatbot />
-    </>
+    </UserProvider>
   );
 }
