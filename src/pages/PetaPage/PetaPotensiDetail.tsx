@@ -38,6 +38,7 @@ interface NewPOIFeature {
     name: string;
     kategori?: string;
     alamat?: string;
+    address?: string;
     tags?: string[];
   };
 }
@@ -110,13 +111,11 @@ const fetchPOIDetail = async (id: string): Promise<POI | null> => {
     };
     // Combine all relevant features
     const allFeatures: { feature: NewPOIFeature; category: string }[] = [];
-    ["sekolah", "tempat_ibadah", "kesehatan", "fasilitas_lainnya"].forEach(
-      (cat) => {
-        (data[cat]?.features || []).forEach((feature: NewPOIFeature) => {
-          allFeatures.push({ feature, category: cat });
-        });
-      },
-    );
+    ["pertanian", "peternakan", "industri", "wisata"].forEach((cat) => {
+      (data[cat]?.features || []).forEach((feature: NewPOIFeature) => {
+        allFeatures.push({ feature, category: cat });
+      });
+    });
     // Find the feature by generated id
     const found = allFeatures.find(({ feature }) => {
       const [lng, lat] = parseCoords(feature.geometry.coordinates);
@@ -157,7 +156,7 @@ if (typeof window !== "undefined") {
   });
 }
 
-const PetaFasilitasDetail: React.FC = () => {
+const PetaPotensiDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [poi, setPoi] = useState<POI | null>(null);
@@ -170,10 +169,10 @@ const PetaFasilitasDetail: React.FC = () => {
     setError(null);
     fetchPOIDetail(id)
       .then((data) => {
-        if (!data) setError("Fasilitas tidak ditemukan.");
+        if (!data) setError("Potensi tidak ditemukan.");
         setPoi(data);
       })
-      .catch(() => setError("Gagal mengambil detail fasilitas."))
+      .catch(() => setError("Gagal mengambil detail potensi."))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -195,7 +194,7 @@ const PetaFasilitasDetail: React.FC = () => {
                 </button>
                 <div>
                   <h1 className="text-xl font-semibold text-gray-900">
-                    Detail Fasilitas Desa
+                    Detail Potensi Desa
                   </h1>
                   {poi && <p className="text-sm text-gray-500">ID: {poi.id}</p>}
                 </div>
@@ -283,4 +282,4 @@ const PetaFasilitasDetail: React.FC = () => {
   );
 };
 
-export default PetaFasilitasDetail;
+export default PetaPotensiDetail;

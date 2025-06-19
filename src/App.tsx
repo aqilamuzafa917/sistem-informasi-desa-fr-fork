@@ -50,6 +50,10 @@ import ArtikelEdit from "./pages/ArtikelPage/ArtikelEdit";
 import PendudukEdit from "./pages/PendudukPage/PendudukEdit";
 import PetaFasilitasDetail from "./pages/PetaPage/PetaFasilitasDetail";
 import { UserProvider } from "./contexts/UserContext";
+import PetaFasilitasCreate from "./pages/PetaPage/PetaFasilitasCreate";
+import PetaPotensiPages from "./pages/PetaPage/PetaPotensiPages";
+import PetaPotensiDetail from "./pages/PetaPage/PetaPotensiDetail";
+import PetaPotensiCreate from "./pages/PetaPage/PetaPotensiCreate";
 
 // You might want to create a DashboardPage for after login
 // import DashboardPage from "./pages/DashboardPage";
@@ -135,11 +139,18 @@ export default function App() {
           <Route path="/admin/penduduk/edit/:nik" element={<PendudukEdit />} />
           <Route path="/admin/idm" element={<IDMPages />} />
           <Route path="/admin/idm/tambah" element={<IDMCreate />} />
-          <Route path="/admin/petafasilitas" element={<PetaFasilitasPages />} />
+          <Route path="/admin/fasilitas" element={<PetaFasilitasPages />} />
           <Route
             path="/admin/fasilitas/:id"
             element={<PetaFasilitasDetail />}
           />
+          <Route path="/admin/fasilitas/tambah" element={<PetaFasilitasCreate />} />
+          <Route path="/admin/potensi" element={<PetaPotensiPages />} />
+          <Route
+            path="/admin/potensi/:id"
+            element={<PetaPotensiDetail />}
+          />
+          <Route path="/admin/potensi/tambah" element={<PetaPotensiCreate />} />
           <Route path="/admin/pengaduan" element={<PengaduanPages />} />
           <Route
             path="/admin/pengaduan/:id"
