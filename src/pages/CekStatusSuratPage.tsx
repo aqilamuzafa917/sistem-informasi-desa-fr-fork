@@ -347,7 +347,7 @@ export default function CekStatusSuratPage() {
                       !!errorPemohon ||
                       !pendudukPemohon?.nama
                     }
-                    className="bg-blue-600 px-6 py-2 text-base font-semibold text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+                    className="h-[60px] bg-blue-600 px-6 text-base font-semibold text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
                   >
                     <HiSearch className="mr-2 h-5 w-5" />
                     Cari
