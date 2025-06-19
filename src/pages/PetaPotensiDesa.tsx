@@ -21,6 +21,7 @@ import {
   Wheat,
   Factory,
   Mountain,
+  Link as LinkIcon,
 } from "lucide-react";
 import { PiFarm } from "react-icons/pi";
 import type { IconType } from "react-icons";
@@ -43,6 +44,7 @@ interface PotensiFeature {
       building: string;
       name: string;
     };
+    artikel_id?: number | null;
   };
 }
 
@@ -394,6 +396,12 @@ export default function PetaPotensiDesa() {
                           building: cat,
                           name: apiFeature.properties.name,
                         },
+                        artikel_id:
+                          (
+                            apiFeature.properties as {
+                              artikel_id?: number | null;
+                            }
+                          ).artikel_id ?? null,
                       },
                     };
                   }
@@ -846,6 +854,18 @@ export default function PetaPotensiDesa() {
                                       {config?.label || "Lainnya"}
                                     </span>
                                   </div>
+                                  {feature.properties.artikel_id && (
+                                    <button
+                                      className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-blue-500 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-blue-50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.location.href = `/artikeldesa/${feature.properties.artikel_id}`;
+                                      }}
+                                    >
+                                      <LinkIcon className="h-4 w-4" />
+                                      Lihat Selengkapnya
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
