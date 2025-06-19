@@ -1,4 +1,4 @@
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -167,7 +167,8 @@ const QuickStats: React.FC<{
       komponen: { skorIKE: number; skorIKS: number; skorIKL: number };
     };
   };
-}> = ({ stats }) => (
+  navigate: (path: string) => void;
+}> = ({ stats, navigate }) => (
   <div className="relative mb-12 overflow-hidden rounded-3xl border border-white/30 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 shadow-2xl backdrop-blur-xl">
     {/* Animated background patterns */}
     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10" />
@@ -188,7 +189,10 @@ const QuickStats: React.FC<{
       </div>
 
       <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+        <div
+          onClick={() => navigate("/admin/surat")}
+          className="group cursor-pointer rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70 hover:shadow-lg"
+        >
           <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg">
             <Clock className="h-6 w-6 text-white" />
           </div>
@@ -200,7 +204,10 @@ const QuickStats: React.FC<{
           </p>
         </div>
 
-        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+        <div
+          onClick={() => navigate("/admin/artikel")}
+          className="group cursor-pointer rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70 hover:shadow-lg"
+        >
           <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
             <FileText className="h-6 w-6 text-white" />
           </div>
@@ -212,7 +219,10 @@ const QuickStats: React.FC<{
           </p>
         </div>
 
-        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+        <div
+          onClick={() => navigate("/admin/pengaduan")}
+          className="group cursor-pointer rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70 hover:shadow-lg"
+        >
           <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 shadow-lg">
             <AlertCircle className="h-6 w-6 text-white" />
           </div>
@@ -224,7 +234,10 @@ const QuickStats: React.FC<{
           </p>
         </div>
 
-        <div className="group rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70">
+        <div
+          onClick={() => navigate("/admin/idm")}
+          className="group cursor-pointer rounded-2xl border border-white/30 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/70 hover:shadow-lg"
+        >
           <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
             <TrendingUp className="h-6 w-6 text-white" />
           </div>
@@ -298,7 +311,7 @@ const LoadingSpinner = () => (
 );
 
 export default function DashboardPage() {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
 
   // Default stats for loading state
@@ -379,7 +392,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-12">
                 {/* Quick Stats Overview */}
-                <QuickStats stats={currentStats} />
+                <QuickStats stats={currentStats} navigate={navigate} />
 
                 {/* Administrative Services */}
                 <div>

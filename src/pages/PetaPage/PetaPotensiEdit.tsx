@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Tag,
   Navigation,
+  Loader2,
 } from "lucide-react";
 import { PiFarm } from "react-icons/pi";
 import dynamic from "next/dynamic";
@@ -103,8 +104,33 @@ function MapComponent({
   return position ? <Marker position={position} /> : null;
 }
 
-export default function PetaPotensiCreate() {
+interface PotensiData {
+  id: string;
+  name: string;
+  kategori: string;
+  alamat: string;
+  tags: string[];
+  latitude: number;
+  longitude: number;
+  artikel_id?: number;
+}
+
+interface PotensiFeature {
+  geometry: {
+    coordinates: [number | string, number | string];
+  };
+  properties: {
+    id?: string | number;
+    name: string;
+    alamat?: string;
+    tags?: string[];
+    artikel_id?: number;
+  };
+}
+
+export default function PetaPotensiEdit() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { desaConfig } = useDesa();
   const [form, setForm] = useState({
     nama: "",
@@ -117,6 +143,7 @@ export default function PetaPotensiCreate() {
     artikel_id: null as number | null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [artikelOptions, setArtikelOptions] = useState<
     { id: number; judul: string }[]
@@ -175,24 +202,24 @@ export default function PetaPotensiCreate() {
         tags: form.tags,
         ...(form.artikel_id ? { artikel_id: form.artikel_id } : {}),
       };
-      await axios.post(`${API_CONFIG.baseURL}/api/map/poi`, payload, {
+      await axios.put(`${API_CONFIG.baseURL}/api/map/poi/${id}`, payload, {
         headers: {
           ...API_CONFIG.headers,
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-      toast.success("Potensi berhasil ditambahkan");
+      toast.success("Potensi berhasil diperbarui");
       setTimeout(() => {
         window.location.href = "/admin/potensi";
       }, 1200);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        toast.error("Gagal menambah potensi", {
+        toast.error("Gagal memperbarui potensi", {
           description: err.response?.data?.message || err.message,
         });
       } else {
-        toast.error("Gagal menambah potensi", {
+        toast.error("Gagal memperbarui potensi", {
           description: err instanceof Error ? err.message : String(err),
         });
       }
@@ -206,6 +233,83 @@ export default function PetaPotensiCreate() {
   );
   const isFormValid = form.nama && form.kategori && form.lat && form.lon;
 
+  // Fetch existing potensi data
+  useEffect(() => {
+    const fetchPotensiData = async () => {
+      if (!id) {
+        toast.error("ID potensi tidak ditemukan");
+        navigate("/admin/potensi");
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("authToken");
+        const response = await axios.get(
+          `${API_CONFIG.baseURL}/api/publik/map/poi/all`,
+          {
+            headers: {
+              ...API_CONFIG.headers,
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          },
+        );
+
+        const data = response.data;
+        let foundPotensi: PotensiData | null = null;
+
+        // Search through all categories
+        for (const cat of ["pertanian", "peternakan", "industri", "wisata"]) {
+          const features = data[cat]?.features || [];
+          const found = features.find(
+            (feature: PotensiFeature) =>
+              feature.properties.id?.toString() === id,
+          );
+          if (found) {
+            const [lng, lat] = found.geometry.coordinates;
+            foundPotensi = {
+              id: found.properties.id?.toString() || id,
+              name: found.properties.name,
+              kategori: cat,
+              alamat: found.properties.alamat || "",
+              tags: found.properties.tags || [],
+              latitude: typeof lat === "string" ? parseFloat(lat) : lat,
+              longitude: typeof lng === "string" ? parseFloat(lng) : lng,
+              artikel_id: found.properties.artikel_id,
+            };
+            break;
+          }
+        }
+
+        if (!foundPotensi) {
+          toast.error("Data potensi tidak ditemukan");
+          navigate("/admin/potensi");
+          return;
+        }
+
+        // Update form with fetched data
+        setForm({
+          nama: foundPotensi.name,
+          kategori: foundPotensi.kategori,
+          alamat: foundPotensi.alamat,
+          tags: foundPotensi.tags,
+          lat: foundPotensi.latitude,
+          lon: foundPotensi.longitude,
+          tagInput: "",
+          artikel_id: foundPotensi.artikel_id || null,
+        });
+      } catch (error) {
+        console.error("Error fetching potensi data:", error);
+        toast.error("Gagal mengambil data potensi");
+        navigate("/admin/potensi");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPotensiData();
+  }, [id, navigate]);
+
+  // Fetch artikel options
   useEffect(() => {
     type ArtikelResponse = {
       id_artikel: number;
@@ -245,6 +349,26 @@ export default function PetaPotensiCreate() {
       });
   }, []);
 
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/20">
+            <div className="flex h-screen items-center justify-center">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                <span className="text-lg text-gray-700">
+                  Memuat data potensi...
+                </span>
+              </div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -264,10 +388,10 @@ export default function PetaPotensiCreate() {
                 <div className="flex items-center gap-3">
                   <div>
                     <h1 className="text-xl font-semibold text-gray-900">
-                      Tambah Potensi Desa
+                      Edit Potensi Desa
                     </h1>
                     <p className="text-sm text-gray-500">
-                      Lengkapi informasi potensi untuk pemetaan desa
+                      Perbarui informasi potensi untuk pemetaan desa
                     </p>
                   </div>
                 </div>
@@ -598,7 +722,7 @@ export default function PetaPotensiCreate() {
                   ) : (
                     <div className="flex items-center gap-2">
                       <Save className="h-4 w-4" />
-                      Simpan Potensi
+                      Simpan Perubahan
                     </div>
                   )}
                 </Button>

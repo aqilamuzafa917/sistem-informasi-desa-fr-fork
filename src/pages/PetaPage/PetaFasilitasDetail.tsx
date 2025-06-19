@@ -12,10 +12,22 @@ import {
   Hospital,
   Stethoscope,
   ChevronLeft,
+  FileText,
+  Calendar,
+  User,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+
+interface Article {
+  id_artikel: number;
+  judul_artikel: string;
+  kategori_artikel: string;
+  penulis_artikel: string;
+  tanggal_publikasi_artikel: string;
+  jenis_artikel: string;
+}
 
 interface POI {
   id: string;
@@ -26,6 +38,8 @@ interface POI {
   address: string;
   created_at: string;
   updated_at: string;
+  artikel_id?: number;
+  article?: Article;
 }
 
 interface NewPOIFeature {
@@ -35,10 +49,12 @@ interface NewPOIFeature {
     coordinates: [string | number, string | number];
   };
   properties: {
+    id: number;
     name: string;
     kategori?: string;
     alamat?: string;
     tags?: string[];
+    artikel_id?: number;
   };
 }
 
@@ -85,6 +101,25 @@ function getAmenityInfo(amenity: string) {
   );
 }
 
+const fetchArticleDetail = async (
+  artikelId: number,
+): Promise<Article | null> => {
+  try {
+    const response = await axios.get(
+      `${API_CONFIG.baseURL}/api/publik/artikel/${artikelId}`,
+      {
+        headers: API_CONFIG.headers,
+      },
+    );
+    if (response.data.status === "success") {
+      return response.data.data;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 const fetchPOIDetail = async (id: string): Promise<POI | null> => {
   try {
     const res = await axios.get(
@@ -117,20 +152,16 @@ const fetchPOIDetail = async (id: string): Promise<POI | null> => {
         });
       },
     );
-    // Find the feature by generated id
+    // Find the feature by actual id from properties
     const found = allFeatures.find(({ feature }) => {
-      const [lng, lat] = parseCoords(feature.geometry.coordinates);
-      const generatedId = `${lng}-${lat}-${feature.properties.name}`.replace(
-        /[^a-zA-Z0-9-]/g,
-        "-",
-      );
-      return generatedId === id;
+      return feature.properties.id.toString() === id;
     });
     if (!found) return null;
     const { feature, category } = found;
     const [lng, lat] = parseCoords(feature.geometry.coordinates);
-    return {
-      id: id,
+
+    const poi: POI = {
+      id: feature.properties.id.toString(),
       name: feature.properties.name,
       amenity: mapCategoryToAmenity(category, feature.properties.name),
       latitude: lat,
@@ -138,7 +169,18 @@ const fetchPOIDetail = async (id: string): Promise<POI | null> => {
       address: feature.properties.alamat || "",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      artikel_id: feature.properties.artikel_id,
     };
+
+    // Fetch article details if artikel_id exists
+    if (poi.artikel_id) {
+      const article = await fetchArticleDetail(poi.artikel_id);
+      if (article) {
+        poi.article = article;
+      }
+    }
+
+    return poi;
   } catch {
     return null;
   }
@@ -178,6 +220,16 @@ const PetaFasilitasDetail: React.FC = () => {
   }, [id]);
 
   const amenityInfo = poi ? getAmenityInfo(poi.amenity) : undefined;
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   return (
     <SidebarProvider>
@@ -228,6 +280,59 @@ const PetaFasilitasDetail: React.FC = () => {
                       {poi.name}
                     </span>
                   </div>
+
+                  {/* Article Information Section */}
+                  {poi.article && (
+                    <div className="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold text-blue-900">
+                          Artikel Terkait
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="mb-1 text-sm font-medium text-blue-700">
+                            Judul Artikel
+                          </div>
+                          <div className="text-blue-900">
+                            {poi.article.judul_artikel}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                          <div>
+                            <div className="mb-1 text-sm font-medium text-blue-700">
+                              Kategori
+                            </div>
+                            <div className="text-blue-900">
+                              {poi.article.kategori_artikel}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="mb-1 text-sm font-medium text-blue-700">
+                              Penulis
+                            </div>
+                            <div className="flex items-center gap-1 text-blue-900">
+                              <User className="h-3 w-3" />
+                              {poi.article.penulis_artikel}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="mb-1 text-sm font-medium text-blue-700">
+                              Tanggal Publikasi
+                            </div>
+                            <div className="flex items-center gap-1 text-blue-900">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(
+                                poi.article.tanggal_publikasi_artikel,
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mb-4">
                     <div className="mb-1 text-sm text-gray-600">Alamat</div>
                     <div className="font-medium text-gray-900">
@@ -266,6 +371,11 @@ const PetaFasilitasDetail: React.FC = () => {
                                 <div className="text-xs text-gray-700">
                                   {poi.address}
                                 </div>
+                                {poi.article && (
+                                  <div className="mt-2 text-xs text-blue-600">
+                                    📰 {poi.article.judul_artikel}
+                                  </div>
+                                )}
                               </div>
                             </Popup>
                           </Marker>

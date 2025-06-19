@@ -375,26 +375,41 @@ export default function PetaFasilitasCreate() {
                     {isLoadingArtikel ? (
                       <div className="h-10 w-full animate-pulse rounded-md bg-gray-100" />
                     ) : (
-                      <Select
-                        value={form.artikel_id ? String(form.artikel_id) : ""}
-                        onValueChange={(val) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            artikel_id: val ? Number(val) : null,
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih artikel (opsional)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {artikelOptions.map((a) => (
-                            <SelectItem key={a.id} value={String(a.id)}>
-                              {a.judul}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex gap-2">
+                        <Select
+                          value={form.artikel_id ? String(form.artikel_id) : ""}
+                          onValueChange={(val) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              artikel_id: val ? Number(val) : null,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Pilih artikel (opsional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {artikelOptions.map((a) => (
+                              <SelectItem key={a.id} value={String(a.id)}>
+                                {a.judul}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {form.artikel_id && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setForm((prev) => ({ ...prev, artikel_id: null }))
+                            }
+                            className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </CardContent>
