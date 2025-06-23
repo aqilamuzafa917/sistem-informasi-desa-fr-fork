@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   Download,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,6 +63,16 @@ interface BelanjaResponse {
   };
 }
 
+const kategoriMapping = {
+  "Belanja Barang": ["Belanja Barang", "Belanja Barang/Jasa"],
+  "Belanja Modal": ["Belanja Modal"],
+  "Belanja Tak Terduga": ["Belanja Tak Terduga"],
+};
+
+type KategoriKey = keyof typeof kategoriMapping;
+
+const kategoris = Object.keys(kategoriMapping) as KategoriKey[];
+
 export default function BelanjaDetail() {
   const navigate = useNavigate();
   const [belanjaData, setBelanjaData] = useState<Belanja[]>([]);
@@ -78,6 +89,8 @@ export default function BelanjaDetail() {
   const [downloading, setDownloading] = useState(false);
   const currentYear = new Date().getFullYear();
   const isCurrentYear = selectedYear === currentYear;
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const ITEMS_PER_PAGE = 5;
 
@@ -148,9 +161,9 @@ export default function BelanjaDetail() {
     fetchAllBelanja();
   }, [navigate]);
 
-  const filterBelanjaByKategori = (kategori: string) => {
+  const filterBelanjaByKategori = (kategori: KategoriKey) => {
     return belanjaData
-      .filter((item) => item.kategori === kategori)
+      .filter((item) => kategoriMapping[kategori].includes(item.kategori))
       .filter((item) => item.tahun_anggaran === selectedYear);
   };
 
@@ -168,7 +181,7 @@ export default function BelanjaDetail() {
   };
 
   const getTotalByKategori = (kategori: string) => {
-    return filterBelanjaByKategori(kategori).reduce(
+    return filterBelanjaByKategori(kategori as KategoriKey).reduce(
       (total, item) => total + parseFloat(item.jumlah),
       0,
     );
@@ -217,6 +230,82 @@ export default function BelanjaDetail() {
           </Button>
         </div>
       </div>
+    );
+  };
+
+  const handleDeleteBelanja = (id: number) => {
+    toast.custom(
+      (t) => (
+        <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <Trash2 className="h-5 w-5 text-red-500" />
+            <div>
+              <h3 className="font-medium text-gray-900">Konfirmasi Hapus</h3>
+              <p className="text-sm text-gray-500">
+                Apakah Anda yakin ingin menghapus data belanja ini?
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => toast.dismiss(t)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t);
+                toast.promise(
+                  new Promise<string>((resolve, reject) => {
+                    (async () => {
+                      setIsDeleting(true);
+                      setDeletingId(id);
+                      const token = localStorage.getItem("authToken");
+                      if (!token) {
+                        setIsDeleting(false);
+                        setDeletingId(null);
+                        reject("Token tidak ditemukan. Silakan login kembali.");
+                        navigate("/");
+                        return;
+                      }
+                      try {
+                        await axios.delete(
+                          `${API_CONFIG.baseURL}/api/belanja/${id}`,
+                          {
+                            headers: {
+                              ...API_CONFIG.headers,
+                              Authorization: `Bearer ${token}`,
+                            },
+                          },
+                        );
+                        setBelanjaData((prev) =>
+                          prev.filter((item) => item.id_belanja !== id),
+                        );
+                        resolve("Data belanja berhasil dihapus.");
+                      } catch {
+                        reject("Gagal menghapus data belanja.");
+                      } finally {
+                        setIsDeleting(false);
+                        setDeletingId(null);
+                      }
+                    })();
+                  }),
+                  {
+                    loading: "Menghapus data...",
+                    success: (msg) => msg,
+                    error: (msg) => msg,
+                  },
+                );
+              }}
+              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+            >
+              Hapus
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: Infinity },
     );
   };
 
@@ -342,6 +431,7 @@ export default function BelanjaDetail() {
                   <TableHead>Penerima/Vendor</TableHead>
                   <TableHead>Keterangan</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -384,6 +474,23 @@ export default function BelanjaDetail() {
                         {formatRupiah(parseFloat(item.jumlah))}
                       </span>
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-600 hover:bg-red-50"
+                        onClick={() => handleDeleteBelanja(item.id_belanja)}
+                        disabled={isDeleting && deletingId === item.id_belanja}
+                      >
+                        {isDeleting && deletingId === item.id_belanja ? (
+                          <span className="animate-spin">
+                            <Trash2 className="h-4 w-4" />
+                          </span>
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -399,8 +506,6 @@ export default function BelanjaDetail() {
   const availableYears = Array.from(
     new Set(belanjaData.map((item) => item.tahun_anggaran)),
   ).sort((a, b) => b - a);
-
-  const kategoris = ["Belanja Barang", "Belanja Modal", "Belanja Tak Terduga"];
 
   // Add console log to debug filtering
   useEffect(() => {
@@ -541,7 +646,7 @@ export default function BelanjaDetail() {
             {/* Tables */}
             <div className="space-y-8">
               {kategoris.map((kategori) => {
-                const data = filterBelanjaByKategori(kategori);
+                const data = filterBelanjaByKategori(kategori as KategoriKey);
                 return (
                   <div
                     key={kategori}
