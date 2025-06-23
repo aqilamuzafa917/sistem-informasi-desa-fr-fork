@@ -284,10 +284,13 @@ export default function SuratPages() {
 
   const handleDownloadPdf = async (nik_pemohon: string, id_surat: number) => {
     try {
-      const pdfUrl = `${API_CONFIG.baseURL}/api/publik/surat/${nik_pemohon}/${id_surat}/pdf`;
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("Token tidak ditemukan");
+      const pdfUrl = `${API_CONFIG.baseURL}/api/surat/${id_surat}/pdf`;
       const response = await fetch(pdfUrl, {
         headers: {
           ...API_CONFIG.headers,
+          Authorization: `Bearer ${token}`,
         },
       });
 

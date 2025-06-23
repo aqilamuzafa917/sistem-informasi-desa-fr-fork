@@ -31,6 +31,7 @@ import {
   PiggyBank,
   Download,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -77,6 +78,8 @@ export default function PendapatanDetail() {
   const [downloading, setDownloading] = useState(false);
   const currentYear = new Date().getFullYear();
   const isCurrentYear = selectedYear === currentYear;
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const ITEMS_PER_PAGE = 5;
 
@@ -175,6 +178,82 @@ export default function PendapatanDetail() {
     return pendapatanData
       .filter((item) => item.tahun_anggaran === selectedYear)
       .reduce((total, item) => total + parseFloat(item.jumlah), 0);
+  };
+
+  const handleDeletePendapatan = (id: number) => {
+    toast.custom(
+      (t) => (
+        <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <Trash2 className="h-5 w-5 text-red-500" />
+            <div>
+              <h3 className="font-medium text-gray-900">Konfirmasi Hapus</h3>
+              <p className="text-sm text-gray-500">
+                Apakah Anda yakin ingin menghapus data pendapatan ini?
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => toast.dismiss(t)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t);
+                toast.promise(
+                  new Promise<string>((resolve, reject) => {
+                    (async () => {
+                      setIsDeleting(true);
+                      setDeletingId(id);
+                      const token = localStorage.getItem("authToken");
+                      if (!token) {
+                        setIsDeleting(false);
+                        setDeletingId(null);
+                        reject("Token tidak ditemukan. Silakan login kembali.");
+                        navigate("/");
+                        return;
+                      }
+                      try {
+                        await axios.delete(
+                          `${API_CONFIG.baseURL}/api/pendapatan/${id}`,
+                          {
+                            headers: {
+                              ...API_CONFIG.headers,
+                              Authorization: `Bearer ${token}`,
+                            },
+                          },
+                        );
+                        setPendapatanData((prev) =>
+                          prev.filter((item) => item.id_pendapatan !== id),
+                        );
+                        resolve("Data pendapatan berhasil dihapus.");
+                      } catch {
+                        reject("Gagal menghapus data pendapatan.");
+                      } finally {
+                        setIsDeleting(false);
+                        setDeletingId(null);
+                      }
+                    })();
+                  }),
+                  {
+                    loading: "Menghapus data...",
+                    success: (msg) => msg,
+                    error: (msg) => msg,
+                  },
+                );
+              }}
+              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+            >
+              Hapus
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: Infinity },
+    );
   };
 
   const renderPagination = (totalItems: number, kategori: string) => {
@@ -340,6 +419,7 @@ export default function PendapatanDetail() {
                   <TableHead>Deskripsi</TableHead>
                   <TableHead>Sumber Dana</TableHead>
                   <TableHead className="text-left">Jumlah</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -379,6 +459,27 @@ export default function PendapatanDetail() {
                       <span className="block text-left font-bold text-gray-900">
                         {formatRupiah(parseFloat(item.jumlah))}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-600 hover:bg-red-50"
+                        onClick={() =>
+                          handleDeletePendapatan(item.id_pendapatan)
+                        }
+                        disabled={
+                          isDeleting && deletingId === item.id_pendapatan
+                        }
+                      >
+                        {isDeleting && deletingId === item.id_pendapatan ? (
+                          <span className="animate-spin">
+                            <Trash2 className="h-4 w-4" />
+                          </span>
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -428,8 +529,8 @@ export default function PendapatanDetail() {
       toast.success("PDF berhasil diunduh", {
         description: "Dokumen APB Desa berhasil diunduh",
       });
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
+    } catch {
+      console.error("Error downloading PDF");
       toast.error("Gagal mengunduh PDF", {
         description: "Silakan coba lagi beberapa saat",
       });

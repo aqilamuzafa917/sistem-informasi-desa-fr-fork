@@ -198,7 +198,7 @@ const PendapatanCreate: React.FC = () => {
           duration: 5000,
         });
         setTimeout(() => {
-          navigate("/admin/pendapatan");
+          navigate("/admin/pendapatan/detail");
         }, 2000);
       }
     } catch (error) {
