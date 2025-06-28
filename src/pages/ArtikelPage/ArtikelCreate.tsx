@@ -1,8 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapPin,
-  Calendar,
+  Calendar as CalendarIcon,
   User,
   FileText,
   Camera,
@@ -10,11 +10,11 @@ import {
   X,
   ChevronLeft,
   Check,
+  Save,
 } from "lucide-react";
 import { Label, Select, Textarea } from "flowbite-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DateTimePicker } from "@/components/ui/datetime-picker";
 import {
   MapContainer,
   TileLayer,
@@ -31,6 +31,12 @@ import axios from "axios";
 import { toast } from "sonner";
 import { API_CONFIG } from "../../config/api";
 import { useDesa } from "@/contexts/DesaContext";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 // Fix for default marker icon in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -115,6 +121,124 @@ function MapComponent({
 const MapWithNoSSR = dynamic(() => Promise.resolve(MapContainer), {
   ssr: false,
 });
+
+// DateInputPicker component for tanggal_kejadian_artikel
+function formatDateToInput(date: Date | undefined) {
+  if (!date) return "";
+  // Format: DD/MM/YYYY
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function parseInputToDate(value: string): Date | undefined {
+  // Accepts DD/MM/YYYY
+  if (!value) return undefined;
+  const [day, month, year] = value.split("/");
+  if (!day || !month || !year) return undefined;
+  const date = new Date(`${year}-${month}-${day}`);
+  return isNaN(date.getTime()) ? undefined : date;
+}
+
+function isValidDate(date: Date | undefined) {
+  return !!date && !isNaN(date.getTime());
+}
+
+function DateInputPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(parseInputToDate(value));
+  const [month, setMonth] = useState<Date | undefined>(date);
+  const [inputValue, setInputValue] = useState(value);
+
+  React.useEffect(() => {
+    setInputValue(value);
+    setDate(parseInputToDate(value));
+    setMonth(parseInputToDate(value));
+  }, [value]);
+
+  return (
+    <div className="relative flex gap-2">
+      <Input
+        id="tanggal_kejadian_artikel"
+        name="tanggal_kejadian_artikel"
+        value={inputValue}
+        placeholder="DD/MM/YYYY"
+        className="bg-background pr-10"
+        onChange={(e) => {
+          let val = e.target.value.replace(/-/g, "/"); // Ganti - jadi /
+          // Jika user mengetik YYYY/MM/DD, ubah ke DD/MM/YYYY
+          if (/^\d{4}\/\d{2}\/\d{2}$/.test(val)) {
+            const [y, m, d] = val.split("/");
+            val = `${d}/${m}/${y}`;
+          }
+          setInputValue(val);
+          const d = parseInputToDate(val);
+          if (isValidDate(d)) {
+            setDate(d);
+            setMonth(d);
+            onChange(formatDateToInput(d));
+          } else {
+            onChange("");
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            id="date-picker"
+            variant="ghost"
+            className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+            tabIndex={-1}
+            type="button"
+          >
+            <CalendarIcon size={16} />
+            <span className="sr-only">Select date</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto overflow-hidden p-0"
+          align="end"
+          alignOffset={-8}
+          sideOffset={10}
+        >
+          <Calendar
+            mode="single"
+            selected={date}
+            captionLayout="dropdown"
+            month={month}
+            onMonthChange={setMonth}
+            onSelect={(d: Date | undefined) => {
+              setDate(d);
+              setInputValue(formatDateToInput(d));
+              if (isValidDate(d)) {
+                onChange(formatDateToInput(d));
+              } else {
+                onChange("");
+              }
+              setOpen(false);
+            }}
+            disabled={(d) => d > new Date() || d < new Date("1900-01-01")}
+            fromYear={1900}
+            toYear={new Date().getFullYear()}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export default function ArtikelCreate() {
   const navigate = useNavigate();
@@ -231,7 +355,20 @@ export default function ArtikelCreate() {
       }
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== "media_artikel" && value !== null) {
-          formDataToSend.append(key, value.toString());
+          if (key === "tanggal_kejadian_artikel" && value) {
+            // Convert DD/MM/YYYY to ISO 8601 (YYYY-MM-DDT00:00:00.000000Z)
+            const [day, month, year] = value.split("/");
+            if (day && month && year) {
+              const isoDate =
+                `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}` +
+                "T00:00:00.000000Z";
+              formDataToSend.append(key, isoDate);
+            } else {
+              formDataToSend.append(key, value.toString());
+            }
+          } else {
+            formDataToSend.append(key, value.toString());
+          }
         }
       });
       const response = await axios.post(
@@ -246,11 +383,11 @@ export default function ArtikelCreate() {
       );
       if (response.data) {
         toast.success("Artikel berhasil dibuat!", {
-          description: "Halaman akan dimuat ulang dalam beberapa detik",
+          description: "Halaman akan dialihkan dalam beberapa detik",
           duration: 2000,
         });
         setTimeout(() => {
-          window.location.reload();
+          navigate("/admin/artikel");
         }, 2000);
       }
     } catch (error) {
@@ -342,20 +479,14 @@ export default function ArtikelCreate() {
                   htmlFor="tanggal_kejadian"
                   className="flex items-center gap-2 text-sm font-medium"
                 >
-                  <Calendar size={16} /> Tanggal Kejadian
+                  <CalendarIcon size={16} /> Tanggal Kejadian
                 </Label>
-                <DateTimePicker
-                  value={
-                    formData.tanggal_kejadian_artikel
-                      ? new Date(formData.tanggal_kejadian_artikel)
-                      : undefined
-                  }
-                  onChange={(date) => {
+                <DateInputPicker
+                  value={formData.tanggal_kejadian_artikel}
+                  onChange={(val) => {
                     setFormData((prev) => ({
                       ...prev,
-                      tanggal_kejadian_artikel: date
-                        ? date.toISOString().split("T")[0]
-                        : "",
+                      tanggal_kejadian_artikel: val,
                     }));
                   }}
                 />
@@ -677,15 +808,23 @@ export default function ArtikelCreate() {
                           Selanjutnya
                         </button>
                       ) : (
-                        <Button
+                        <button
                           type="submit"
                           disabled={isSubmitting}
-                          className="rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {isSubmitting
-                            ? "Mengirim..."
-                            : "Publikasikan Artikel"}
-                        </Button>
+                          {isSubmitting ? (
+                            <>
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                              <span>Menyimpan...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-5 w-5" />
+                              <span>Simpan Data</span>
+                            </>
+                          )}
+                        </button>
                       )}
                     </div>
                   </div>

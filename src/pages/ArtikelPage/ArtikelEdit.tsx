@@ -10,6 +10,7 @@ import {
   X,
   ChevronLeft,
   Check,
+  Save,
 } from "lucide-react";
 import { Label, Select, Textarea } from "flowbite-react";
 import { Button } from "@/components/ui/button";
@@ -387,7 +388,10 @@ export default function ArtikelEdit() {
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("authToken");
@@ -465,6 +469,19 @@ export default function ArtikelEdit() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSubmit();
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Hanya izinkan submit jika user benar-benar mengklik tombol simpan
+    // Form tidak akan di-submit secara otomatis
   };
 
   const renderFormStep = () => {
@@ -883,7 +900,7 @@ export default function ArtikelEdit() {
               <div className="grid grid-cols-1 gap-8">
                 {/* Form Section */}
                 <form
-                  onSubmit={handleSubmit}
+                  onSubmit={handleFormSubmit}
                   className="rounded-lg bg-white p-6 shadow-sm"
                 >
                   <div className="space-y-6">{renderFormStep()}</div>
@@ -911,13 +928,24 @@ export default function ArtikelEdit() {
                           Selanjutnya
                         </button>
                       ) : (
-                        <Button
-                          type="submit"
+                        <button
+                          type="button"
+                          onClick={handleSaveClick}
                           disabled={isSubmitting}
-                          className="rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
-                        </Button>
+                          {isSubmitting ? (
+                            <>
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                              <span>Menyimpan...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-5 w-5" />
+                              <span>Simpan Data</span>
+                            </>
+                          )}
+                        </button>
                       )}
                     </div>
                   </div>

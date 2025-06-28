@@ -15,7 +15,6 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  Trash2,
   Save,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
@@ -122,8 +121,6 @@ export default function VerifikasiPengaduanPage() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("diajukan");
   const [submitting, setSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Log the current pengaduan state during render for debugging
   console.log("Current pengaduan state in render:", pengaduan);
@@ -238,40 +235,6 @@ export default function VerifikasiPengaduanPage() {
       }
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      setIsDeleting(true);
-      const token =
-        localStorage.getItem("token") || localStorage.getItem("authToken");
-      await axios.delete(`${API_CONFIG.baseURL}/api/pengaduan/${id}`, {
-        headers: {
-          ...API_CONFIG.headers,
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      toast.success("Pengaduan berhasil dihapus!", {
-        description: "Pengaduan telah dihapus dari sistem",
-        duration: 2000,
-      });
-
-      setTimeout(() => {
-        window.location.href = "/admin/pengaduan";
-      }, 2000);
-    } catch (error) {
-      console.error("Gagal menghapus pengaduan:", error);
-      toast.error("Gagal menghapus pengaduan", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Terjadi kesalahan saat menghapus pengaduan. Silakan coba lagi.",
-      });
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
     }
   };
 
@@ -444,35 +407,17 @@ export default function VerifikasiPengaduanPage() {
                         <button
                           onClick={handleVerifikasi}
                           disabled={submitting}
-                          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-blue-400"
+                          className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {submitting ? (
                             <>
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                              Memproses...
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                              <span>Memproses...</span>
                             </>
                           ) : (
                             <>
-                              <Save className="h-4 w-4" />
-                              Simpan Verifikasi
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          onClick={() => setShowDeleteDialog(true)}
-                          disabled={isDeleting}
-                          className="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-red-700 disabled:bg-red-400"
-                        >
-                          {isDeleting ? (
-                            <>
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                              Menghapus...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="h-4 w-4" />
-                              Hapus Pengaduan
+                              <Save className="h-5 w-5" />
+                              <span>Simpan Verifikasi</span>
                             </>
                           )}
                         </button>
@@ -482,42 +427,6 @@ export default function VerifikasiPengaduanPage() {
                 </div>
               )}
             </div>
-
-            {/* Delete Confirmation Dialog */}
-            {showDeleteDialog && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-md rounded-xl bg-white p-6">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="rounded-full bg-red-100 p-2">
-                      <AlertCircle className="h-5 w-5 text-red-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Konfirmasi Penghapusan
-                    </h3>
-                  </div>
-                  <p className="mb-6 text-gray-600">
-                    Apakah Anda yakin ingin menghapus pengaduan ini? Tindakan
-                    ini tidak dapat dibatalkan dan akan menghapus semua data
-                    terkait secara permanen.
-                  </p>
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => setShowDeleteDialog(false)}
-                      className="rounded-lg px-4 py-2 text-gray-700 transition-colors hover:bg-gray-100"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 disabled:bg-red-400"
-                    >
-                      {isDeleting ? "Menghapus..." : "Hapus"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </SidebarInset>
       </SidebarProvider>

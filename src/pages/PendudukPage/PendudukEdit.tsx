@@ -950,17 +950,17 @@ export default function PendudukEdit() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-green-600 to-blue-600 px-8 py-3 text-white transition-all hover:from-green-700 hover:to-blue-700 disabled:opacity-50"
+                      className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {loading ? (
                         <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                           <span>Menyimpan...</span>
                         </>
                       ) : (
                         <>
-                          <Save className="h-4 w-4" />
-                          <span>Simpan Perubahan</span>
+                          <Save className="h-5 w-5" />
+                          <span>Simpan Data</span>
                         </>
                       )}
                     </button>

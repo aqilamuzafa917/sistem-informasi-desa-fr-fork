@@ -5,7 +5,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import {
   formatCurrency,
   formatCurrencyWithSign,
-  getStatusColor,
+  getIDMStatusTextColor,
 } from "@/utils/formatters";
 import {
   QuickStatsSkeleton,
@@ -26,7 +26,6 @@ import {
   Info,
   ArrowUp,
   ArrowDown,
-  Sparkles,
   Activity,
   Building,
   MapPin,
@@ -59,10 +58,6 @@ const StatCard: React.FC<StatCardProps> = ({
     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
     {/* Floating particles effect */}
-    <div className="absolute top-2 right-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-      <Sparkles className="h-4 w-4 animate-pulse text-blue-500/30" />
-    </div>
-
     <div className="relative z-10 flex items-start justify-between">
       <div className="flex-1">
         <div className="mb-4 flex items-center gap-3">
@@ -241,7 +236,9 @@ const QuickStats: React.FC<{
           <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
             <TrendingUp className="h-6 w-6 text-white" />
           </div>
-          <p className="mb-1 text-3xl font-black text-emerald-600">
+          <p
+            className={`mb-1 text-3xl font-black ${getIDMStatusTextColor(stats.idm.skor)}`}
+          >
             {stats.idm.skor}
           </p>
           <p className="text-xs font-semibold tracking-wide text-gray-600 uppercase">
@@ -579,22 +576,29 @@ export default function DashboardPage() {
                         title="Skor IDM"
                         value={currentStats.idm.skor}
                         icon={TrendingUp}
-                        color={getStatusColor(currentStats.idm.status)}
+                        color="bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-600"
                         subtitle={`Evaluasi ${currentStats.idm.tahun}`}
+                        textColor={getIDMStatusTextColor(currentStats.idm.skor)}
                       />
                       <StatCard
                         title="Status Saat Ini"
                         value={currentStats.idm.status}
                         icon={BarChart3}
-                        color={getStatusColor(currentStats.idm.status)}
+                        color="bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-600"
                         subtitle={`Evaluasi ${currentStats.idm.tahun}`}
+                        textColor={getIDMStatusTextColor(
+                          currentStats.idm.status,
+                        )}
                       />
                       <StatCard
                         title="Target Status"
                         value={currentStats.idm.target}
                         icon={TrendingUp}
-                        color={getStatusColor(currentStats.idm.target)}
+                        color="bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-600"
                         subtitle="Target pencapaian"
+                        textColor={getIDMStatusTextColor(
+                          currentStats.idm.target,
+                        )}
                       />
                       <StatCard
                         title="Skor Minimal"
@@ -602,6 +606,9 @@ export default function DashboardPage() {
                         icon={Info}
                         color="bg-gradient-to-br from-gray-100 to-slate-100 text-gray-600"
                         subtitle="Standar minimum"
+                        textColor={getIDMStatusTextColor(
+                          currentStats.idm.target,
+                        )}
                       />
                     </div>
 
@@ -617,6 +624,9 @@ export default function DashboardPage() {
                           icon={DollarSign}
                           color="bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-600"
                           subtitle="Aspek ekonomi desa"
+                          textColor={getIDMStatusTextColor(
+                            currentStats.idm.komponen.skorIKE,
+                          )}
                         />
                         <StatCard
                           title="Indeks Ketahanan Sosial"
@@ -624,6 +634,9 @@ export default function DashboardPage() {
                           icon={Users}
                           color="bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-600"
                           subtitle="Aspek sosial budaya"
+                          textColor={getIDMStatusTextColor(
+                            currentStats.idm.komponen.skorIKS,
+                          )}
                         />
                         <StatCard
                           title="Indeks Ketahanan Lingkungan"
@@ -631,6 +644,9 @@ export default function DashboardPage() {
                           icon={TrendingUp}
                           color="bg-gradient-to-br from-teal-100 to-cyan-100 text-teal-600"
                           subtitle="Aspek lingkungan"
+                          textColor={getIDMStatusTextColor(
+                            currentStats.idm.komponen.skorIKL,
+                          )}
                         />
                       </div>
                     </div>

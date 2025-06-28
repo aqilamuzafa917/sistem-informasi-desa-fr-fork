@@ -46,6 +46,7 @@ import ChatbotLogPages from "./pages/ChatBotPage/ChabotLogPages";
 import IDMPages from "./pages/InfografisPage/IdmPages";
 import PetaFasilitasPages from "./pages/PetaPage/PetaFasilitasPages";
 import IDMCreate from "./pages/InfografisPage/IdmCreate";
+import IdmEdit from "./pages/InfografisPage/IdmEdit";
 import ArtikelEdit from "./pages/ArtikelPage/ArtikelEdit";
 import PendudukEdit from "./pages/PendudukPage/PendudukEdit";
 import PetaFasilitasDetail from "./pages/PetaPage/PetaFasilitasDetail";
@@ -141,18 +142,22 @@ export default function App() {
           <Route path="/admin/penduduk/edit/:nik" element={<PendudukEdit />} />
           <Route path="/admin/idm" element={<IDMPages />} />
           <Route path="/admin/idm/tambah" element={<IDMCreate />} />
+          <Route path="/admin/idm/edit/:variabelIDM" element={<IdmEdit />} />
           <Route path="/admin/fasilitas" element={<PetaFasilitasPages />} />
           <Route
             path="/admin/fasilitas/:id"
             element={<PetaFasilitasDetail />}
           />
-          <Route path="/admin/fasilitas/tambah" element={<PetaFasilitasCreate />} />
-          <Route path="/admin/fasilitas/edit/:id" element={<PetaFasilitasEdit />} />
-          <Route path="/admin/potensi" element={<PetaPotensiPages />} />
           <Route
-            path="/admin/potensi/:id"
-            element={<PetaPotensiDetail />}
+            path="/admin/fasilitas/tambah"
+            element={<PetaFasilitasCreate />}
           />
+          <Route
+            path="/admin/fasilitas/edit/:id"
+            element={<PetaFasilitasEdit />}
+          />
+          <Route path="/admin/potensi" element={<PetaPotensiPages />} />
+          <Route path="/admin/potensi/:id" element={<PetaPotensiDetail />} />
           <Route path="/admin/potensi/tambah" element={<PetaPotensiCreate />} />
           <Route path="/admin/potensi/edit/:id" element={<PetaPotensiEdit />} />
           <Route path="/admin/pengaduan" element={<PengaduanPages />} />

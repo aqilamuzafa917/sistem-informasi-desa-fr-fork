@@ -588,18 +588,18 @@ export default function PetaPotensiCreate() {
                 <Button
                   type="submit"
                   disabled={isSubmitting || !isFormValid}
-                  className="min-w-32 bg-gradient-to-r from-green-600 to-green-700 shadow-sm hover:from-green-700 hover:to-green-800"
+                  className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? (
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                      Menyimpan...
-                    </div>
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      <span>Menyimpan...</span>
+                    </>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <Save className="h-4 w-4" />
-                      Simpan Potensi
-                    </div>
+                    <>
+                      <Save className="h-5 w-5" />
+                      <span>Simpan Data</span>
+                    </>
                   )}
                 </Button>
               </div>
