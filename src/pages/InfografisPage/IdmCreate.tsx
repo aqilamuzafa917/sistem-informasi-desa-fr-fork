@@ -31,7 +31,6 @@ interface IdmFormData {
   kegiatan: string;
   nilai_plus: number;
   pelaksana: string[];
-  pelaksana_lainnya: string[];
   kategori: string;
   tahun: number;
 }
@@ -64,16 +63,35 @@ const kategoriOptions = [
   },
 ];
 
-const pelaksanaOptions = [
-  { value: "Desa", icon: "🏛️" },
-  { value: "Masyarakat", icon: "👥" },
-  { value: "PKBM", icon: "📚" },
-  { value: "Karang Taruna", icon: "🎯" },
-  { value: "PKK", icon: "👩‍👩‍👧‍👦" },
-  { value: "BUMDes", icon: "🏢" },
-  { value: "LPM", icon: "🏛️" },
-  { value: "Lainnya", icon: "➕" },
-];
+const pelaksanaOptions: Record<
+  string,
+  Array<{ value: string; icon: string }>
+> = {
+  IKS: [
+    { value: "Kepala Desa", icon: "👨‍💼" },
+    { value: "Sekretaris Desa", icon: "📋" },
+    { value: "Kepala Dusun", icon: "🏘️" },
+    { value: "Kader PKK", icon: "👩‍👩‍👧‍👦" },
+    { value: "Karang Taruna", icon: "🎯" },
+    { value: "Tokoh Masyarakat", icon: "👥" },
+  ],
+  IKE: [
+    { value: "Kepala Desa", icon: "👨‍💼" },
+    { value: "Kasi Kesejahteraan", icon: "💰" },
+    { value: "BUMDes", icon: "🏢" },
+    { value: "Kelompok Tani", icon: "🌾" },
+    { value: "UMKM", icon: "🏪" },
+    { value: "Koperasi Desa", icon: "🤝" },
+  ],
+  IKL: [
+    { value: "Kepala Desa", icon: "👨‍💼" },
+    { value: "Kasi Pemerintahan", icon: "🏛️" },
+    { value: "Kader Lingkungan", icon: "🌱" },
+    { value: "LPM", icon: "🏛️" },
+    { value: "Satgas Lingkungan", icon: "🛡️" },
+    { value: "Pokdarwis", icon: "🏞️" },
+  ],
+};
 
 const skorOptions = [
   {
@@ -183,7 +201,6 @@ const IdmCreate: React.FC = () => {
                 kegiatan: "",
                 nilai_plus: 0,
                 pelaksana: [],
-                pelaksana_lainnya: [],
                 kategori: kategori,
                 tahun: currentYear,
               };
@@ -267,12 +284,6 @@ const IdmCreate: React.FC = () => {
         ? currentPelaksana.filter((p) => p !== value)
         : [...currentPelaksana, value];
 
-      // If "Lainnya" is unchecked, clear the custom inputs
-      const pelaksana_lainnya =
-        value === "Lainnya" && !currentPelaksana.includes(value)
-          ? []
-          : prev[kategori][indikator].pelaksana_lainnya;
-
       return {
         ...prev,
         [kategori]: {
@@ -280,68 +291,10 @@ const IdmCreate: React.FC = () => {
           [indikator]: {
             ...prev[kategori][indikator],
             pelaksana: newPelaksana,
-            pelaksana_lainnya,
           },
         },
       };
     });
-  };
-
-  const handlePelaksanaLainnyaChange = (
-    kategori: string,
-    indikator: string,
-    value: string,
-    index: number,
-  ) => {
-    setFormData((prev) => {
-      const currentLainnya = [...prev[kategori][indikator].pelaksana_lainnya];
-      currentLainnya[index] = value;
-      return {
-        ...prev,
-        [kategori]: {
-          ...prev[kategori],
-          [indikator]: {
-            ...prev[kategori][indikator],
-            pelaksana_lainnya: currentLainnya,
-          },
-        },
-      };
-    });
-  };
-
-  const handleAddPelaksanaLainnya = (kategori: string, indikator: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [kategori]: {
-        ...prev[kategori],
-        [indikator]: {
-          ...prev[kategori][indikator],
-          pelaksana_lainnya: [
-            ...prev[kategori][indikator].pelaksana_lainnya,
-            "",
-          ],
-        },
-      },
-    }));
-  };
-
-  const handleRemovePelaksanaLainnya = (
-    kategori: string,
-    indikator: string,
-    index: number,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [kategori]: {
-        ...prev[kategori],
-        [indikator]: {
-          ...prev[kategori][indikator],
-          pelaksana_lainnya: prev[kategori][indikator].pelaksana_lainnya.filter(
-            (_, i) => i !== index,
-          ),
-        },
-      },
-    }));
   };
 
   const toggleCardExpansion = (indikator: string) => {
@@ -430,9 +383,6 @@ const IdmCreate: React.FC = () => {
         Object.values(categoryData).map((data) => ({
           ...data,
           pelaksana: data.pelaksana.length > 0 ? data.pelaksana : ["-"],
-          pelaksana_lainnya: data.pelaksana.includes("Lainnya")
-            ? data.pelaksana_lainnya
-            : [],
         })),
       );
 
@@ -454,7 +404,7 @@ const IdmCreate: React.FC = () => {
       if (response.data) {
         toast.success("Data IDM berhasil disimpan!");
         setTimeout(() => {
-          navigate("/admin/idm/tambah");
+          navigate("/admin/idm");
         }, 2000);
       }
     } catch (error) {
@@ -877,8 +827,10 @@ const IdmCreate: React.FC = () => {
                                   (Opsional)
                                 </span>
                               </label>
-                              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                                {pelaksanaOptions.map((option) => (
+                              <div className="grid grid-cols-3 gap-3">
+                                {pelaksanaOptions[
+                                  kategoriOptions[currentKategoriIndex].value
+                                ]?.map((option) => (
                                   <label
                                     key={option.value}
                                     className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 transition-all ${
@@ -911,38 +863,63 @@ const IdmCreate: React.FC = () => {
                                   </label>
                                 ))}
                               </div>
-                              {data.pelaksana.includes("Lainnya") && (
-                                <div className="mt-3 space-y-3">
-                                  {data.pelaksana_lainnya.map(
-                                    (value, index) => (
+
+                              {/* Custom Pelaksana Input */}
+                              <div className="mt-4 space-y-3">
+                                <label className="text-sm font-medium text-gray-700">
+                                  Tambah Pelaksana Lainnya:
+                                </label>
+                                {data.pelaksana.map((pelaksana, index) => {
+                                  // Check if this is a custom pelaksana (not in standard options for current kategori)
+                                  const currentKategori =
+                                    kategoriOptions[currentKategoriIndex].value;
+                                  const standardPelaksana =
+                                    pelaksanaOptions[currentKategori]?.map(
+                                      (p) => p.value,
+                                    ) || [];
+                                  const isCustom =
+                                    !standardPelaksana.includes(pelaksana);
+
+                                  if (isCustom) {
+                                    return (
                                       <div key={index} className="flex gap-2">
                                         <input
                                           type="text"
-                                          value={value}
-                                          onChange={(e) =>
-                                            handlePelaksanaLainnyaChange(
+                                          value={pelaksana}
+                                          onChange={(e) => {
+                                            const newPelaksana = [
+                                              ...data.pelaksana,
+                                            ];
+                                            newPelaksana[index] =
+                                              e.target.value;
+                                            handleFieldChange(
                                               kategoriOptions[
                                                 currentKategoriIndex
                                               ].value,
                                               indikator,
-                                              e.target.value,
-                                              index,
-                                            )
-                                          }
-                                          placeholder="Ketik pelaksana lainnya..."
+                                              "pelaksana",
+                                              newPelaksana,
+                                            );
+                                          }}
+                                          placeholder="Ketik nama pelaksana..."
                                           className="flex-1 rounded-xl border-2 border-gray-300 px-4 py-3 transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                                         />
                                         <button
                                           type="button"
-                                          onClick={() =>
-                                            handleRemovePelaksanaLainnya(
+                                          onClick={() => {
+                                            const newPelaksana =
+                                              data.pelaksana.filter(
+                                                (_, i) => i !== index,
+                                              );
+                                            handleFieldChange(
                                               kategoriOptions[
                                                 currentKategoriIndex
                                               ].value,
                                               indikator,
-                                              index,
-                                            )
-                                          }
+                                              "pelaksana",
+                                              newPelaksana,
+                                            );
+                                          }}
                                           className="rounded-xl p-3 text-red-500 transition-all hover:bg-red-50 hover:text-red-600"
                                         >
                                           <svg
@@ -959,49 +936,46 @@ const IdmCreate: React.FC = () => {
                                           </svg>
                                         </button>
                                       </div>
-                                    ),
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleAddPelaksanaLainnya(
-                                        kategoriOptions[currentKategoriIndex]
-                                          .value,
-                                        indikator,
-                                      )
-                                    }
-                                    className="flex items-center gap-2 rounded-xl px-4 py-2 text-blue-600 transition-all hover:bg-blue-50 hover:text-blue-700"
+                                    );
+                                  }
+                                  return null;
+                                })}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newPelaksana = [
+                                      ...data.pelaksana,
+                                      "",
+                                    ];
+                                    handleFieldChange(
+                                      kategoriOptions[currentKategoriIndex]
+                                        .value,
+                                      indikator,
+                                      "pelaksana",
+                                      newPelaksana,
+                                    );
+                                  }}
+                                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-blue-600 transition-all hover:bg-blue-50 hover:text-blue-700"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
                                   >
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-5 w-5"
-                                      viewBox="0 0 20 20"
-                                      fill="currentColor"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                    <span>Tambah Pelaksana Lainnya</span>
-                                  </button>
-                                </div>
-                              )}
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <span>Tambah Pelaksana Lainnya</span>
+                                </button>
+                              </div>
+
                               {data.pelaksana.length > 0 && (
                                 <p className="text-sm text-blue-600">
                                   {data.pelaksana.length} pelaksana dipilih
-                                  {data.pelaksana.includes("Lainnya") &&
-                                    data.pelaksana_lainnya.length > 0 && (
-                                      <span>
-                                        {" "}
-                                        (termasuk:{" "}
-                                        {data.pelaksana_lainnya
-                                          .filter(Boolean)
-                                          .join(", ")}
-                                        )
-                                      </span>
-                                    )}
                                 </p>
                               )}
                             </div>

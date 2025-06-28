@@ -1,6 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import { FileText, User, ChevronLeft, Check } from "lucide-react";
+import {
+  FileText,
+  User,
+  ChevronLeft,
+  Check,
+  Save,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -8,11 +15,17 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { DateTimePicker, TimePicker } from "@/components/ui/datetime-picker";
+import { TimePicker } from "@/components/ui/datetime-picker";
 import { API_CONFIG } from "../../config/api";
 import { toast } from "sonner";
 import { SuratPayload } from "@/types/surat";
 import { useNavigate } from "react-router-dom";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 // Interface for Pengikut data
 interface Pengikut {
@@ -40,6 +53,130 @@ const jenisSuratOptions = [
   },
   { value: "SK_KEHILANGAN_KTP", label: "SK Kehilangan KTP" },
 ];
+
+// DateInputPicker component for date fields
+function formatDateToInput(date: Date | undefined) {
+  if (!date) return "";
+  // Format: DD/MM/YYYY
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function parseInputToDate(value: string): Date | undefined {
+  // Accepts DD/MM/YYYY
+  if (!value) return undefined;
+  const [day, month, year] = value.split("/");
+  if (!day || !month || !year) return undefined;
+  const date = new Date(`${year}-${month}-${day}`);
+  return isNaN(date.getTime()) ? undefined : date;
+}
+
+function isValidDate(date: Date | undefined) {
+  return !!date && !isNaN(date.getTime());
+}
+
+function DateInputPicker({
+  value,
+  onChange,
+  id,
+  name,
+  placeholder = "DD/MM/YYYY",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  id: string;
+  name: string;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(parseInputToDate(value));
+  const [month, setMonth] = useState<Date | undefined>(date);
+  const [inputValue, setInputValue] = useState(value);
+
+  React.useEffect(() => {
+    setInputValue(value);
+    setDate(parseInputToDate(value));
+    setMonth(parseInputToDate(value));
+  }, [value]);
+
+  return (
+    <div className="relative flex gap-2">
+      <Input
+        id={id}
+        name={name}
+        value={inputValue}
+        placeholder={placeholder}
+        className="bg-background pr-10"
+        onChange={(e) => {
+          let val = e.target.value.replace(/-/g, "/"); // Ganti - jadi /
+          // Jika user mengetik YYYY/MM/DD, ubah ke DD/MM/YYYY
+          if (/^\d{4}\/\d{2}\/\d{2}$/.test(val)) {
+            const [y, m, d] = val.split("/");
+            val = `${d}/${m}/${y}`;
+          }
+          setInputValue(val);
+          const d = parseInputToDate(val);
+          if (isValidDate(d)) {
+            setDate(d);
+            setMonth(d);
+            onChange(formatDateToInput(d));
+          } else {
+            onChange("");
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            id="date-picker"
+            variant="ghost"
+            className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+            tabIndex={-1}
+            type="button"
+          >
+            <CalendarIcon size={16} />
+            <span className="sr-only">Select date</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto overflow-hidden p-0"
+          align="end"
+          alignOffset={-8}
+          sideOffset={10}
+        >
+          <Calendar
+            mode="single"
+            selected={date}
+            captionLayout="dropdown"
+            month={month}
+            onMonthChange={setMonth}
+            onSelect={(d: Date | undefined) => {
+              setDate(d);
+              setInputValue(formatDateToInput(d));
+              if (isValidDate(d)) {
+                onChange(formatDateToInput(d));
+              } else {
+                onChange("");
+              }
+              setOpen(false);
+            }}
+            disabled={(d) => d > new Date() || d < new Date("1900-01-01")}
+            fromYear={1900}
+            toYear={new Date().getFullYear()}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export default function SuratCreate() {
   const navigate = useNavigate();
@@ -167,7 +304,14 @@ export default function SuratCreate() {
         value !== undefined &&
         key !== "data_pengikut_pindah"
       ) {
-        formDataToSend.append(key, String(value));
+        // Convert DD/MM/YYYY format to YYYY-MM-DD for date fields
+        if (typeof value === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+          const [day, month, year] = value.split("/");
+          const isoDate = `${year}-${month}-${day}`;
+          formDataToSend.append(key, isoDate);
+        } else {
+          formDataToSend.append(key, String(value));
+        }
       }
     });
 
@@ -465,21 +609,18 @@ export default function SuratCreate() {
                 <Label htmlFor="tanggal_kematian">
                   Tanggal Kematian <span className="text-destructive">*</span>
                 </Label>
-                <DateTimePicker
-                  granularity="day"
-                  value={
-                    formData.tanggal_kematian
-                      ? new Date(formData.tanggal_kematian)
-                      : undefined
-                  }
-                  onChange={(date: Date | undefined) => {
+                <DateInputPicker
+                  value={formData.tanggal_kematian || ""}
+                  onChange={(val) => {
                     handleInputChange({
                       target: {
                         name: "tanggal_kematian",
-                        value: date ? date.toISOString().split("T")[0] : "",
+                        value: val,
                       },
                     });
                   }}
+                  id="tanggal_kematian"
+                  name="tanggal_kematian"
                 />
               </div>
             </div>
@@ -566,21 +707,18 @@ export default function SuratCreate() {
                 <Label htmlFor="tanggal_lahir_bayi">
                   Tanggal Lahir Bayi <span className="text-destructive">*</span>
                 </Label>
-                <DateTimePicker
-                  granularity="day"
-                  value={
-                    formData.tanggal_lahir_bayi
-                      ? new Date(formData.tanggal_lahir_bayi)
-                      : undefined
-                  }
-                  onChange={(date: Date | undefined) => {
+                <DateInputPicker
+                  value={formData.tanggal_lahir_bayi || ""}
+                  onChange={(val) => {
                     handleInputChange({
                       target: {
                         name: "tanggal_lahir_bayi",
-                        value: date ? date.toISOString().split("T")[0] : "",
+                        value: val,
                       },
                     });
                   }}
+                  id="tanggal_lahir_bayi"
+                  name="tanggal_lahir_bayi"
                 />
               </div>
               <div className="space-y-2">
@@ -691,21 +829,18 @@ export default function SuratCreate() {
                   Sejak Tanggal Usaha{" "}
                   <span className="text-destructive">*</span>
                 </Label>
-                <DateTimePicker
-                  granularity="day"
-                  value={
-                    formData.sejak_tanggal_usaha
-                      ? new Date(formData.sejak_tanggal_usaha)
-                      : undefined
-                  }
-                  onChange={(date: Date | undefined) => {
+                <DateInputPicker
+                  value={formData.sejak_tanggal_usaha || ""}
+                  onChange={(val) => {
                     handleInputChange({
                       target: {
                         name: "sejak_tanggal_usaha",
-                        value: date ? date.toISOString().split("T")[0] : "",
+                        value: val,
                       },
                     });
                   }}
+                  id="sejak_tanggal_usaha"
+                  name="sejak_tanggal_usaha"
                 />
               </div>
             </div>
@@ -794,21 +929,18 @@ export default function SuratCreate() {
                   Tanggal Perkiraan Hilang{" "}
                   <span className="text-destructive">*</span>
                 </Label>
-                <DateTimePicker
-                  granularity="day"
-                  value={
-                    formData.tanggal_perkiraan_hilang
-                      ? new Date(formData.tanggal_perkiraan_hilang)
-                      : undefined
-                  }
-                  onChange={(date: Date | undefined) => {
+                <DateInputPicker
+                  value={formData.tanggal_perkiraan_hilang || ""}
+                  onChange={(val) => {
                     handleInputChange({
                       target: {
                         name: "tanggal_perkiraan_hilang",
-                        value: date ? date.toISOString().split("T")[0] : "",
+                        value: val,
                       },
                     });
                   }}
+                  id="tanggal_perkiraan_hilang"
+                  name="tanggal_perkiraan_hilang"
                 />
               </div>
             </div>
@@ -835,21 +967,18 @@ export default function SuratCreate() {
                 <Label htmlFor="tanggal_laporan_polisi">
                   Tanggal Laporan Polisi (Jika Ada)
                 </Label>
-                <DateTimePicker
-                  granularity="day"
-                  value={
-                    formData.tanggal_laporan_polisi
-                      ? new Date(formData.tanggal_laporan_polisi)
-                      : undefined
-                  }
-                  onChange={(date: Date | undefined) => {
+                <DateInputPicker
+                  value={formData.tanggal_laporan_polisi || ""}
+                  onChange={(val) => {
                     handleInputChange({
                       target: {
                         name: "tanggal_laporan_polisi",
-                        value: date ? date.toISOString().split("T")[0] : "",
+                        value: val,
                       },
                     });
                   }}
+                  id="tanggal_laporan_polisi"
+                  name="tanggal_laporan_polisi"
                 />
               </div>
             </div>
@@ -993,7 +1122,6 @@ export default function SuratCreate() {
                           value={jenisSurat}
                           onChange={(e) => {
                             setJenisSurat(e.target.value);
-                            setCurrentStep(2);
                           }}
                           required
                           className="bg-background w-full rounded-md border p-2"
@@ -1072,7 +1200,7 @@ export default function SuratCreate() {
                           setCurrentStep(Math.max(1, currentStep - 1))
                         }
                         disabled={currentStep === 1}
-                        className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-12 w-32 items-center justify-center space-x-2 rounded-xl border border-gray-300 px-8 py-3 font-semibold text-gray-700 shadow-lg transition-all duration-200 hover:bg-gray-50 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Sebelumnya
                       </button>
@@ -1083,7 +1211,8 @@ export default function SuratCreate() {
                             onClick={() =>
                               setCurrentStep(Math.min(2, currentStep + 1))
                             }
-                            className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700"
+                            disabled={!jenisSurat}
+                            className="flex h-12 w-32 items-center justify-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             Selanjutnya
                           </button>
@@ -1091,9 +1220,19 @@ export default function SuratCreate() {
                           <Button
                             type="submit"
                             disabled={isLoading}
-                            className="rounded-lg bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-12 w-32 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {isLoading ? "Mengirim..." : "Ajukan Surat"}
+                            {isLoading ? (
+                              <>
+                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                <span>Menyimpan...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-5 w-5" />
+                                <span>Simpan Data</span>
+                              </>
+                            )}
                           </Button>
                         )}
                       </div>
