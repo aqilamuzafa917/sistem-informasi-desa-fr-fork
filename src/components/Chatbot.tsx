@@ -487,6 +487,7 @@ export function Chatbot() {
     "/infografis/apbdesa",
     "/infografis/idm",
     "/petafasilitasdesa",
+    "/petapotensidesa"
   ];
 
   // Check if the current route is in the static allowed list or starts with /artikeldesa

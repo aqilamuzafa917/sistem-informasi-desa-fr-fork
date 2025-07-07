@@ -990,6 +990,25 @@ const PengajuanFormSteps: React.FC<PengajuanFormStepsProps> = ({
                 removeFile={removeFile}
               />
             </div>
+
+            {/* Navigation Buttons for Step 2 */}
+            <div className="mt-8 flex justify-between">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(1)}
+                className="rounded-lg bg-gray-200 px-8 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-300"
+              >
+                Sebelumnya
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentStep(3)}
+                className="rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!formData.nik_pemohon || !formData.keperluan}
+              >
+                Lanjutkan
+              </button>
+            </div>
           </div>
         )}
 

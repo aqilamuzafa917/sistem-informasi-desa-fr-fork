@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { AlertCircle, X } from "lucide-react";
-import { toast } from "sonner";
+import {
+  AlertCircle,
+  X,
+  Upload,
+  Phone,
+  User,
+  FileText,
+  Tag,
+  Camera,
+  CheckCircle,
+  Send,
+} from "lucide-react";
 import axios from "axios";
 import { API_CONFIG } from "../config/api";
 
@@ -16,13 +23,13 @@ interface FormData {
 }
 
 const kategoriOptions = [
-  { value: "", label: "Pilih Kategori Pengaduan" },
-  { value: "Umum", label: "Umum" },
-  { value: "Sosial", label: "Sosial" },
-  { value: "Keamanan", label: "Keamanan" },
-  { value: "Kesehatan", label: "Kesehatan" },
-  { value: "Kebersihan", label: "Kebersihan" },
-  { value: "Permintaan", label: "Permintaan" },
+  { value: "", label: "Pilih Kategori Pengaduan", icon: "📝" },
+  { value: "Umum", label: "Umum", icon: "📢" },
+  { value: "Sosial", label: "Sosial", icon: "👥" },
+  { value: "Keamanan", label: "Keamanan", icon: "🔒" },
+  { value: "Kesehatan", label: "Kesehatan", icon: "🏥" },
+  { value: "Kebersihan", label: "Kebersihan", icon: "🧹" },
+  { value: "Permintaan", label: "Permintaan", icon: "📋" },
 ];
 
 interface PengaduanPopupProps {
@@ -43,6 +50,7 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -93,7 +101,7 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError("");
@@ -130,207 +138,253 @@ export function PengaduanPopup({ isOpen, onClose }: PengaduanPopupProps) {
         },
       );
 
-      toast.success("Pengaduan berhasil dikirim!", {
-        description: "Petugas desa akan segera menindaklanjuti laporan Anda.",
-        duration: 2000,
-      });
+      setSubmitSuccess(true);
 
-      setFormData({
-        nama: "",
-        nomor_telepon: "",
-        kategori: "",
-        detail_pengaduan: "",
-        media: [],
-      });
-
-      previewImages.forEach((url) => URL.revokeObjectURL(url));
-      setPreviewImages([]);
-      onClose();
+      setTimeout(() => {
+        setFormData({
+          nama: "",
+          nomor_telepon: "",
+          kategori: "",
+          detail_pengaduan: "",
+          media: [],
+        });
+        previewImages.forEach((url) => URL.revokeObjectURL(url));
+        setPreviewImages([]);
+        setSubmitSuccess(false);
+        onClose();
+      }, 2000);
     } catch (error) {
       console.error("Error submitting pengaduan:", error);
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;
-        toast.error("Gagal mengirim pengaduan", {
-          description: errorMessage,
-        });
+        setSubmitError(errorMessage);
       } else {
-        toast.error("Gagal mengirim pengaduan", {
-          description:
-            "Terjadi kesalahan saat mengirim pengaduan. Silakan coba lagi.",
-        });
+        setSubmitError(
+          "Terjadi kesalahan saat mengirim pengaduan. Silakan coba lagi.",
+        );
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-        isOpen
-          ? "pointer-events-auto opacity-100"
-          : "pointer-events-none opacity-0"
-      }`}
-      style={{
-        backdropFilter: isOpen ? "blur(9px)" : "blur(0px)",
-      }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
       <div
-        className={`relative mx-4 w-full max-w-2xl rounded-xl bg-[var(--color-pure-white)] p-6 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          isOpen
-            ? "translate-y-0 scale-100 opacity-100"
-            : "translate-y-4 scale-95 opacity-0"
-        }`}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute top-4 right-4 transition-all duration-200 hover:scale-110 hover:bg-[var(--color-off-white)]"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Modal */}
+      <div className="relative z-10 max-h-screen w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        {/* Header */}
+        <div className="sticky top-0 z-10 rounded-t-2xl border-b border-gray-100 bg-white p-6 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                <FileText className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Pengaduan Warga
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Laporkan masalah atau keluhan Anda
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
 
-        <h2 className="mb-4 text-2xl font-bold text-[var(--color-dark-slate)]">
-          Pengaduan Warga
-        </h2>
-        <p className="mb-6 text-sm text-[var(--color-slate-gray)]">
-          Silakan lengkapi formulir di bawah ini untuk melaporkan kejadian atau
-          masalah yang sedang Anda alami.
-        </p>
-
-        {submitError && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-100 p-3 text-sm text-red-700">
-            <AlertCircle className="h-4 w-4" />
-            {submitError}
+        {/* Success State */}
+        {submitSuccess && (
+          <div className="p-6">
+            <div className="py-8 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="mb-2 text-xl font-semibold text-gray-800">
+                Pengaduan Berhasil Dikirim!
+              </h3>
+              <p className="text-gray-600">
+                Petugas desa akan segera menindaklanjuti laporan Anda.
+              </p>
+            </div>
           </div>
         )}
 
-        {fileUploadError && (
-          <div className="mb-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-            {fileUploadError}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="nama" className="text-[var(--color-dark-slate)]">
-                Nama Lengkap
-              </Label>
-              <Input
-                id="nama"
-                name="nama"
-                placeholder="Masukkan nama lengkap Anda"
-                value={formData.nama}
-                onChange={handleInputChange}
-                required
-                className="border-[var(--color-slate-gray)]/20 focus:border-[var(--color-cyan-blue)] focus:ring-[var(--color-cyan-blue)]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="nomor_telepon"
-                className="text-[var(--color-dark-slate)]"
-              >
-                Nomor Telepon
-              </Label>
-              <Input
-                type="tel"
-                id="nomor_telepon"
-                name="nomor_telepon"
-                placeholder="Contoh: 081234567890"
-                value={formData.nomor_telepon}
-                onChange={handleInputChange}
-                required
-                className="border-[var(--color-slate-gray)]/20 focus:border-[var(--color-cyan-blue)] focus:ring-[var(--color-cyan-blue)]"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="kategori"
-              className="text-[var(--color-dark-slate)]"
-            >
-              Kategori Pengaduan
-            </Label>
-            <select
-              id="kategori"
-              name="kategori"
-              className="w-full rounded-md border border-[var(--color-slate-gray)]/20 p-2 focus:border-[var(--color-cyan-blue)] focus:ring-1 focus:ring-[var(--color-cyan-blue)] focus:outline-none"
-              value={formData.kategori}
-              onChange={handleInputChange}
-              required
-            >
-              {kategoriOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="detail_pengaduan"
-              className="text-[var(--color-dark-slate)]"
-            >
-              Detail Pengaduan
-            </Label>
-            <textarea
-              id="detail_pengaduan"
-              name="detail_pengaduan"
-              className="min-h-[100px] w-full rounded-md border border-[var(--color-slate-gray)]/20 p-2 focus:border-[var(--color-cyan-blue)] focus:ring-1 focus:ring-[var(--color-cyan-blue)] focus:outline-none"
-              placeholder="Jelaskan secara detail pengaduan atau masalah yang Anda alami..."
-              value={formData.detail_pengaduan}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="media" className="text-[var(--color-dark-slate)]">
-              Upload Foto (Opsional)
-            </Label>
-            <Input
-              type="file"
-              id="media"
-              accept="image/*"
-              multiple
-              onChange={handleFileChange}
-              className="border-[var(--color-slate-gray)]/20 focus:border-[var(--color-cyan-blue)] focus:ring-[var(--color-cyan-blue)]"
-            />
-            {previewImages.length > 0 && (
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {previewImages.map((url, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={url}
-                      alt={`Preview ${index + 1}`}
-                      className="h-24 w-full rounded-lg object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
+        {/* Form */}
+        {!submitSuccess && (
+          <div className="space-y-6 p-6">
+            {/* Error Alert */}
+            {submitError && (
+              <div className="flex items-center space-x-3 rounded-lg border border-red-200 bg-red-50 p-4">
+                <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600" />
+                <p className="text-sm text-red-700">{submitError}</p>
               </div>
             )}
-          </div>
 
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-[var(--color-cyan-blue)] text-[var(--color-pure-white)] hover:bg-[var(--color-deep-blue)] disabled:opacity-50"
-          >
-            {isSubmitting ? "Mengirim..." : "Kirim Pengaduan"}
-          </Button>
-        </form>
+            {/* File Upload Error */}
+            {fileUploadError && (
+              <div className="flex items-center space-x-3 rounded-lg border border-red-200 bg-red-50 p-4">
+                <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600" />
+                <p className="text-sm text-red-700">{fileUploadError}</p>
+              </div>
+            )}
+
+            {/* Name and Phone */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                  <User className="h-4 w-4" />
+                  <span>Nama Lengkap</span>
+                </label>
+                <input
+                  type="text"
+                  name="nama"
+                  placeholder="Masukkan nama lengkap Anda"
+                  value={formData.nama}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                  <Phone className="h-4 w-4" />
+                  <span>Nomor Telepon</span>
+                </label>
+                <input
+                  type="tel"
+                  name="nomor_telepon"
+                  placeholder="081234567890"
+                  value={formData.nomor_telepon}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                <Tag className="h-4 w-4" />
+                <span>Kategori Pengaduan</span>
+              </label>
+              <select
+                name="kategori"
+                value={formData.kategori}
+                onChange={handleInputChange}
+                required
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              >
+                {kategoriOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.icon} {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Detail */}
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                <FileText className="h-4 w-4" />
+                <span>Detail Pengaduan</span>
+              </label>
+              <textarea
+                name="detail_pengaduan"
+                placeholder="Jelaskan secara detail pengaduan atau masalah yang Anda alami..."
+                value={formData.detail_pengaduan}
+                onChange={handleInputChange}
+                required
+                rows={4}
+                className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* File Upload */}
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                <Camera className="h-4 w-4" />
+                <span>Upload Foto (Opsional)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+                <div className="flex w-full flex-col items-center justify-center space-y-2 rounded-lg border-2 border-dashed border-gray-200 px-4 py-6 transition-colors hover:border-blue-400">
+                  <Upload className="h-6 w-6 text-gray-400" />
+                  <p className="text-sm text-gray-600">
+                    Klik untuk upload atau drag & drop
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    JPG, PNG (Max 2MB per file)
+                  </p>
+                </div>
+              </div>
+              {/* Image Previews */}
+              {previewImages.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {previewImages.map((url, index) => (
+                    <div key={index} className="group relative">
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="h-20 w-full rounded-lg border border-gray-200 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-colors group-hover:opacity-100 hover:bg-red-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <div className="border-t border-gray-100 pt-4">
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className={`flex w-full items-center justify-center space-x-2 rounded-lg px-4 py-3 font-medium text-white transition-all ${
+                  isSubmitting
+                    ? "cursor-not-allowed bg-gray-400"
+                    : "transform bg-blue-600 hover:scale-105 hover:bg-blue-700 hover:shadow-lg"
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Mengirim...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-5 w-5" />
+                    <span>Kirim Pengaduan</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
