@@ -18,6 +18,7 @@ import {
   Save,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 // Interface for pengaduan media
 interface MediaPengaduan {
@@ -121,6 +122,7 @@ export default function VerifikasiPengaduanPage() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("diajukan");
   const [submitting, setSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Log the current pengaduan state during render for debugging
   console.log("Current pengaduan state in render:", pengaduan);
@@ -345,38 +347,79 @@ export default function VerifikasiPengaduanPage() {
                   {/* Media Section */}
                   {pengaduan?.media_pengaduan &&
                     pengaduan.media_pengaduan.length > 0 && (
-                      <div className="rounded-xl border bg-white shadow-sm">
-                        <div className="border-b p-6">
+                      <div className="rounded-xl border bg-white p-6 shadow-sm">
+                        <div className="mb-6 flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-gray-600" />
                           <h3 className="text-lg font-semibold text-gray-900">
                             Media Lampiran
                           </h3>
+                          <span className="rounded-full bg-gray-100 px-2 py-1 text-sm text-gray-600">
+                            {pengaduan.media_pengaduan.length} file
+                          </span>
                         </div>
-                        <div className="p-6">
-                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            {pengaduan.media_pengaduan.map((media, index) => (
-                              <div key={index} className="group relative">
-                                <div className="aspect-video overflow-hidden rounded-lg bg-gray-100">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                          {pengaduan.media_pengaduan.map((media, index) => (
+                            <div key={index} className="group">
+                              {media.type.startsWith("image/") ? (
+                                <div
+                                  className="relative cursor-pointer overflow-hidden rounded-lg border border-gray-200"
+                                  onClick={() => setPreviewImage(media.url)}
+                                >
                                   <img
                                     src={media.url}
                                     alt={media.name}
-                                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                    className="h-48 w-full object-cover transition-transform duration-200 group-hover:scale-105"
                                   />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                  <div className="absolute bottom-3 left-3 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                                    <p className="text-sm font-medium">
+                                      {media.name}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="mt-2">
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {media.name}
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    {media.type}
-                                  </p>
+                              ) : (
+                                <div className="rounded-lg border border-gray-200 p-4 transition-colors hover:border-blue-300 hover:bg-blue-50">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-red-100">
+                                      <FileText className="h-6 w-6 text-red-600" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-sm font-medium text-gray-900">
+                                        {media.name}
+                                      </p>
+                                      <p className="text-sm text-gray-500">
+                                        {media.type}
+                                      </p>
+                                    </div>
+                                    <a
+                                      href={media.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex-shrink-0 p-2 text-gray-400 transition-colors hover:text-gray-600"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </a>
+                                  </div>
                                 </div>
-                                <button className="absolute top-2 right-2 rounded-lg bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70">
-                                  <Eye className="h-4 w-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
+                        {/* Dialog untuk preview gambar full */}
+                        <Dialog
+                          open={!!previewImage}
+                          onOpenChange={() => setPreviewImage(null)}
+                        >
+                          <DialogContent className="flex max-w-3xl flex-col items-center justify-center">
+                            {previewImage && (
+                              <img
+                                src={previewImage}
+                                alt="Preview"
+                                className="max-h-[80vh] w-auto rounded-lg object-contain shadow-lg"
+                              />
+                            )}
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     )}
 
